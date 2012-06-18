@@ -1,0 +1,5 @@
+#!/bin/bash
+
+awk '/qa/{print $8, $9, FILENAME }' 2012.*/*.26
+
+

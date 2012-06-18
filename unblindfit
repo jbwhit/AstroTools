@@ -1,0 +1,81 @@
+#!/bin/bash
+
+if [ "$1" == "--help" ]; then
+  echo "ex: fit fort.13 --l2"
+fi
+
+TIMESTAMP=$(date +%Y.%m.%d.%H.%M.%S)
+mkdir $TIMESTAMP
+
+cd $TIMESTAMP
+
+export VPFSETUP=/nfs/cluster/qso/jwhitmore/fits/setup/vp_setup.dat
+export ATOMDIR=/nfs/cluster/qso/jwhitmore/fits/setup/atom.dat
+export VPFPLOTS=/nfs/cluster/qso/jwhitmore/fits/setup/vp_splot.dat
+
+# ln -s /nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/J222006-280323.fits .
+ln -s /nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/unblinded/he2217m2818.fits .
+
+cp ../$1 fort.13
+awk -v seen=0 '/^   \*/{seen = 1} seen {print}' fort.13 | awk -v seen=1 '/^  \*/{seen = 0} seen {print}' > temp.head
+# awk -v seen=0 '/^   \*/{seen = 1} seen {print}' ../$1
+# awk -v seen=1 '/^  \*/{seen = 0} seen {print}' ../$1 > temp.head
+awk '/^  \*/{seen = 1} seen {print}' ../$1 | sed 's/ 0.5000/ 0.6250/g' > temp.body
+
+cat temp.head temp.body > fort.13 # This overwrites fort.13 -- this is good.
+head -1 temp.body >> temp.head
+
+if [ "$2" == "--fine" ]; then
+  # Fine fitting parameters
+  FITTINGPARAMETERS="f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.0001\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+
+
+elif [ "$2" == "--paolo" ]; then
+  FITTINGPARAMETERS="f\nil\ncs\n5.e-7 50.0 5.e-7\nn\n0.003\nb\n0.02\nz\n1.e-6\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+  echo "paolo" >> fit.log
+elif [ "$2" == "--l1" ]; then
+  FITTINGPARAMETERS="f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.001\nb\n0.2\nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+  echo "l1" >> fit.log
+elif [ "$2" == "--l2" ]; then
+  FITTINGPARAMETERS="f\nil\ncs\n2.e-5 100.0 2.e-5\nn\n0.001\nb\n0.1\nz\n2.e-7\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+  echo "l2" >> fit.log
+elif [ "$2" == "--l3" ]; then
+  FITTINGPARAMETERS="f\nil\ncs\n2.e-6 100.0 2.e-6\nn\n0.0005\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+  echo "l3" >> fit.log
+elif [ "$2" == "--l4" ]; then
+  FITTINGPARAMETERS="f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.0001\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+  echo "l4" >> fit.log
+else
+  # FITTINGPARAMETERS="f\nil\ncs\n2.e-6 100.0 2.e-6\nn\n0.001\nb\n0.20\nz\n2.e-6\nx4\n2.e-6\n\n\nfort.13\nn\nn\n\n"
+  echo "You must specify a step-size level (--l[1-4])."
+  # exit
+fi
+
+echo "! Setup file used:    $VPFSETUP" > fit.command
+echo "! atom.dat file used: $ATOMDIR" >> fit.command
+echo "! Fitting parameters: $FITTINGPARAMETERS" >> fit.command
+
+cat fit.command fort.13 > temp.13 && mv temp.13 fort.13
+
+printf "$FITTINGPARAMETERS" | /home/ssi/jwhitmore/bin/vpfit10 
+
+cat fit.command fort.26 > temp.26 && mv temp.26 fort.26
+
+combine2613 fort.13 fort.26 temp.fit
+
+cat fit.command temp.fit > temp && mv temp fit.13 
+rm temp.fit
+
+grep 'BAD' fort.26 
+grep 'dropped' fort.18 
+echo $TIMESTAMP
+
+# echo "iter;  chisq;    Npix;   DoF; Ndropped; Filename; level; alpha-fit"
+
+awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s \n"), $3, $4, $5, $6, $8, "'$TIMESTAMP'" "/" FILENAME}' fit.13 | paste - fit.log > temp
+awk '/qa/{print "alpha"}' fit.13 | paste temp - > summary.txt
+
+cp fit.13 ..
+
+cd ..
+
