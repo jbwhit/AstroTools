@@ -1,11 +1,16 @@
 - Create auto-bashrc link to add the github folder/AstroTools/stuff to path.
 
+Create git directory for fitting each absorber.
+
 Add
 - shreklogin
 - scpdesktop/green/etc.
 - helpreduce.py
 - various update functions (moebius/shrek/green/etc.)
 
-Rewrite
-- fit.bash in python (to make more flexible)
+ =======
+ = FIT =
+ =======
+- check for matching UPPER and lower case components
+- Rewrite in python (to make more flexible)
 
