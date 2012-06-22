@@ -1,0 +1,11 @@
+- Create auto-bashrc link to add the github folder/AstroTools/stuff to path.
+
+Add
+- shreklogin
+- scpdesktop/green/etc.
+- helpreduce.py
+- various update functions (moebius/shrek/green/etc.)
+
+Rewrite
+- fit.bash in python (to make more flexible)
+
