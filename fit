@@ -50,8 +50,12 @@ else
 fi
 
 echo "Here's your chance to stop things before we get going... "
-
 sleep 2
+
+# consider running the fit in a screen session named after the TIMESTAMP (so screen -r $TIMESTAMP) brings that about
+# then immediately dropping into a "comment.txt" in the fitting directory so that comments to that run can be added.
+# Would have to be sure that the screen program inherited all of the proper environment variables, etc.
+
 mkdir $TIMESTAMP
 cd $TIMESTAMP
 
@@ -88,7 +92,7 @@ else
   echo "You must specify a step-size level (--l[1-4]) with level 4 being the finest fit."
 fi
 
-# TODO save exact setup and atom.dat files to fitting directory.
+# TODO copy exact setup and atom.dat files to fitting directory.
 # TODO create function that reruns using everything exactly in the fitting directory.
 
 echo "! Setup file used:    $VPFSETUP" > fit.command
@@ -119,5 +123,7 @@ awk '/qa/{print "alpha"}' fit.13 | paste temp - > summary.txt
 cp fit.13 ..
 cd ..
 
-# TODO find some way to parse things that won't change (fit results, time, date) plus things.
+# Create pdf of full plot and individual plots.
+
+# TODO find some way to parse things that won't change (fit results, time, date) plus things
 # that might change (comment on run, comment on something strange).
