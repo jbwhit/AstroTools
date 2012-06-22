@@ -42,7 +42,6 @@ mkdir $TIMESTAMP
 cd $TIMESTAMP
 
 export VPFSETUP=/nfs/cluster/qso/jwhitmore/fits/setup/vp_setup.dat
-export ATOMDIR=/nfs/cluster/qso/jwhitmore/fits/setup/atom.dat
 export VPFPLOTS=/nfs/cluster/qso/jwhitmore/fits/setup/vp_splot.dat
 
 ln -s /nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/J222006-280323.fits .
