@@ -67,14 +67,16 @@ cat temp.head temp.body > fort.13 # This overwrites fort.13 -- this is good.
 head -1 temp.body >> temp.head
 
 if [ "$2" == "--fine" ]; then
+  echo "Wrong choice"
+  exit
 elif [ "$2" == "--paolo" ]; then
   FITTINGPARAMETERS="f\nil\ncs\n5.e-7 50.0 5.e-7\nn\n0.003\nb\n0.02\nz\n1.e-6\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
   echo "paolo" >> fit.log
 elif [ "$2" == "--l1" ]; then
-  FITTINGPARAMETERS="f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.001\nb\n0.2\nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   FITTINGPARAMETERS="f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   echo "l1" >> fit.log
 elif [ "$2" == "--l2" ]; then
+  FITTINGPARAMETERS="f\nil\ncs\n2.e-5 100.0 2.e-5\nn\n0.005\nb\n0.1 \nz\n2.e-7\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   echo "l2" >> fit.log
 elif [ "$2" == "--l3" ]; then
   FITTINGPARAMETERS="f\nil\ncs\n2.e-6 100.0 2.e-6\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
@@ -86,11 +88,15 @@ else
   echo "You must specify a step-size level (--l[1-4]) with level 4 being the finest fit."
 fi
 
+# TODO save exact setup and atom.dat files to fitting directory.
+# TODO create function that reruns using everything exactly in the fitting directory.
 echo "! Setup file used:    $VPFSETUP" > fit.command
 echo "! atom.dat file used: $ATOMDIR" >> fit.command
 echo "! Fitting parameters: $FITTINGPARAMETERS" >> fit.command
 
 cat fit.command fort.13 > temp.13 && mv temp.13 fort.13
+
+# TODO include vpfit version in log file.
 
 printf "$FITTINGPARAMETERS" | /home/ssi/jwhitmore/bin/vpfit10 
 
@@ -106,11 +112,11 @@ grep 'dropped' fort.18
 echo $TIMESTAMP
 
 # echo "iter;  chisq;    Npix;   DoF; Ndropped; Filename; level; alpha-fit"
-
 awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s \n"), $3, $4, $5, $6, $8, "'$TIMESTAMP'" "/" FILENAME}' fit.13 | paste - fit.log > temp
 awk '/qa/{print "alpha"}' fit.13 | paste temp - > summary.txt
 
 cp fit.13 ..
-
 cd ..
 
+# TODO find some way to parse things that won't change (fit results, time, date) plus things.
+# that might change (comment on run, comment on something strange).
