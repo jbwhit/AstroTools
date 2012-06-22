@@ -90,6 +90,7 @@ fi
 
 # TODO save exact setup and atom.dat files to fitting directory.
 # TODO create function that reruns using everything exactly in the fitting directory.
+
 echo "! Setup file used:    $VPFSETUP" > fit.command
 echo "! atom.dat file used: $ATOMDIR" >> fit.command
 echo "! Fitting parameters: $FITTINGPARAMETERS" >> fit.command
