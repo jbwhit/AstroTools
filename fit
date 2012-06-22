@@ -37,14 +37,25 @@ if [ "$1" == "--help" ]; then
 fi
 
 TIMESTAMP=$(date +%Y.%m.%d.%H.%M.%S)
-mkdir $TIMESTAMP
-
-cd $TIMESTAMP
-
 export VPFSETUP=/nfs/cluster/qso/jwhitmore/fits/setup/vp_setup.dat
+export ATOMDIR=/nfs/cluster/qso/jwhitmore/fits/setup/MM_VPFIT_2012-06-05_noiso.dat
 export VPFPLOTS=/nfs/cluster/qso/jwhitmore/fits/setup/vp_splot.dat
 
-ln -s /nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/J222006-280323.fits .
+if [ "$3" == "--unblind" ]; then
+  echo "Using the unblinded data."
+  export DATAFILE=/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/unblinded/he2217m2818.fits .
+else
+  echo "Using the BLIND data."
+  export DATAFILE=/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/J222006-280323.fits
+fi
+
+echo "Here's your chance to stop things before we get going... "
+
+sleep 2
+mkdir $TIMESTAMP
+cd $TIMESTAMP
+
+ln -s $DATAFILE .
 
 cp ../$1 fort.13
 awk -v seen=0 '/^   \*/{seen = 1} seen {print}' fort.13 | awk -v seen=1 '/^  \*/{seen = 0} seen {print}' > temp.head
