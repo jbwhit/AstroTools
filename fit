@@ -68,14 +68,13 @@ cd $TIMESTAMP
 ln -s $DATAFILE .
 
 cp ../$1 fort.13
-# Split file into file header and model portions.
-# csplit -s [suppress bytesize output] filename '%throw away until this expression%' '/split file at this expression/'
-csplit -s fort.13 '%^   \*%' '/^  \*/1'
-# This outputs two files: xx00, xx01
-mv xx00 head.13
-mv xx01 body.13
+awk -v seen=0 '/^   \*/{seen = 1} seen {print}' fort.13 | awk -v seen=1 '/^  \*/{seen = 0} seen {print}' > temp.head
+# awk -v seen=0 '/^   \*/{seen = 1} seen {print}' ../$1
+# awk -v seen=1 '/^  \*/{seen = 0} seen {print}' ../$1 > temp.head
+awk '/^  \*/{seen = 1} seen {print}' ../$1 | sed 's/ 0.5000/ 0.6250/g' > temp.body
 
-cat head.13 body.13 > fort.13 # This overwrites fort.13 -- this is good.
+cat temp.head temp.body > fort.13 # This overwrites fort.13 -- this is good.
+head -1 temp.body >> temp.head
 
 if [ "$2" == "--fine" ]; then
   echo "Wrong choice"
@@ -100,6 +99,7 @@ else
 fi
 
 # TODO copy exact setup and atom.dat files to fitting directory.
+# TODO create function that reruns using everything exactly in the fitting directory.
 
 echo "! Setup file used:    $VPFSETUP" > fit.command
 echo "! atom.dat file used: $ATOMDIR" >> fit.command

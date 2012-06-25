@@ -12,7 +12,5 @@ Add
  = FIT =
  =======
 - check for matching UPPER and lower case components
--- isupper(); islower()
--- len(string_of_) = set(string_of_)
 - Rewrite in python (to make more flexible)
-- create function that reruns using everything exactly in the fitting directory.
+
