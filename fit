@@ -108,7 +108,7 @@ echo "! Fitting parameters: $FITTINGPARAMETERS" >> fit.command
 cat fit.command fort.13 > temp.13 && mv temp.13 fort.13
 
 # Automatically parses the body of the body.13 for any anomalies.
-python fort13flagcheck.py
+fort13flagcheck
 echo "Last check."
 sleep 2
 
