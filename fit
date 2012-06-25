@@ -55,6 +55,9 @@ else
   export DATAFILE=/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/J222006-280323.fits
 fi
 
+# Automatically parses the body of the body.13 for any anomalies.
+fort13flagcheck
+
 echo "Here's your chance to stop things before we get going... "
 sleep 2
 
