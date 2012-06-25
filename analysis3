@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "iter;  chisq;    Npix;   DoF; Ndropped; Filename"
 
-awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s\n"), $3, $4, $5, $6, $8, FILENAME}' 2012.0*/fit.13 
+awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s\n"), $3, $4, $5, $6, $8, FILENAME}' 201*/fit.13 
 awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s\n"), $3, $4, $5, $6, $8, FILENAME}' fort.13
 
