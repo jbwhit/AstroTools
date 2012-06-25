@@ -44,11 +44,14 @@ export VPFPLOTS=/nfs/cluster/qso/jwhitmore/fits/setup/vp_splot.dat
 if [ "$3" == "--unblind" ]; then
   echo "Using the unblinded data."
   export DATAFILE=/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/unblinded/he2217m2818.fits
-elif [ "$2" == "--P169" ]; then
+elif [ "$3" == "--P169" ]; then
+  echo "Using Paolo's data; 1.69 system."
   export DATAFILE=/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/paoloandmiriam/norAq2217.dat
-elif [ "$2" == "--P162" ]; then
+elif [ "$3" == "--P162" ]; then
+  echo "Using Paolo's data; 1.62 system."
   export DATAFILE=/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/paoloandmiriam/norBq2217.dat
-elif [ "$2" == "--P155" ]; then
+elif [ "$3" == "--P155" ]; then
+  echo "Using Paolo's data; 1.55 system."
   export DATAFILE=/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/paoloandmiriam/norCq2217.dat
 else
   echo "Using the BLIND data."
