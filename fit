@@ -38,7 +38,12 @@ fi
 
 TIMESTAMP=$(date +%Y.%m.%d.%H.%M.%S)
 export VPFSETUP=/nfs/cluster/qso/jwhitmore/fits/setup/vp_setup.dat
-export ATOMDIR=/nfs/cluster/qso/jwhitmore/fits/setup/MM_VPFIT_2012-06-05_noiso.dat
+if [ "$4" == "--isotope" ]; then
+  echo "ISOTOPE FITTING!"
+  export ATOMDIR=/nfs/cluster/qso/jwhitmore/fits/setup/MM_VPFIT_2012-06-05.dat
+else
+  export ATOMDIR=/nfs/cluster/qso/jwhitmore/fits/setup/MM_VPFIT_2012-06-05_noiso.dat
+fi
 export VPFPLOTS=/nfs/cluster/qso/jwhitmore/fits/setup/vp_splot.dat
 
 if [ "$3" == "--unblind" ]; then
