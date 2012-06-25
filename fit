@@ -55,10 +55,7 @@ else
   export DATAFILE=/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/J222006-280323.fits
 fi
 
-# Automatically parses the body of the body.13 for any anomalies.
-fort13flagcheck
-
-echo "Here's your chance to stop things before we get going... "
+echo "Here's your chance to stop things before we create the directory. "
 sleep 2
 
 # consider running the fit in a screen session named after the TIMESTAMP (so screen -r $TIMESTAMP) brings that about
@@ -109,6 +106,11 @@ echo "! atom.dat file used: $ATOMDIR" >> fit.command
 echo "! Fitting parameters: $FITTINGPARAMETERS" >> fit.command
 
 cat fit.command fort.13 > temp.13 && mv temp.13 fort.13
+
+# Automatically parses the body of the body.13 for any anomalies.
+python fort13flagcheck.py
+echo "Last check."
+sleep 2
 
 # TODO include vpfit version in log file.
 

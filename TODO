@@ -16,3 +16,10 @@ Add
 -- len(string_of_) = set(string_of_)
 - Rewrite in python (to make more flexible)
 - create function that reruns using everything exactly in the fitting directory.
+
+ ===================
+ = fort13flagcheck =
+ ===================
+ - check if no flag
+ - check if 1 letter flag
+ 
