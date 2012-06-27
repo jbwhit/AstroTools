@@ -100,6 +100,7 @@ elif [ "$3" == "--laptopP169" ]; then
   export VPFSETUP=vp_setup.dat
   echo "changing VPFSETUP: ", $VPFSETUP
   cp ../vp_splot.dat .
+  export VPFPLOTS=vp_splot.dat
   echo "changing VPFPLOTS: ", $VPFPLOTS
 fi
 export VPFPLOTS=/nfs/cluster/qso/jwhitmore/fits/setup/vp_splot.dat
@@ -147,7 +148,7 @@ echo "! Setup file used:    $VPFSETUP" > fit.command
 echo "! atom.dat file used: $ATOMDIR" >> fit.command
 echo "! Fitting parameters: $FITTINGPARAMETERS" >> fit.command
 
-cat fit.command fort.13 > temp.13 && mv temp.13 fort.13
+cat fit.command fort.13 > command.fort.13
 
 # Automatically parses the body of the body.13 for any anomalies.
 fort13flagcheck
