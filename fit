@@ -58,6 +58,14 @@ elif [ "$3" == "--P162" ]; then
 elif [ "$3" == "--P155" ]; then
   echo "Using Paolo's data; 1.55 system."
   export DATAFILE=/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/paoloandmiriam/norCq2217.dat
+elif [ "$3" == "--laptop" ]; then
+  echo "Laptop. Data from current directory"
+  export DATAFILE=../he2217m2818.fits # sets data file from starting directory
+  echo $DATAFILE
+elif [ "$3" == "--laptopP169" ]; then
+  echo "Laptop Paolo's data. Data from current directory"
+  export DATAFILE=../norAq2217.dat # sets data file from starting directory
+  echo $DATAFILE
 else
   echo "Using the BLIND data."
   export DATAFILE=/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/J222006-280323.fits
@@ -75,10 +83,36 @@ cd $TIMESTAMP
 
 ln -s $DATAFILE .
 
-cp ../$1 fort.13
+# fit fort.13 --l4 --laptop 
+if [ "$3" == "--laptop" ]; then
+  cp ../MM_VPFIT_2012-06-05_noiso.dat .
+  ln -s MM_VPFIT_2012-06-05_noiso.dat atom.dat
+  export ATOMDIR=atom.dat
+  cp ../vp_setup.dat .
+  export VPFSETUP=vp_setup.dat
+  cp ../vp_splot.dat .
+  export VPFPLOTS=vp_splot.dat
+elif [ "$3" == "--laptopP169" ]; then
+  cp ../MM_VPFIT_2012-06-05_noiso.dat .
+  ln -s MM_VPFIT_2012-06-05_noiso.dat atom.dat
+  export ATOMDIR=atom.dat
+  cp ../vp_setup.dat .
+  export VPFSETUP=vp_setup.dat
+  echo "changing VPFSETUP: ", $VPFSETUP
+  cp ../vp_splot.dat .
+  echo "changing VPFPLOTS: ", $VPFPLOTS
+fi
+export VPFPLOTS=/nfs/cluster/qso/jwhitmore/fits/setup/vp_splot.dat
+
+cp ../$1 temp.13
+
+head temp.13
+echo $PWD
+
 # Split file into file header and model portions.
 # csplit -s [suppress bytesize output] filename '%throw away until this expression%' '/split file at this expression/'
-csplit -s fort.13 '%^   \*%' '/^  \*/1'
+# On mac you need a ! on the top line for this csplit to work.
+csplit -s temp.13 '%^   \*%' '/^  \*/1'
 # This outputs two files: xx00, xx01
 mv xx00 head.13
 mv xx01 body.13
@@ -117,19 +151,29 @@ cat fit.command fort.13 > temp.13 && mv temp.13 fort.13
 
 # Automatically parses the body of the body.13 for any anomalies.
 fort13flagcheck
+
+echo $ATOMDIR
+echo $VPFSETUP
+
 echo "Last check."
 sleep 2
 
 # TODO include vpfit version in log file.
 
-printf "$FITTINGPARAMETERS" | /home/ssi/jwhitmore/bin/vpfit10 
+# if [ "$3" == "--laptop" ]; then
+  # printf "$FITTINGPARAMETERS" | vpfit
+# elif [ "$3" == "--laptopP169" ]; then
+  printf "$FITTINGPARAMETERS" | vpfit
+# else
+  # printf "$FITTINGPARAMETERS" | /home/ssi/jwhitmore/bin/vpfit10 
+# fi
 
-cat fit.command fort.26 > temp.26 && mv temp.26 fort.26
+# stop over-writing and deleting files.
+cat fit.command fort.26 > command.fort.26
 
 combine2613 fort.13 fort.26 temp.fit
-
-cat fit.command temp.fit > temp && mv temp fit.13 
-rm temp.fit
+cat fit.command temp.fit > temp
+cp temp fit.13 
 
 grep 'BAD' fort.26 
 grep 'dropped' fort.18 
