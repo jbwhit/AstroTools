@@ -1,4 +1,5 @@
 #!/bin/bash
+# setupvelocityshift.bash INPUT.13
 
 csplit -s $1 '%^   \*%' '/^  \*/1'
 # This outputs two files: xx00, xx01
