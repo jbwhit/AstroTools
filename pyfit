@@ -61,12 +61,12 @@ parser.add_argument('--version', action='version', version='%(prog)s 0.01')
 
 args = parser.parse_args()
 
-# print args.vpfitVersion
 
 if args.isotope == True:
   print "FITTING FOR ISOTOPES"
   os.environ['ATOMDIR'] = '/nfs/cluster/qso/jwhitmore/fits/setup/MM_VPFIT_2012-06-05.dat'
 else:
+  pass
   # os.environ['ATOMDIR'] = '/nfs/cluster/qso/jwhitmore/fits/setup/MM_VPFIT_2012-06-05_noiso.dat'
 os.environ['VPFPLOTS'] = '/nfs/cluster/qso/jwhitmore/fits/setup/vp_splot.dat'
 
@@ -126,17 +126,11 @@ if args.dataFile == 'blind':
 
 os.symlink(DATAFILE, DATAFILE.split('/')[-1]) # create symbolic link from the location of the DATAFILE to cwd.
 
-# temp
-print args.input13
-print parentDirectory + args.input13
-print fitDirectory + "input.fort.13"
 shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
 
 # Have a config file for different computers with locations
 # of atom.dat, vp_setup.dat, vp_splot.dat, datafile, etc. 
 config = ConfigParser()
-config.read('argparse_witH_shlex.ini')
-config_value = config.get('cli', 'options')
 print 'Config  :', config_value
 
 # Log QSO name
@@ -222,7 +216,7 @@ with open('head.13','r') as head, open('body.13','r') as body:
 
 
 if args.parameterString == "paolo":
-  FITTINGPARAMETERS="f\nil\ncs\n5.e-7 50.0 5.e-7\nn\n0.003\nb\n0.02\nz\n1.e-6\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+  FITTINGPARAMETERS="f\nil\ncs\n5.e-7  50.0 5.e-7\nn\n0.003\nb\n0.02\nz\n1.e-6\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
 if args.parameterString == "L1":
   FITTINGPARAMETERS="f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
 if args.parameterString == "L2":
@@ -268,12 +262,6 @@ if args.vpfitVersion == "10.0":
 # cp fit.13 ..
 # 
 # # TODO parse the fort.13 and fit.13 files and report any discrepancies. 
-# 
 # printf "{fb,2}\npdf/\nq\n" | fitcmp ../vpfit -n fit.13 -o fort.13
-# 
-# cd ..
-# 
 # # Create pdf of full velocity plot.
-# 
 # # TODO find some way to parse things that won't change (fit results, time, date) plus things
-# # that might change (comment on run, comment on something strange).
