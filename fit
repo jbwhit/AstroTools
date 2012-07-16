@@ -123,22 +123,6 @@ mv xx00 head.13
 mv xx01 body.13
 # catch if errors out!
 
-# python attempt to parse bump.13: 
-# input = open('fort.13', 'r').read().split('\n')
-# beginhead = False
-# beginbody = False
-# for line in input:
-#   if line.startswith('   *'):
-#     beginhead = True
-#   if beginhead == True:
-#     print "head: ", line
-#   if beginbody == True:
-#     print "body: ", line
-#   if line.startswith('  *'):
-#     beginhead = False
-#     beginbody = True
-
-
 
 cat head.13 body.13 > fort.13 # This writes fort.13.
 
@@ -160,8 +144,11 @@ elif [ "$2" == "--l3" ]; then
 elif [ "$2" == "--l4" ]; then
   FITTINGPARAMETERS="f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
   echo "l4" >> fit.log
+elif [ "$2" == "--l5" ]; then
+  FITTINGPARAMETERS="f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+  echo "l4" >> fit.log
 else
-  echo "You must specify a step-size level (--l[1-4]) with level 4 being the finest fit."
+  echo "You must specify a step-size level (--l[1-5]) with level 5 being the finest fit."
 fi
 
 # TODO copy exact setup and atom.dat files to fitting directory.
@@ -184,6 +171,7 @@ sleep 2
 # TODO include vpfit version in log file.
 
 printf "$FITTINGPARAMETERS" | vpfit95
+# printf "$FITTINGPARAMETERS" | vpfit10
 
 echo $PWD
 # stop over-writing and deleting files.

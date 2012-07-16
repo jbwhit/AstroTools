@@ -76,6 +76,8 @@ bLowerSet = set(bLowerCase)
 qUpperSet = set(qUpperCase)
 qLowerSet = set(qLowerCase)
 
+# Include n-values and q values?
+
 # Check if too many "master" flags being fit.
 if len(zLowerCase) != len(zLowerSet):
   print "\n\n"
