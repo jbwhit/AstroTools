@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # pyfit.py
 # 
+# The purpose of this program is to attempt to make fitting absorption systems 
+# with vpfit reproducible, and easier. Several decisions were made that could
+# ideas or suggestions. (You can probably Google me and vpfit and find out my
+# current information).
 # Copyright 2012 Jonathan Whitmore 
 # Distributed under the Boost Software License, Version 1.0.
 #
@@ -30,7 +34,6 @@ import os
 import re
 import shutil
 import argparse
-from ConfigParser import ConfigParser
 import shlex
 import datetime 
 import time 
@@ -40,36 +43,36 @@ import logging
 import readline
 import subprocess as subprocess
 import difflib
+from ConfigParser import SafeConfigParser
+import simplejson as json
 
 pauseTime = 2
 TIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
 print TIMESTAMP
 
+latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
+
+# Known limitations
+# datafiles must not have spaces in their names. 
+
 # Parse command line arguments
-parser = argparse.ArgumentParser(description='This is a program that runs vpfit with defined parameters.')
+parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
 parser.add_argument('input13', action="store", default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
 parser.add_argument('--continue', action="store_true", default=False, help='Set continue to true.')
+parser.add_argument('--nocomment', action="store_true", default=False, help='Turn off comment prompt.')
+parser.add_argument('--donotuseconfigs', action="store_true", default=False, help='Will not use the config files.')
 parser.add_argument('--nobump', action="store_true", default=False, help='Turn off bump the initial min values.')
 parser.add_argument('--vpfit', action="store", dest="vpfitVersion", default='9.5', type=str, help='Which version of vpfit to use.')
 parser.add_argument('--parameterString', choices=('L1', 'L2', 'L3', 'L4', 'L5'), default='L5', 
                     help='The VPFIT parameter step sizes to use.')
-parser.add_argument('--dataFile', choices=('blind', 'unblind', 'P169', 'P162', 'P155', 'laptop', 'laptopP169'), default='blind', 
-                    help='data file to use.')
+parser.add_argument('--dataFile', action="store", default='blind', help='data file to use.')
 parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
-parser.add_argument('--isotope', action="store_true", default=False, help='Use the isotope atom.dat')
+parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
 parser.add_argument('--version', action='version', version='%(prog)s 0.01')
 
 args = parser.parse_args()
 
-
-if args.isotope == True:
   print "FITTING FOR ISOTOPES"
-  os.environ['ATOMDIR'] = '/nfs/cluster/qso/jwhitmore/fits/setup/MM_VPFIT_2012-06-05.dat'
-else:
-  pass
-  # os.environ['ATOMDIR'] = '/nfs/cluster/qso/jwhitmore/fits/setup/MM_VPFIT_2012-06-05_noiso.dat'
-os.environ['VPFPLOTS'] = '/nfs/cluster/qso/jwhitmore/fits/setup/vp_splot.dat'
-
 print "You have %d seconds to stop things if there's a problem... " % pauseTime
 time.sleep(pauseTime)
 
@@ -78,95 +81,45 @@ parentDirectory = os.getcwd() + '/'
 os.chdir(TIMESTAMP)
 fitDirectory = os.getcwd() + '/'
 
-print TIMESTAMP
-
-# TODO implement ConfigParser for local atom.dat; data path; 
-if args.dataFile == 'unblind':
-  DATAFILE = '/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/unblinded/he2217m2818.fits'
-if args.dataFile == 'P169':
-  DATAFILE = '/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/paoloandmiriam/norAq2217.dat'
-if args.dataFile == 'P162':
-  DATAFILE = '/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/paoloandmiriam/norBq2217.dat'
-if args.dataFile == 'P155':
-  DATAFILE = '/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/paoloandmiriam/norCq2217.dat'
-if args.dataFile == 'laptop':
-  DATAFILE = '../he2217m2818.fits'
-  #   cp ../MM_VPFIT_2012-06-05_noiso.dat .
   shutil.copy('../MM_VPFIT_2012-06-05_noiso.dat', fitDirectory)
-  #   ln -s MM_VPFIT_2012-06-05_noiso.dat atom.dat
-  os.symlink('MM_VPFIT_2012-06-05_noiso.dat', 'atom.dat') # create symbolic link to atom.dat 
   #   cp ../vp_setup.dat .
-  shutil.copy('../vp_setup.dat', fitDirectory)
   #   export VPFSETUP=vp_setup.dat
-if args.dataFile == 'laptopP169':
   DATAFILE = '../norAq2217.dat'
-  #   cp ../MM_VPFIT_2012-06-05_noiso.dat .
-  #   ln -s MM_VPFIT_2012-06-05_noiso.dat atom.dat
   #   export ATOMDIR=atom.dat
-  #   cp ../vp_setup.dat .
   #   export VPFSETUP=vp_setup.dat
-  #   echo "changing VPFSETUP: ", $VPFSETUP
-  #   cp ../vp_splot.dat .
   #   export VPFPLOTS=vp_splot.dat
-  #   echo "changing VPFPLOTS: ", $VPFPLOTS
+# Create a fitting log. 
+logging.basicConfig(filename=TIMESTAMP + '.log', level=logging.DEBUG)
 
-# Setup Directory has atom.dat, vp_setup.dat, vp_splot.dat.
-# Data directory (?) has all various data files in it. Unsure of this idea.
-
-print os.environ['ATOMDIR'] # will show what's stored here. 
-
-if args.dataFile == 'blind':
-  DATAFILE = '/nfs/cluster/qso/jwhitmore/fits/UVES/185.A-0745/J222006-280323/J222006-280323.fits'
+if args.donotuseconfigs == True:
+  print "Not using config files."
+  print "Need to know locations of setup files and data files."
+else:
+  parser = SafeConfigParser()
+  candidates = glob.glob(parentDirectory + 'config*')
+  found = parser.read(candidates)
+  print "Using these config files:"
+  for configfile in set(found):
+    print "  ", configfile
+    logging.info("config loaded: " + configfile)
+  setupDir = parser.get('machine', 'setupdir') + '/'
+  atomDatFile = parser.get('update', args.atomdat)
+  shutil.copy(setupDir + atomDatFile, fitDirectory)
+  shutil.copy(setupDir + 'vp_setup.dat', fitDirectory)
+  shutil.copy(setupDir + 'vp_splot.dat', fitDirectory)
+  dataDirectory = parser.get('data', 'dataDirectory') + '/'
+  os.symlink(atomDatFile, 'atom.dat') # create symbolic link to atom.dat in fitting directory.
   
-# # # consider running the fit in a screen session named after the TIMESTAMP (so screen -r $TIMESTAMP) brings that about
-# # # then immediately dropping into a "comment.txt" in the fitting directory so that comments to that run can be added.
-# # # Would have to be sure that the screen program inherited all of the proper environment variables, etc.
-# bigspectrahandle.write(open(chunk + ".ascii").read())
-# dirpath = tempfile.mkdtemp()  # make temporary directory
-
-os.symlink(DATAFILE, DATAFILE.split('/')[-1]) # create symbolic link from the location of the DATAFILE to cwd.
-
 shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
 
-# Have a config file for different computers with locations
-# of atom.dat, vp_setup.dat, vp_splot.dat, datafile, etc. 
-config = ConfigParser()
 print 'Config  :', config_value
 
-# Log QSO name
-# Log absorber system (1.62, etc.)
 
-argument_list = shlex.split(config_value)
-print 'Arg List:', argument_list
-
-# shutil.rmtree(dirpath)  # delete temp directory -rf
-# temp1 = open(vpfitcontol,'r')
-# temp2 = open(vpfitLog,'w')
-# p1 = call(['vpfit'], stdin=temp1, stdout=temp2) # waits for command to complete (do one that doesn't wait).
-# temp1.close()
-# temp2.close()
-
-startTime = datetime.datetime.now()
-
-# Change to use current directory settings. 
-os.environ['ATOMDIR'] = 'atom.dat'
 os.environ['VPFSETUP'] = 'vp_setup.dat'
-os.environ['VPFPLOTS'] = 'vp_splot.dat'
-
-
-p = subprocess.Popen(["vpfit95", "arg1"])
-# do other stuff here
-# at the end wait for the program to exit
 returncode = p.wait()
-# run final step here
-# subprocess.Popen.poll() # Check if process has finished or not. (For parsing output).
-# End-run analysis should be a separate program so can be rerun separately. ?
-endTime = datetime.datetime.now()
 runningTime = endTime - startTime
-print "Running time:", runningTime.__str__()
-# Log this.
-
-shutil.copy(args.input13, fitDirectory + "input.fort.13")
+if args.input13 != "input.fort.13":
+  shutil.copy(args.input13, fitDirectory + "input.fort.13")
 
 # # Auto-include bump w/ flag to turn off?
 if args.nobump:
