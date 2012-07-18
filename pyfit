@@ -204,6 +204,8 @@ with open('command.fort.13', 'w') as outFile:
     outFile.write(com.read())
     outFile.write(fort13.read())
 
+shutil.copy('command.fort.13', TIMESTAMP + '.fort.13')
+
 startTime = datetime.datetime.now()
 logging.info("Fitting Parameters: " + repr(FITTINGPARAMETERS))
 
@@ -264,13 +266,13 @@ with open('fort.18', 'r') as f18:
     if re.search('iteration', line):
       dropped.append(line)
 
+if max(set(starts)) >= 2:
+  logging.warning("Initial fort.18 restarts: " + max(set(starts)))
 if int(iterationArray[-1]) == 125:
   continueFlag = True
+  logging.info("Automated continue fitting to begin.")
 else:
   continueFlag = False
-if max(set(starts)) > 1:
-  logging.warning("fort.18 restarts: " + max(set(starts)))
-
 # Errors in fort.26 to parse for:
 # Stats: ... errs 
 # Stats: ... BAD
