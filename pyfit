@@ -106,7 +106,6 @@ else:
   
 shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
 
-
 if args.input13 != "input.fort.13":
   shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
 
@@ -184,29 +183,53 @@ elif args.vpfitVersion == ("10.0" or "10"):
 else:
   print "What VPFIT version are you wanting to use?"
 
-# cat fit.command fort.13 > command.fort.13
 
-# # Automatically parses the body of the body.13 for any anomalies.
-fort13flagcheck 
+# Change to use current directory settings. 
+os.environ['ATOMDIR'] = 'atom.dat'
+os.environ['VPFSETUP'] = 'vp_setup.dat'
+os.environ['VPFPLOTS'] = 'vp_splot.dat'
+logging.info("PATH for ATOMDIR:  " + os.environ['ATOMDIR'])
+logging.info("PATH for VPFSETUP: " + os.environ['VPFSETUP'])
+logging.info("PATH for VPFPLOTS: " + os.environ['VPFPLOTS'])
 
-print "Last chance... "
-time.sleep(pauseTime)
+with open('command.info', 'w') as fh:
+  print >>fh, "! ATOMDIR: atomDatFile"
+  print >>fh, "! runCommand: printf " + repr(FITTINGPARAMETERS) + " | " + vpfitExecutable
 
-if args.vpfitVersion == "9.5":
-  Popen.call(FITTINGPARAMETERS, vpfit95) # or something.
-if args.vpfitVersion == "10.0":
-  vpfit10
+# cat command.info fort.13 > command.fort.13
+with open('command.fort.13', 'w') as outFile:
+  with open('command.info', 'r') as com, open('fort.13', 'r') as fort13:
+    outFile.write(com.read())
+    outFile.write(fort13.read())
 
-# cat fit.command fort.26 > command.fort.26
-# 
-# combine2613 fort.13 fort.26 temp.fit
-# cat fit.command temp.fit > temp
-# cp temp fit.13 
-# 
-# grep 'BAD' fort.26 
-# grep 'dropped' fort.18 
-# echo $TIMESTAMP
-# 
+startTime = datetime.datetime.now()
+logging.info("Fitting Parameters: " + repr(FITTINGPARAMETERS))
+
+if args.nocomment == False:
+  initialFitComment = raw_input("Comment: ")
+  logging.info(initialFitComment)
+
+print "Running... "
+proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+endTime = datetime.datetime.now()
+runningTime = endTime - startTime
+print "Running time:", runningTime.__str__()
+logging.info("Time to execute: " + runningTime.__str__())
+
+# data = [{"running time": runningTime}]
+# json
+
+# Parse datafile -- report/log if blind or unblind. 
+
+# cat command.info fort.26 > command.fort.26
+with open('command.fort.26', 'w') as outFile:
+  with open('command.info', 'r') as com, open('fort.26', 'r') as fort26:
+    outFile.write(com.read())
+    outFile.write(fort26.read())
+
+p2 = subprocess.call(['combine2613', 'fort.13', 'fort.26', 'fit.13'])
+
 # # echo "iter;  chisq;    Npix;   DoF; Ndropped; Filename; level; alpha-fit"
 # awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s \n"), $3, $4, $5, $6, $8, "'$TIMESTAMP'" "/" FILENAME}' fit.13 | paste - fit.log > temp
 # awk '/qa/{print "alpha"}' fit.13 | paste temp - > summary.txt
