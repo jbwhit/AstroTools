@@ -82,8 +82,6 @@ parentDirectory = os.getcwd() + '/'
 os.chdir(TIMESTAMP)
 fitDirectory = os.getcwd() + '/'
 
-  shutil.copy('../MM_VPFIT_2012-06-05_noiso.dat', fitDirectory)
-  #   export ATOMDIR=atom.dat
 # Create a fitting log. 
 logging.basicConfig(filename=TIMESTAMP + '.log', level=logging.DEBUG)
 
@@ -108,9 +106,7 @@ else:
   
 shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
 
-print 'Config  :', config_value
 
-runningTime = endTime - startTime
 if args.input13 != "input.fort.13":
   shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
 
@@ -144,21 +140,30 @@ try:
           beginhead = False
           beginbody = True
 except: 
-  print "Splitting the input file failed. "
+  print "Splitting the input file failed."
 
-# cat head.13 body.13 > fort.13 # This writes fort.13.
-with open('head.13','r') as head, open('body.13','r') as body:
-  with open('fort.13', 'w') as fort13:
-    for line in head.read().split('\n'):
-      if line.strip() != '':
-        print >>fort13, line
-    for line in body.read().split('\n'):
-      if line.strip() != '':
-        print >>fort13, line
+# combine head and body into fort.13
+with open('fort.13', 'w') as outFile:
+  with open('head.13','r') as head, open('body.13','r') as body:
+    outFile.write(head.read())
+    outFile.write(body.read())
 
+# parse input fort.13 for data files needed. 
+dataFiles = []
+with open ('head.13', 'r') as head:
+  for line in head.read().split('\n'):
+    if len(line.split()) > 4:
+      dataFiles.append(line.split()[0])
 
-if args.parameterString == "paolo":
-  FITTINGPARAMETERS="f\nil\ncs\n5.e-7  50.0 5.e-7\nn\n0.003\nb\n0.02\nz\n1.e-6\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+# Create symbolic link to data files needed.
+logging.info("Data files used: ")
+for datafile in set(dataFiles):
+  os.symlink(dataDirectory + datafile, fitDirectory + datafile)
+  logging.info(datafile)
+
+# Parses the body of the body.13 for any anomalies.
+p = subprocess.call('fort13flagcheck') # waits for return.
+
 if args.parameterString == "L1":
   FITTINGPARAMETERS="f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
 if args.parameterString == "L2":
@@ -170,9 +175,14 @@ if args.parameterString == "L4":
 if args.parameterString == "L5":
   FITTINGPARAMETERS="f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
 
-# echo "! Setup file used:    $VPFSETUP" > fit.command
-# echo "! atom.dat file used: $ATOMDIR" >> fit.command
-# echo "! Fitting parameters: $FITTINGPARAMETERS" >> fit.command
+if args.vpfitVersion == ("9.5" or "95"):
+  print "VPFIT version: ", args.vpfitVersion
+  vpfitExecutable = 'vpfit95'
+elif args.vpfitVersion == ("10.0" or "10"):
+  print "VPFIT version: ", 
+  vpfitExecutable = 'vpfit10'
+else:
+  print "What VPFIT version are you wanting to use?"
 
 # cat fit.command fort.13 > command.fort.13
 
