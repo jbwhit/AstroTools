@@ -213,6 +213,7 @@ if args.nocomment == False:
   initialFitComment = raw_input("Comment: ")
   logging.info(initialFitComment)
 
+print TIMESTAMP
 print "Running... "
 proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 result = proc.communicate(input=FITTINGPARAMETERS)
