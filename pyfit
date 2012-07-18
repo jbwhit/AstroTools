@@ -324,7 +324,7 @@ with open(CONTINUETIMESTAMP[-1] + '.fit.13', 'r') as finalFit13:
     alphafit = True # If already started out fitting for alpha
 if alphafit == False:
   print "Fitting for alpha..."
-  p3 = subprocess.call(['convert13-13a', fit.13])
+  p3 = subprocess.call(['convert13-13a', CONTINUETIMESTAMP[-1] + '.fit.13'])
   NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
   CONTINUETIMESTAMP.append( NEWTIMESTAMP + '.alpha')
   shutil.move('alpha.13', NEWTIMESTAMP + '.alpha.fit.13')
