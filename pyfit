@@ -242,6 +242,7 @@ shutil.copy('fort.26', TIMESTAMP + '.fort.26')
 shutil.copy('fit.13', TIMESTAMP + '.fit.13')
 
 # if 125 iterations and no other errors
+# checks (chi-sq going down every iteration; error not "too big"; value not "too big")
 datfile = []
 # fort.18 errors
 iterationArray = []
@@ -287,7 +288,9 @@ while (RUNCOUNT < maxRuns) and (continueFlag == True):
   RUNCOUNT += 1
   NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
   CONTINUETIMESTAMP.append(NEWTIMESTAMP)
-  shutil.copy(CONTINUETIMESTAMP[-2] + '.fit.13', 'fort.13') #Dangerous, think about it...
+  with open(CONTINUETIMESTAMP[-2] + '.fit.13', 'r') as unbumped, open('fort.13', 'w') as bumpFile:
+    for line in unbumped.readlines():
+      bumpFile.write(re.sub(r' 0.5000', ' 0.6250', line))
   shutil.copy('fort.13', CONTINUETIMESTAMP[-1] + '.fort.13') 
   print "Continuing with run: ", RUNCOUNT
   proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
