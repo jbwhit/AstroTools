@@ -280,13 +280,14 @@ if max(set(starts)) > 1:
 # awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s \n"), $3, $4, $5, $6, $8, "'$TIMESTAMP'" "/" FILENAME}' fit.13 | paste - fit.log > temp
 # awk '/qa/{print "alpha"}' fit.13 | paste temp - > summary.txt
 
-RUNCOUNT = 1
 CONTINUETIMESTAMP = []
 CONTINUETIMESTAMP.append(TIMESTAMP)
 maxRuns = 10
+RUNCOUNT = 1
 while (RUNCOUNT < maxRuns) and (continueFlag == True):
   RUNCOUNT += 1
   NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+  logging.info("Beginning run: " + RUNCOUNT + " at " + NEWTIMESTAMP)
   CONTINUETIMESTAMP.append(NEWTIMESTAMP)
   with open(CONTINUETIMESTAMP[-2] + '.fit.13', 'r') as unbumped, open('fort.13', 'w') as bumpFile:
     for line in unbumped.readlines():
@@ -295,7 +296,7 @@ while (RUNCOUNT < maxRuns) and (continueFlag == True):
   print "Continuing with run: ", RUNCOUNT
   proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   result = proc.communicate(input=FITTINGPARAMETERS)
-  shutil.copy('fort.18', CONTINUETIMESTAMP[-1] + '.fort.18')
+  shutil.move('fort.18', CONTINUETIMESTAMP[-1] + '.fort.18') # vpfit9.5 does weird things to the fort.18
   shutil.copy('fort.26', CONTINUETIMESTAMP[-1] + '.fort.26')
   p2 = subprocess.call(['combine2613', 'fort.13', 'fort.26', 'fit.13'])
   shutil.copy('fit.13', CONTINUETIMESTAMP[-1] + '.fit.13')
@@ -309,9 +310,50 @@ while (RUNCOUNT < maxRuns) and (continueFlag == True):
     continueFlag = False
 
 if RUNCOUNT == maxRuns:
-  print "Not converged yet. Runs: ", RUNCOUNT
+  print "Not converged yet. Runs before stopping: ", RUNCOUNT
+  logging.warning("Not converged yet. Runs before stopping: ", RUNCOUNT)
 else:
-  print "It took ", RUNCOUNT, "runs to converge. "
+  print "It took ", RUNCOUNT, "runs to converge."
+  logging.info("It took ", RUNCOUNT, "runs to converge.")
+
+alphafit = False
+with open(CONTINUETIMESTAMP[-1] + '.fit.13', 'r') as finalFit13:
+  if re.search('qa', finalFit13.read()):
+    alphafit = True # If already started out fitting for alpha
+if alphafit == False:
+  print "Fitting for alpha..."
+  p3 = subprocess.call(['convert13-13a', fit.13])
+  NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+  CONTINUETIMESTAMP.append( NEWTIMESTAMP + '.alpha')
+  shutil.move('alpha.13', NEWTIMESTAMP + '.alpha.fit.13')
+  # Reusing above code.
+  RUNCOUNT = 1
+  while (RUNCOUNT < maxRuns) and (continueFlag == True):
+    RUNCOUNT += 1
+    NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+    logging.info("Beginning alpha run: " + RUNCOUNT + " at " + NEWTIMESTAMP)
+    CONTINUETIMESTAMP.append(NEWTIMESTAMP)
+    with open(CONTINUETIMESTAMP[-2] + '.fit.13', 'r') as unbumped, open('fort.13', 'w') as bumpFile:
+      for line in unbumped.readlines():
+        bumpFile.write(re.sub(r' 0.5000', ' 0.6250', line))
+    shutil.copy('fort.13', CONTINUETIMESTAMP[-1] + '.fort.13') 
+    print "Continuing with run: ", RUNCOUNT
+    proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    result = proc.communicate(input=FITTINGPARAMETERS)
+    shutil.move('fort.18', CONTINUETIMESTAMP[-1] + '.fort.18') # vpfit9.5 does weird things to the fort.18
+    shutil.copy('fort.26', CONTINUETIMESTAMP[-1] + '.fort.26')
+    p2 = subprocess.call(['combine2613', 'fort.13', 'fort.26', 'fit.13'])
+    shutil.copy('fit.13', CONTINUETIMESTAMP[-1] + '.fit.13')
+    with open('fort.18', 'r') as f18:
+      for line in f18.read().splitlines():
+        if re.search('iteration', line):
+          iterationArray.append(line.split()[2])
+    if int(iterationArray[-1]) == 125:
+      continueFlag = True
+    else:
+      continueFlag = False
+else:
+  print "Finished."
   
 # # TODO parse the body of fort.13 and fit.13 files and report any discrepancies. 
 # STRINGT = r'printf "{fb,2}\npdf/\nq\n" | fitcmp ../vpfit -n fit.13 -o fort.13'
@@ -324,4 +366,5 @@ else:
 # -----------------------
 # Higher level: physical components are the structures, the particular metals are not important. Abundance ratios are interesting.
 # End-run analysis should be a separate program so can be rerun separately/repeatedly ?
+# stochastic shifting of every fit variable and restart of fitting process.
 # -----------------------
