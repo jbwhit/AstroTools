@@ -31,6 +31,8 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # 
 
+# checks the file "body.13" for component flag errors
+
 import re
 import string
 
