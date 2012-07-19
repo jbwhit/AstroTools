@@ -187,7 +187,7 @@ else:
 
 # Create symbolic link to fitting directory.
 executableLink = subprocess.Popen(['which', vpfitExecutable], stdout=subprocess.PIPE)
-shutil.symlink(executableLink.communicate()[0].strip(), fitDirectory + 'vpfit')
+os.symlink(executableLink.communicate()[0].strip(), fitDirectory + 'vpfit')
 logging.info('VPFIT version: ' + args.vpfitVersion)
 logging.info('VPFIT executable: ' + vpfitExecutable)
 
