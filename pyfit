@@ -56,6 +56,7 @@ latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this.
 
 # Known limitations
 # datafiles must not have spaces in their names. 
+# qa is the flag for fitting alpha.
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
@@ -63,6 +64,7 @@ parser.add_argument('input13', action="store", default='fort.13', type=str) # Po
 parser.add_argument('--continue', action="store_true", default=False, help='Set continue to true.')
 parser.add_argument('--nocomment', action="store_true", default=False, help='Turn off comment prompt.')
 parser.add_argument('--donotuseconfigs', action="store_true", default=False, help='Will not use the config files.')
+parser.add_argument('--donotcreatePlot', action="store_true", default=False, help='Will not make pdf plots.')
 parser.add_argument('--nobump', action="store_true", default=False, help='Turn off bump the initial min values.')
 parser.add_argument('--vpfit', action="store", dest="vpfitVersion", default='9.5', type=str, help='Which version of vpfit to use.')
 parser.add_argument('--parameterString', choices=('L1', 'L2', 'L3', 'L4', 'L5'), default='L5', 
@@ -183,6 +185,9 @@ elif args.vpfitVersion == ("10.0" or "10"):
 else:
   print "What VPFIT version are you wanting to use?"
 
+# Create symbolic link to fitting directory.
+executableLink = subprocess.Popen(['which', vpfitExecutable], stdout=subprocess.PIPE)
+shutil.symlink(executableLink.communicate()[0].strip(), fitDirectory + 'vpfit')
 logging.info('VPFIT version: ' + args.vpfitVersion)
 logging.info('VPFIT executable: ' + vpfitExecutable)
 
@@ -319,6 +324,11 @@ else:
   print "It took ", RUNCOUNT, " runs to converge."
   logging.info("It took " + str(RUNCOUNT) + "runs to converge.")
 
+if args.donotcreatePlot == False: 
+  print "Creating fit comparison plots."
+  proc = subprocess.Popen(['plotfit', CONTINUETIMESTAMP[-1], 'input.fort.13', CONTINUETIMESTAMP[-1] + ".fit.13"])
+
+
 alphafit = False
 with open(CONTINUETIMESTAMP[-1] + '.fit.13', 'r') as finalFit13:
   if re.search('qa', finalFit13.read()):
@@ -363,11 +373,7 @@ else:
   print "Finished."
   
 # # TODO parse the body of fort.13 and fit.13 files and report any discrepancies. 
-# STRINGT = r'printf "{fb,2}\npdf/\nq\n" | fitcmp ../vpfit -n fit.13 -o fort.13'
-# proc = subprocess.Popen(['fitcmp', '../vpfit', '-n', 'fit.13', '-o', 'fort.13'])
-# proc = subprocess.Popen(['bash', STRINGT], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-# result = proc.communicate(input="{fb,2}\npdf/\nq\n")
-# # Create pdf of full velocity plot.
+# # TODO Create pdf of full velocity plot.
 # # TODO find some way to parse things that won't change (fit results, time, date) plus things
 
 # -----------------------
