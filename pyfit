@@ -260,8 +260,6 @@ hessian = []
 dropped = []
 with open('fort.18', 'r') as f18:
   for line in f18.read().splitlines():
-    # if len(line.split()):
-    #   datfile.append(line)# for line in datfile:
     if re.search('iteration', line):
       iterationArray.append(line.split()[2])
       starts.append(line.split()[4])
@@ -333,7 +331,10 @@ alphafit = False
 with open(CONTINUETIMESTAMP[-1] + '.fit.13', 'r') as finalFit13:
   if re.search('qa', finalFit13.read()):
     alphafit = True # If already started out fitting for alpha
-if alphafit == False:
+
+# Add argparse option to say which fittingflag would fit for alpha
+# Add argparse option to not fit for alpha
+if alphafit == False: 
   print "Fitting for alpha..."
   p3 = subprocess.call(['convert13-13da', CONTINUETIMESTAMP[-1] + '.fit.13'])
   NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
@@ -341,7 +342,7 @@ if alphafit == False:
   shutil.move('alpha.13', NEWTIMESTAMP + '.alpha.fit.13')
   print NEWTIMESTAMP + '.alpha.fit.13'
   # Reusing above code.
-  RUNCOUNT = 1
+  RUNCOUNT = 0
   continueFlag = True
   while (RUNCOUNT < maxRuns) and (continueFlag == True):
     RUNCOUNT += 1
