@@ -290,7 +290,7 @@ RUNCOUNT = 1
 while (RUNCOUNT < maxRuns) and (continueFlag == True):
   RUNCOUNT += 1
   NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-  logging.info("Beginning run: " + RUNCOUNT + " at " + NEWTIMESTAMP)
+  logging.info("Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP)
   CONTINUETIMESTAMP.append(NEWTIMESTAMP)
   with open(CONTINUETIMESTAMP[-2] + '.fit.13', 'r') as unbumped, open('fort.13', 'w') as bumpFile:
     for line in unbumped.readlines():
@@ -314,10 +314,10 @@ while (RUNCOUNT < maxRuns) and (continueFlag == True):
 
 if RUNCOUNT == maxRuns:
   print "Not converged yet. Runs before stopping: ", RUNCOUNT
-  logging.warning("Not converged yet. Runs before stopping: ", RUNCOUNT)
+  logging.warning("Not converged yet. Runs before stopping: " + str(RUNCOUNT))
 else:
   print "It took ", RUNCOUNT, "runs to converge."
-  logging.info("It took ", RUNCOUNT, "runs to converge.")
+  logging.info("It took " + str(RUNCOUNT) + "runs to converge.")
 
 alphafit = False
 with open(CONTINUETIMESTAMP[-1] + '.fit.13', 'r') as finalFit13:
@@ -334,13 +334,13 @@ if alphafit == False:
   while (RUNCOUNT < maxRuns) and (continueFlag == True):
     RUNCOUNT += 1
     NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-    logging.info("Beginning alpha run: " + RUNCOUNT + " at " + NEWTIMESTAMP)
+    logging.info("Beginning alpha run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP)
     CONTINUETIMESTAMP.append(NEWTIMESTAMP)
     with open(CONTINUETIMESTAMP[-2] + '.fit.13', 'r') as unbumped, open('fort.13', 'w') as bumpFile:
       for line in unbumped.readlines():
         bumpFile.write(re.sub(r' 0.5000', ' 0.6250', line))
     shutil.copy('fort.13', CONTINUETIMESTAMP[-1] + '.fort.13') 
-    print "Continuing with run: ", RUNCOUNT
+    print "Continuing with alpha run: ", RUNCOUNT
     proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result = proc.communicate(input=FITTINGPARAMETERS)
     shutil.move('fort.18', CONTINUETIMESTAMP[-1] + '.fort.18') # vpfit9.5 does weird things to the fort.18
