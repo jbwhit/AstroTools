@@ -195,7 +195,7 @@ logging.info("PATH for VPFSETUP: " + os.environ['VPFSETUP'])
 logging.info("PATH for VPFPLOTS: " + os.environ['VPFPLOTS'])
 
 with open('command.info', 'w') as fh:
-  print >>fh, "! ATOMDIR: atomDatFile"
+  print >>fh, "! ATOMDIR:" + atomDatFile
   print >>fh, "! runCommand: printf " + repr(FITTINGPARAMETERS) + " | " + vpfitExecutable
 
 # cat command.info fort.13 > command.fort.13
@@ -332,6 +332,7 @@ if alphafit == False:
   print NEWTIMESTAMP + '.alpha.fit.13'
   # Reusing above code.
   RUNCOUNT = 1
+  continueFlag = True
   while (RUNCOUNT < maxRuns) and (continueFlag == True):
     RUNCOUNT += 1
     NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
