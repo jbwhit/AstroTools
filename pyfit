@@ -299,7 +299,7 @@ while (RUNCOUNT < maxRuns) and (continueFlag == True):
   print "Continuing with run: ", RUNCOUNT
   proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   result = proc.communicate(input=FITTINGPARAMETERS)
-  shutil.move('fort.18', CONTINUETIMESTAMP[-1] + '.fort.18') # vpfit9.5 does weird things to the fort.18
+  shutil.copy('fort.18', CONTINUETIMESTAMP[-1] + '.fort.18') # vpfit9.5 does weird things to the fort.18
   shutil.copy('fort.26', CONTINUETIMESTAMP[-1] + '.fort.26')
   p2 = subprocess.call(['combine2613', 'fort.13', 'fort.26', 'fit.13'])
   shutil.copy('fit.13', CONTINUETIMESTAMP[-1] + '.fit.13')
@@ -325,7 +325,7 @@ with open(CONTINUETIMESTAMP[-1] + '.fit.13', 'r') as finalFit13:
     alphafit = True # If already started out fitting for alpha
 if alphafit == False:
   print "Fitting for alpha..."
-  p3 = subprocess.call(['convert13-13a', CONTINUETIMESTAMP[-1] + '.fit.13'])
+  p3 = subprocess.call(['convert13-13da', CONTINUETIMESTAMP[-1] + '.fit.13'])
   NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
   CONTINUETIMESTAMP.append( NEWTIMESTAMP + '.alpha')
   shutil.move('alpha.13', NEWTIMESTAMP + '.alpha.fit.13')
