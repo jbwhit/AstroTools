@@ -286,6 +286,7 @@ if max(set(starts)) >= 2:
   logging.warning("Initial fort.18 restarts: " + max(set(starts)))
 if int(iterationArray[-1]) == 125:
   continueFlag = True
+  flag125hit = True
   logging.info("Automated continue fitting to begin.")
 else:
   continueFlag = False
@@ -309,8 +310,20 @@ CONTINUETIMESTAMP.append(TIMESTAMP)
   
 maxRuns = 10
 RUNCOUNT = 1
+maxlevel = sorted(fitLevelDictionary.keys())[-1]
+for i, s in enumerate(sorted(fitLevelDictionary.keys())):
+  if level in s:
+    currentLevel = i
+
+# while (RUNCOUNT < maxRuns) and (continueFlag == True):
 while (RUNCOUNT < maxRuns) and (continueFlag == True):
   RUNCOUNT += 1
+  if (flag125hit == False) and (currentLevel < maxlevel):
+    currentLevel += 1
+    RUNCOUNT = 1
+    FITTINGPARAMETERS = fitLevelDictionary[currentLevel]
+    logging.info("Leveled up!")
+    logging.info("Fitting Parameters: " + repr(FITTINGPARAMETERS))
   NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
   logging.info("Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP)
   print "Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP
@@ -332,8 +345,11 @@ while (RUNCOUNT < maxRuns) and (continueFlag == True):
         iterationArray.append(line.split()[2])
   if int(iterationArray[-1]) == 125:
     continueFlag = True
+    flag125hit = True
   else:
-    continueFlag = False
+    if currentLevel == maxlevel:
+      continueFlag = False
+    flag125hit = False
 
 if RUNCOUNT == maxRuns:
   print "Not converged yet. Runs before stopping: ", RUNCOUNT
@@ -345,7 +361,6 @@ else:
 if args.donotcreatePlot == False: 
   print "Creating fit comparison plots."
   proc = subprocess.Popen(['plotfit', CONTINUETIMESTAMP[-1], 'input.fort.13', CONTINUETIMESTAMP[-1] + ".fit.13"])
-
 
 alphafit = False
 with open(CONTINUETIMESTAMP[-1] + '.fit.13', 'r') as finalFit13:
@@ -364,6 +379,7 @@ if alphafit == False:
   # Reusing above code.
   RUNCOUNT = 0
   continueFlag = True
+  FITTINGPARAMETERS = fitLevelDictionary[maxlevel]
   while (RUNCOUNT < maxRuns) and (continueFlag == True):
     RUNCOUNT += 1
     NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
