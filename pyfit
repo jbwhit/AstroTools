@@ -237,18 +237,15 @@ if args.nocomment == False:
 
 print TIMESTAMP
 print "Running... "
+# ===========
+# = Running =
+# ===========
 proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 result = proc.communicate(input=FITTINGPARAMETERS)
-
 endTime = datetime.datetime.now()
 runningTime = endTime - startTime
 print "Running time:", runningTime.__str__()
 logging.info("Time to execute: " + runningTime.__str__())
-
-# data = [{"running time": runningTime}]
-# json
-
-# Parse datafile -- report/log if blind or unblind. 
 
 # cat command.info fort.26 > command.fort.26
 with open('command.fort.26', 'w') as outFile:
@@ -258,18 +255,16 @@ with open('command.fort.26', 'w') as outFile:
 
 p2 = subprocess.call(['combine2613', 'fort.13', 'fort.26', 'fit.13'])
 
-# ===================
-# = Analyze fort.18 =
-# ===================
 # copy all fort.* to TIMESTAMP.fort.* 
 shutil.copy('fort.18', TIMESTAMP + '.fort.18')
 shutil.copy('fort.26', TIMESTAMP + '.fort.26')
 shutil.copy('fit.13', TIMESTAMP + '.fit.13')
 
+# ===================
+# = Analyze fort.18 =
+# ===================
 # if 125 iterations and no other errors
-# checks (chi-sq going down every iteration; error not "too big"; value not "too big")
-datfile = []
-# fort.18 errors
+# check (chi-sq going down every iteration; error not "too big"; value not "too big")
 iterationArray = []
 starts = []
 rejected = []
@@ -305,6 +300,13 @@ else:
 
 CONTINUETIMESTAMP = []
 CONTINUETIMESTAMP.append(TIMESTAMP)
+
+# pseudocode
+# if flag125hit == True:
+#   rerun maxRuns
+# if scaleUp == True:
+#   continueScale()
+  
 maxRuns = 10
 RUNCOUNT = 1
 while (RUNCOUNT < maxRuns) and (continueFlag == True):
@@ -395,9 +397,15 @@ else:
 # # TODO parse the body of fort.13 and fit.13 files and report any discrepancies. 
 # # TODO Create pdf of full velocity plot.
 # # TODO find some way to parse things that won't change (fit results, time, date) plus things
+# TODO Create a function of repeating fits and scaling up the level until level 5 converges.
 
 # -----------------------
 # Higher level: physical components are the structures, the particular metals are not important. Abundance ratios are interesting.
 # End-run analysis should be a separate program so can be rerun separately/repeatedly ?
 # stochastic shifting of every fit variable and restart of fitting process.
 # -----------------------
+# data = [{"running time": runningTime}]
+# json
+
+# Parse datafile -- report/log if blind or unblind. 
+
