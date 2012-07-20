@@ -33,6 +33,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # 
 import os
+import sys
 import re
 import shutil
 import argparse
@@ -75,16 +76,18 @@ parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='a
 parser.add_argument('--version', action='version', version='%(prog)s 0.01')
 
 args = parser.parse_args()
-# Create a fitting log. 
+
+os.makedirs(TIMESTAMP)
+parentDirectory = os.getcwd() + '/'
+os.chdir(TIMESTAMP)
+fitDirectory = os.getcwd() + '/'
+
+# Create a fitting log.
 logging.basicConfig(filename=TIMESTAMP + '.log', level=logging.DEBUG)
 for arg, value in sorted(vars(args).items()):
   logging.info("Argument %s: %r", arg, value)
 
-os.makedirs(TIMESTAMP)
-parentDirectory = os.getcwd() + '/'
 logging.info("parentDirectory: " + parentDirectory)
-os.chdir(TIMESTAMP)
-fitDirectory = os.getcwd() + '/'
 logging.info("fitDirectory: " + fitDirectory)
 
 if args.donotuseconfigs == True:
