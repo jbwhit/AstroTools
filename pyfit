@@ -172,17 +172,27 @@ for datafile in set(dataFiles):
 # Parses the body of the body.13 for any anomalies.
 p = subprocess.call('fort13flagcheck') # waits for return.
 
-if args.parameterString == "L1":
-  FITTINGPARAMETERS="f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
-if args.parameterString == "L2":
-  FITTINGPARAMETERS="f\nil\ncs\n2.e-5 100.0 2.e-5\nn\n0.005\nb\n0.1 \nz\n2.e-7\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
-if args.parameterString == "L3":
-  FITTINGPARAMETERS="f\nil\ncs\n2.e-6 100.0 2.e-6\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
-if args.parameterString == "L4":
-  FITTINGPARAMETERS="f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
-if args.parameterString == "L5":
-  FITTINGPARAMETERS="f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+# Create dictionary of all level strings; use args.parameterString as key.
+fitLevelDictionary = {}
+fitLevelDictionary["L1"] = "f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+fitLevelDictionary["L2"] = "f\nil\ncs\n2.e-5 100.0 2.e-5\nn\n0.005\nb\n0.1 \nz\n2.e-7\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+fitLevelDictionary["L3"] = "f\nil\ncs\n2.e-6 100.0 2.e-6\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+fitLevelDictionary["L4"] = "f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+fitLevelDictionary["L5"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
 
+FITTINGPARAMETERS = fitLevelDictionary[args.parameterString]
+
+# if args.parameterString == "L1":
+#   FITTINGPARAMETERS="f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+# if args.parameterString == "L2":
+#   FITTINGPARAMETERS="f\nil\ncs\n2.e-5 100.0 2.e-5\nn\n0.005\nb\n0.1 \nz\n2.e-7\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+# if args.parameterString == "L3":
+#   FITTINGPARAMETERS="f\nil\ncs\n2.e-6 100.0 2.e-6\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+# if args.parameterString == "L4":
+#   FITTINGPARAMETERS="f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+# if args.parameterString == "L5":
+#   FITTINGPARAMETERS="f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+# 
 if args.vpfitVersion == ("9.5" or "95"):
   print "VPFIT version: ", args.vpfitVersion
   vpfitExecutable = 'vpfit95'
