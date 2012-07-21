@@ -66,7 +66,7 @@ parser.add_argument('--continue', action="store_true", default=False, help='Set 
 parser.add_argument('--nocomment', action="store_true", default=False, help='Turn off comment prompt.')
 parser.add_argument('--donotuseconfigs', action="store_true", default=False, help='Will not use the config files.')
 parser.add_argument('--donotcreatePlot', action="store_true", default=False, help='Will not make pdf plots.')
-parser.add_argument('--nobump', action="store_true", default=False, help='Turn off bump the initial min values.')
+parser.add_argument('--nobump', action="store_true", default=False, help='Will not bump the fort.13 off the min values.')
 parser.add_argument('--vpfit', action="store", dest="vpfitVersion", default='9.5', type=str, help='Which version of vpfit to use.')
 parser.add_argument('--parameterString', choices=('L1', 'L2', 'L3', 'L4', 'L5'), default='L5', 
                     help='The VPFIT parameter step sizes to use.')
@@ -183,19 +183,8 @@ fitLevelDictionary["L5"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n
 FITTINGPARAMETERS = fitLevelDictionary[args.parameterString]
 levelArray = sorted(fitLevelDictionary.keys())
 maxlevel = levelArray[-1]
-print "Max level is: ", maxlevel
+print "Max fitting level is: ", maxlevel
 
-# if args.parameterString == "L1":
-#   FITTINGPARAMETERS="f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
-# if args.parameterString == "L2":
-#   FITTINGPARAMETERS="f\nil\ncs\n2.e-5 100.0 2.e-5\nn\n0.005\nb\n0.1 \nz\n2.e-7\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
-# if args.parameterString == "L3":
-#   FITTINGPARAMETERS="f\nil\ncs\n2.e-6 100.0 2.e-6\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
-# if args.parameterString == "L4":
-#   FITTINGPARAMETERS="f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
-# if args.parameterString == "L5":
-#   FITTINGPARAMETERS="f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
-# 
 if args.vpfitVersion == ("9.5" or "95"):
   print "VPFIT version: ", args.vpfitVersion
   vpfitExecutable = 'vpfit95'
@@ -297,7 +286,6 @@ else:
 # Stats: ... errs 
 # Stats: ... BAD
 
-# Think about creating fitting chains (trees?) instead of individual runs within each directory.
 # # echo "iter;  chisq;    Npix;   DoF; Ndropped; Filename; level; alpha-fit"
 # awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s \n"), $3, $4, $5, $6, $8, "'$TIMESTAMP'" "/" FILENAME}' fit.13 | paste - fit.log > temp
 # awk '/qa/{print "alpha"}' fit.13 | paste temp - > summary.txt
@@ -311,9 +299,8 @@ CONTINUETIMESTAMP.append(TIMESTAMP)
 # if scaleUp == True:
 #   continueScale()
   
-maxRuns = 10
+maxRuns = 12
 RUNCOUNT = 1
-# for level, s in enumerate(sorted(fitLevelDictionary.keys())):
 for level, s in enumerate(levelArray):
   if args.parameterString in s:
     currentLevel = level
@@ -415,6 +402,7 @@ if alphafit == False:
 else:
   print "Finished."
   
+print "Exited gracefully."
 # # TODO parse the body of fort.13 and fit.13 files and report any discrepancies. 
 # # TODO Create pdf of full velocity plot.
 # # TODO find some way to parse things that won't change (fit results, time, date) plus things
