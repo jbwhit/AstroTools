@@ -181,6 +181,9 @@ fitLevelDictionary["L4"] = "f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n
 fitLevelDictionary["L5"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
 
 FITTINGPARAMETERS = fitLevelDictionary[args.parameterString]
+levelArray = sorted(fitLevelDictionary.keys())
+maxlevel = levelArray[-1]
+print "Max level is: ", maxlevel
 
 # if args.parameterString == "L1":
 #   FITTINGPARAMETERS="f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
@@ -310,18 +313,20 @@ CONTINUETIMESTAMP.append(TIMESTAMP)
   
 maxRuns = 10
 RUNCOUNT = 1
-maxlevel = sorted(fitLevelDictionary.keys())[-1]
-for i, s in enumerate(sorted(fitLevelDictionary.keys())):
-  if level in s:
-    currentLevel = i
+# for level, s in enumerate(sorted(fitLevelDictionary.keys())):
+for level, s in enumerate(levelArray):
+  if args.parameterString in s:
+    currentLevel = level
 
 # while (RUNCOUNT < maxRuns) and (continueFlag == True):
 while (RUNCOUNT < maxRuns) and (continueFlag == True):
   RUNCOUNT += 1
-  if (flag125hit == False) and (currentLevel < maxlevel):
+  if (flag125hit == False) and (levelArray[currentLevel] != levelArray[-1]):
     currentLevel += 1
+    print "Leveling up\nCurrent level: ", currentLevel
     RUNCOUNT = 1
-    FITTINGPARAMETERS = fitLevelDictionary[currentLevel]
+    FITTINGPARAMETERS = fitLevelDictionary[levelArray[currentLevel]]
+    print "Fitting Parameters: " + repr(FITTINGPARAMETERS)
     logging.info("Leveled up!")
     logging.info("Fitting Parameters: " + repr(FITTINGPARAMETERS))
   NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
@@ -413,7 +418,6 @@ else:
 # # TODO parse the body of fort.13 and fit.13 files and report any discrepancies. 
 # # TODO Create pdf of full velocity plot.
 # # TODO find some way to parse things that won't change (fit results, time, date) plus things
-# TODO Create a function of repeating fits and scaling up the level until level 5 converges.
 
 # -----------------------
 # Higher level: physical components are the structures, the particular metals are not important. Abundance ratios are interesting.
