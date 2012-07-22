@@ -353,10 +353,13 @@ def main():
   if alphafit == False: 
     print "Fitting for alpha..."
     p3 = subprocess.call(['convert13-13da', CONTINUETIMESTAMP[-1] + '.fit.13'])
-    NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-    CONTINUETIMESTAMP.append( NEWTIMESTAMP + '.alpha')
-    shutil.move('alpha.13', NEWTIMESTAMP + '.alpha.fit.13')
-    print NEWTIMESTAMP + '.alpha.fit.13'
+    # NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+    NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.alpha'
+    # CONTINUETIMESTAMP.append( NEWTIMESTAMP + '.alpha')
+    CONTINUETIMESTAMP.append( NEWTIMESTAMP )
+    # shutil.move('alpha.13', NEWTIMESTAMP + '.alpha.fit.13')
+    shutil.move('alpha.13', NEWTIMESTAMP + '.fit.13')
+    print NEWTIMESTAMP + '.fit.13'
     rerunFlag = True
     RUNCOUNT = 0
     currentLevel = levelArray.index(maxLevel)
@@ -368,7 +371,7 @@ def main():
         print "flagDict['iterations125']: ", flagDict['iterations125']
         print "currentLevel: " , currentLevel
         print "RUNCOUNT: ", RUNCOUNT
-        NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+        NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.alpha'
         CONTINUETIMESTAMP.append(NEWTIMESTAMP)
         logging.info("Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP)
         print "Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP
@@ -396,6 +399,7 @@ def main():
         continue
 
   print "Exited gracefully."
+  print TIMESTAMP
   pass
 
 if __name__ == '__main__':
