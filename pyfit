@@ -302,11 +302,11 @@ def main():
   RUNCOUNT = 0
   CONTINUETIMESTAMP = []
   CONTINUETIMESTAMP.append(TIMESTAMP)
-  if (flagDict['iterations125'] == True) or (currentLevel < maxLevel):
+  if (flagDict['iterations125'] == True) or (currentLevel < levelArray.index(maxLevel)):
     rerunFlag = True
     
   while rerunFlag == True:
-    if (((flagDict['iterations125'] == True) or (currentLevel < maxLevel)) and (RUNCOUNT < maxRuns)):
+    if (((flagDict['iterations125'] == True) or (currentLevel < levelArray.index(maxLevel))) and (RUNCOUNT < maxRuns)):
       RUNCOUNT += 1
       print "Restarting."
       print "flagDict['iterations125']: ", flagDict['iterations125']
@@ -317,16 +317,16 @@ def main():
       logging.info("Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP)
       print "Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP
       bump(CONTINUETIMESTAMP[-2] + '.fit.13', 'fort.13')
-      runVPFIT(vpfitExecutable, fitLevelDictionary[currentLevel], CONTINUETIMESTAMP[-1])
+      runVPFIT(vpfitExecutable, fitLevelDictionary[levelArray[currentLevel]], CONTINUETIMESTAMP[-1])
       fort18Check('fort.18', flagDict)
-    elif (flagDict['iterations125'] == False) and (currentLevel < maxLevel):
+    elif (flagDict['iterations125'] == False) and (currentLevel < levelArray.index(maxLevel)):
       currentLevel += 1
       RUNCOUNT = 0
       print "Level up; RUNCOUNT reset."
       logging.info("Leveled up!")
-      logging.info("Fitting Parameters: " + fitLevelDictionary[currentLevel])
+      logging.info("Fitting Parameters: " + fitLevelDictionary[levelArray[currentLevel]])
       continue
-    elif (flagDict['iterations125'] == False) and (currentLevel == maxLevel):
+    elif (flagDict['iterations125'] == False) and (currentLevel == levelArray.index(maxLevel)):
       print "Less than 125 iterations."
       print "currentLevel is maxLevel"
       print "converged!"
@@ -359,7 +359,7 @@ def main():
     print NEWTIMESTAMP + '.alpha.fit.13'
     rerunFlag = True
     RUNCOUNT = 0
-    currentLevel = maxLevel
+    currentLevel = levelArray.index(maxLevel)
     flagDict['iterations125'] = True
     while rerunFlag == True:
       if ((flagDict['iterations125'] == True)  and (RUNCOUNT < maxRuns)):
@@ -373,16 +373,16 @@ def main():
         logging.info("Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP)
         print "Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP
         bump(CONTINUETIMESTAMP[-2] + '.fit.13', 'fort.13')
-        runVPFIT(vpfitExecutable, fitLevelDictionary[currentLevel], CONTINUETIMESTAMP[-1])
+        runVPFIT(vpfitExecutable, fitLevelDictionary[levelArray[currentLevel]], CONTINUETIMESTAMP[-1])
         fort18Check('fort.18', flagDict)
-      elif (flagDict['iterations125'] == False) and (currentLevel < maxLevel):
+      elif (flagDict['iterations125'] == False) and (currentLevel < levelArray.index(maxLevel)):
         currentLevel += 1
         RUNCOUNT = 0
         print "Level up; RUNCOUNT reset."
         logging.info("Leveled up!")
-        logging.info("Fitting Parameters: " + fitLevelDictionary[currentLevel])
+        logging.info("Fitting Parameters: " + fitLevelDictionary[levelArray[currentLevel]])
         continue
-      elif (flagDict['iterations125'] == False) and (currentLevel == maxLevel):
+      elif (flagDict['iterations125'] == False) and (currentLevel == levelArray.index(maxLevel)):
         print "Less than 125 iterations."
         print "currentLevel is maxLevel"
         print "converged!"
