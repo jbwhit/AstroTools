@@ -35,6 +35,12 @@
 import os
 import sys
 
+latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
+
+# Known limitations
+# datafiles must not have spaces in their names. 
+# qa is the flag for fitting alpha.
+
 def main():
   import re
   import shutil
@@ -51,31 +57,24 @@ def main():
   from ConfigParser import SafeConfigParser
   import simplejson as json
 
-  pauseTime = 2
   TIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
   print TIMESTAMP
-
-  latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
-
-  # Known limitations
-  # datafiles must not have spaces in their names. 
-  # qa is the flag for fitting alpha.
 
   # Parse command line arguments
   parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
   parser.add_argument('input13', action="store", default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
   parser.add_argument('--continue', action="store_true", default=False, help='Set continue to true.')
-  parser.add_argument('--nocomment', action="store_true", default=False, help='Turn off comment prompt.')
-  parser.add_argument('--donotuseconfigs', action="store_true", default=False, help='Will not use the config files.')
-  parser.add_argument('--donotcreatePlot', action="store_true", default=False, help='Will not make pdf plots.')
-  parser.add_argument('--nobump', action="store_true", default=False, help='Will not bump the fort.13 off the min values.')
+  parser.add_argument('--noComment', action="store_true", default=False, help='Turn off comment prompt.')
+  parser.add_argument('--noConfigs', action="store_true", default=False, help='Will not use the config files.')
+  parser.add_argument('--noPlot', action="store_true", default=False, help='Will not make pdf plots.')
+  parser.add_argument('--noBump', action="store_true", default=False, help='Will not bump the fort.13 off the min values.')
   parser.add_argument('--vpfit', action="store", dest="vpfitVersion", default='9.5', type=str, help='Which version of vpfit to use.')
-  parser.add_argument('--parameterString', choices=('L1', 'L2', 'L3', 'L4', 'L5'), default='L5', 
+  parser.add_argument('--fitLevel', choices=('L1', 'L2', 'L3', 'L4', 'L5'), default='L5', 
                       help='The VPFIT parameter step sizes to use.')
   parser.add_argument('--dataFile', action="store", default='blind', help='data file to use.')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
-  parser.add_argument('--version', action='version', version='%(prog)s 0.01')
+  parser.add_argument('--version', action='version', version='%(prog)s 0.02')
 
   args = parser.parse_args()
 
@@ -92,7 +91,7 @@ def main():
   logging.info("parentDirectory: " + parentDirectory)
   logging.info("fitDirectory: " + fitDirectory)
 
-  if args.donotuseconfigs == True:
+  if args.noConfigs == True:
     print "Not using config files."
     print "Need to know locations of setup files and data files."
   else:
@@ -112,11 +111,10 @@ def main():
     os.symlink(atomDatFile, 'atom.dat') # create symbolic link to atom.dat in fitting directory.
 
   shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
-
   if args.input13 != "input.fort.13":
     shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
 
-  if args.nobump:
+  if args.noBump:
     shutil.copy('input.fort.13', fitDirectory + 'bump.13')
   else:
     with open('input.fort.13', 'r') as sources:
@@ -174,7 +172,7 @@ def main():
   # Parses the body of the body.13 for any anomalies.
   p = subprocess.call('fort13flagcheck') # waits for return.
 
-  # Create dictionary of all level strings; use args.parameterString as key.
+  # Create dictionary of all level strings; use args.fitLevel as key.
   fitLevelDictionary = {}
   fitLevelDictionary["L1"] = "f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   fitLevelDictionary["L2"] = "f\nil\ncs\n2.e-5 100.0 2.e-5\nn\n0.005\nb\n0.1 \nz\n2.e-7\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
@@ -182,7 +180,7 @@ def main():
   fitLevelDictionary["L4"] = "f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
   fitLevelDictionary["L5"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
 
-  FITTINGPARAMETERS = fitLevelDictionary[args.parameterString]
+  FITTINGPARAMETERS = fitLevelDictionary[args.fitLevel]
   levelArray = sorted(fitLevelDictionary.keys())
   maxlevel = levelArray[-1]
   print "Max fitting level is: ", maxlevel
@@ -224,8 +222,8 @@ def main():
 
   startTime = datetime.datetime.now()
   logging.info("Fitting Parameters: " + repr(FITTINGPARAMETERS))
-
-  if args.nocomment == False:
+  print TIMESTAMP
+  if args.noComment == False:
     initialFitComment = raw_input("Comment: ")
     logging.info(initialFitComment)
 
@@ -305,7 +303,7 @@ def main():
   maxRuns = 12
   RUNCOUNT = 1
   for level, s in enumerate(levelArray):
-    if args.parameterString in s:
+    if args.fitLevel in s:
       currentLevel = level
 
   # while (RUNCOUNT < maxRuns) and (continueFlag == True):
@@ -353,7 +351,7 @@ def main():
     print "It took ", RUNCOUNT, " runs to converge."
     logging.info("It took " + str(RUNCOUNT) + " runs to converge.")
 
-  if args.donotcreatePlot == False: 
+  if args.noPlot == False: 
     print "Creating fit comparison plots."
     proc = subprocess.Popen(['plotfit', CONTINUETIMESTAMP[-1], 'input.fort.13', CONTINUETIMESTAMP[-1] + ".fit.13"])
 
