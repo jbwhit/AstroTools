@@ -240,8 +240,6 @@ def main():
     for line in head.read().split('\n'):
       if len(line.split()) > 4:
         dataFiles.append(line.split()[0])
-
-  # Create symbolic link to data files needed.
   logging.info("Data files used: ")
   for datafile in set(dataFiles):
     os.symlink(dataDirectory + datafile, fitDirectory + datafile)
@@ -260,18 +258,13 @@ def main():
 
   FITTINGPARAMETERS = fitLevelDictionary[args.fitLevel]
   levelArray = sorted(fitLevelDictionary.keys())
+  maxRuns = args.maxRuns
+  for level, s in enumerate(levelArray):
+    if args.fitLevel in s:
+      currentLevel = level
   maxLevel = levelArray[-1]
   print "Max fitting level is: ", maxLevel
-
-  if args.vpfitVersion == ("9.5" or "95"):
-    print "VPFIT version: ", args.vpfitVersion
-    vpfitExecutable = 'vpfit95'
-  elif args.vpfitVersion == ("10.0" or "10"):
-    print "VPFIT version: ", 
-    vpfitExecutable = 'vpfit10'
-  else:
-    print "What VPFIT version are you wanting to use?"
-
+  
   # Create symbolic link to fitting directory.
   executableLink = subprocess.Popen(['which', vpfitExecutable], stdout=subprocess.PIPE)
   os.symlink(executableLink.communicate()[0].strip(), fitDirectory + 'vpfit')
@@ -296,9 +289,6 @@ def main():
       outFile.write(com.read())
       outFile.write(fort13.read())
 
-  shutil.copy('command.fort.13', TIMESTAMP + '.fort.13')
-
-  startTime = datetime.datetime.now()
   logging.info("Fitting Parameters: " + repr(FITTINGPARAMETERS))
   print TIMESTAMP
   if args.noComment == False:
