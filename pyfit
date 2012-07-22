@@ -34,6 +34,20 @@
 # 
 import os
 import sys
+import re
+import shutil
+import argparse
+import shlex
+import datetime
+import time 
+import pprint
+import glob
+import logging
+import readline
+import subprocess as subprocess
+import difflib
+from ConfigParser import SafeConfigParser
+import simplejson as json
 
 latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
 
@@ -93,20 +107,6 @@ def bump(inFile, outFile):
   pass
 
 def main():
-  import re
-  import shutil
-  import argparse
-  import shlex
-  import datetime
-  import time 
-  import pprint
-  import glob
-  import logging
-  import readline
-  import subprocess as subprocess
-  import difflib
-  from ConfigParser import SafeConfigParser
-  import simplejson as json
 
   TIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
   print TIMESTAMP
