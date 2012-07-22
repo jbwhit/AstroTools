@@ -106,12 +106,27 @@ def bump(inFile, outFile):
       bumpFile.write(re.sub(r' 0.5000', ' 0.6250', line))
   pass
 
-def main():
+def runVPFIT(vpfitExecutable, FITTINGPARAMETERS, prependStamp):
+  """docstring for runVPFIT"""
+  print "Running... "
+  shutil.copy('command.fort.13', prependStamp + '.fort.13')
+  startTime = datetime.datetime.now()
+  proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+  result = proc.communicate(input=FITTINGPARAMETERS)
+  endTime = datetime.datetime.now()
+  runningTime = endTime - startTime
+  print "Running time:", runningTime.__str__()
+  logging.info("Time to execute: " + runningTime.__str__())
+  p2 = subprocess.call(['combine2613', 'fort.13', 'fort.26', 'fit.13'])
+  shutil.copy('fort.18', prependStamp + '.fort.18')
+  shutil.copy('fort.26', prependStamp + '.fort.26')
+  shutil.copy('fit.13', prependStamp + '.fit.13')
+  pass
 
+def main():
   TIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
   print TIMESTAMP
 
-  # Parse command line arguments
   parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
   parser.add_argument('input13', action="store", default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
   parser.add_argument('--noContinue', action="store_true", default=False, help='Will not continue with alpha fitting.')
@@ -128,8 +143,23 @@ def main():
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
   parser.add_argument('--version', action='version', version='%(prog)s 0.02')
-
   args = parser.parse_args()
+  
+  if args.vpfitVersion == ("9.5" or "95"):
+    print "VPFIT version: ", args.vpfitVersion
+    vpfitExecutable = 'vpfit95'
+  elif args.vpfitVersion == ("10.0" or "10"):
+    print "VPFIT version: ", 
+    vpfitExecutable = 'vpfit10'
+  else:
+    print "What VPFIT version are you wanting to use?"
+  
+  flagDict = {}  
+  flagDict['noContinue'] = args.noContinue
+  flagDict['noLevelUp'] = args.noLevelUp
+  flagDict['noComment'] = args.noComment
+  flagDict['noConfigs'] = args.noConfigs
+  flagDict['iterations125'] = False
 
   os.makedirs(TIMESTAMP)
   parentDirectory = os.getcwd() + '/'
