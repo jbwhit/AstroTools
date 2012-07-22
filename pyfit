@@ -114,7 +114,8 @@ def main():
   # Parse command line arguments
   parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
   parser.add_argument('input13', action="store", default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
-  parser.add_argument('--continue', action="store_true", default=False, help='Set continue to true.')
+  parser.add_argument('--noContinue', action="store_true", default=False, help='Will not continue with alpha fitting.')
+  parser.add_argument('--noLevelUp', action="store_true", default=False, help='Will not level up through the fitLevels.')
   parser.add_argument('--noComment', action="store_true", default=False, help='Turn off comment prompt.')
   parser.add_argument('--noConfigs', action="store_true", default=False, help='Will not use the config files.')
   parser.add_argument('--noPlot', action="store_true", default=False, help='Will not make pdf plots.')
@@ -123,6 +124,7 @@ def main():
   parser.add_argument('--fitLevel', choices=('L1', 'L2', 'L3', 'L4', 'L5'), default='L5', 
                       help='The VPFIT parameter step sizes to use.')
   parser.add_argument('--dataFile', action="store", default='blind', help='data file to use.')
+  parser.add_argument('--maxRuns', action="store", default=12, type=int, help='Max runs before quitting.')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
   parser.add_argument('--version', action='version', version='%(prog)s 0.02')
