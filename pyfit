@@ -180,22 +180,21 @@ def main():
   logging.info( '\n'.join(diff))
   logging.info( "diff end " )
 
-  inputHandle = open('input.fort.13', 'r').read().split('\n')
-  beginhead = False
-  beginbody = False
+  inputHandle = open('bump.13', 'r').read().split('\n')
+  beginHead, beginBody = False, False
   try: 
     with open('head.13', 'w') as head, open('body.13', 'w') as body:
       for line in inputHandle:
-        if (not line.startswith('!') and line.strip() != ''): # Ignore comments and empty lines.
+        if (not line.strip().startswith('!') and line.strip() != ''): # Ignore comments and empty lines.
           if line.startswith('   *'):
-            beginhead = True
-          if beginhead == True:
+            beginHead = True
+          if beginHead == True:
             print >>head, line
-          if beginbody == True:
+          if beginBody == True:
             print >>body, line
           if line.startswith('  *'):
-            beginhead = False
-            beginbody = True
+            beginHead = False
+            beginBody = True
   except: 
     print "Splitting the input file failed."
 
@@ -231,8 +230,8 @@ def main():
 
   FITTINGPARAMETERS = fitLevelDictionary[args.fitLevel]
   levelArray = sorted(fitLevelDictionary.keys())
-  maxlevel = levelArray[-1]
-  print "Max fitting level is: ", maxlevel
+  maxLevel = levelArray[-1]
+  print "Max fitting level is: ", maxLevel
 
   if args.vpfitVersion == ("9.5" or "95"):
     print "VPFIT version: ", args.vpfitVersion
@@ -278,9 +277,6 @@ def main():
 
   print TIMESTAMP
   print "Running... "
-  # ===========
-  # = Running =
-  # ===========
   proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   result = proc.communicate(input=FITTINGPARAMETERS)
   endTime = datetime.datetime.now()
@@ -288,7 +284,6 @@ def main():
   print "Running time:", runningTime.__str__()
   logging.info("Time to execute: " + runningTime.__str__())
 
-  # cat command.info fort.26 > command.fort.26
   with open('command.fort.26', 'w') as outFile:
     with open('command.info', 'r') as com, open('fort.26', 'r') as fort26:
       outFile.write(com.read())
