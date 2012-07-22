@@ -34,357 +34,300 @@
 # 
 import os
 import sys
-import re
-import shutil
-import argparse
-import shlex
-import datetime
-import time 
-import pprint
-import glob
-import logging
-import readline
-import subprocess as subprocess
-import difflib
-from ConfigParser import SafeConfigParser
-import simplejson as json
 
-pauseTime = 2
-TIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-print TIMESTAMP
+def main():
+  import re
+  import shutil
+  import argparse
+  import shlex
+  import datetime
+  import time 
+  import pprint
+  import glob
+  import logging
+  import readline
+  import subprocess as subprocess
+  import difflib
+  from ConfigParser import SafeConfigParser
+  import simplejson as json
 
-latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
+  pauseTime = 2
+  TIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+  print TIMESTAMP
 
-# Known limitations
-# datafiles must not have spaces in their names. 
-# qa is the flag for fitting alpha.
+  latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
 
-# Parse command line arguments
-parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
-parser.add_argument('input13', action="store", default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
-parser.add_argument('--continue', action="store_true", default=False, help='Set continue to true.')
-parser.add_argument('--nocomment', action="store_true", default=False, help='Turn off comment prompt.')
-parser.add_argument('--donotuseconfigs', action="store_true", default=False, help='Will not use the config files.')
-parser.add_argument('--donotcreatePlot', action="store_true", default=False, help='Will not make pdf plots.')
-parser.add_argument('--nobump', action="store_true", default=False, help='Will not bump the fort.13 off the min values.')
-parser.add_argument('--vpfit', action="store", dest="vpfitVersion", default='9.5', type=str, help='Which version of vpfit to use.')
-parser.add_argument('--parameterString', choices=('L1', 'L2', 'L3', 'L4', 'L5'), default='L5', 
-                    help='The VPFIT parameter step sizes to use.')
-parser.add_argument('--dataFile', action="store", default='blind', help='data file to use.')
-parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
-parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
-parser.add_argument('--version', action='version', version='%(prog)s 0.01')
+  # Known limitations
+  # datafiles must not have spaces in their names. 
+  # qa is the flag for fitting alpha.
 
-args = parser.parse_args()
+  # Parse command line arguments
+  parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
+  parser.add_argument('input13', action="store", default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
+  parser.add_argument('--continue', action="store_true", default=False, help='Set continue to true.')
+  parser.add_argument('--nocomment', action="store_true", default=False, help='Turn off comment prompt.')
+  parser.add_argument('--donotuseconfigs', action="store_true", default=False, help='Will not use the config files.')
+  parser.add_argument('--donotcreatePlot', action="store_true", default=False, help='Will not make pdf plots.')
+  parser.add_argument('--nobump', action="store_true", default=False, help='Will not bump the fort.13 off the min values.')
+  parser.add_argument('--vpfit', action="store", dest="vpfitVersion", default='9.5', type=str, help='Which version of vpfit to use.')
+  parser.add_argument('--parameterString', choices=('L1', 'L2', 'L3', 'L4', 'L5'), default='L5', 
+                      help='The VPFIT parameter step sizes to use.')
+  parser.add_argument('--dataFile', action="store", default='blind', help='data file to use.')
+  parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
+  parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
+  parser.add_argument('--version', action='version', version='%(prog)s 0.01')
 
-os.makedirs(TIMESTAMP)
-parentDirectory = os.getcwd() + '/'
-os.chdir(TIMESTAMP)
-fitDirectory = os.getcwd() + '/'
+  args = parser.parse_args()
 
-# Create a fitting log.
-logging.basicConfig(filename=TIMESTAMP + '.log', level=logging.DEBUG)
-for arg, value in sorted(vars(args).items()):
-  logging.info("Argument %s: %r", arg, value)
+  os.makedirs(TIMESTAMP)
+  parentDirectory = os.getcwd() + '/'
+  os.chdir(TIMESTAMP)
+  fitDirectory = os.getcwd() + '/'
 
-logging.info("parentDirectory: " + parentDirectory)
-logging.info("fitDirectory: " + fitDirectory)
+  # Create a fitting log.
+  logging.basicConfig(filename=TIMESTAMP + '.log', level=logging.DEBUG)
+  for arg, value in sorted(vars(args).items()):
+    logging.info("Argument %s: %r", arg, value)
 
-if args.donotuseconfigs == True:
-  print "Not using config files."
-  print "Need to know locations of setup files and data files."
-else:
-  parser = SafeConfigParser()
-  candidates = glob.glob(parentDirectory + 'config*')
-  found = parser.read(candidates)
-  print "Using these config files:"
-  for configfile in set(found):
-    print "  ", configfile
-    logging.info("config loaded: " + configfile)
-  setupDir = parser.get('machine', 'setupdir') + '/'
-  atomDatFile = parser.get('update', args.atomdat)
-  shutil.copy(setupDir + atomDatFile, fitDirectory)
-  shutil.copy(setupDir + 'vp_setup.dat', fitDirectory)
-  shutil.copy(setupDir + 'vp_splot.dat', fitDirectory)
-  dataDirectory = parser.get('data', 'dataDirectory') + '/'
-  os.symlink(atomDatFile, 'atom.dat') # create symbolic link to atom.dat in fitting directory.
-  
-shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
+  logging.info("parentDirectory: " + parentDirectory)
+  logging.info("fitDirectory: " + fitDirectory)
 
-if args.input13 != "input.fort.13":
+  if args.donotuseconfigs == True:
+    print "Not using config files."
+    print "Need to know locations of setup files and data files."
+  else:
+    parser = SafeConfigParser()
+    candidates = glob.glob(parentDirectory + 'config*')
+    found = parser.read(candidates)
+    print "Using these config files:"
+    for configfile in set(found):
+      print "  ", configfile
+      logging.info("config loaded: " + configfile)
+    setupDir = parser.get('machine', 'setupdir') + '/'
+    atomDatFile = parser.get('update', args.atomdat)
+    shutil.copy(setupDir + atomDatFile, fitDirectory)
+    shutil.copy(setupDir + 'vp_setup.dat', fitDirectory)
+    shutil.copy(setupDir + 'vp_splot.dat', fitDirectory)
+    dataDirectory = parser.get('data', 'dataDirectory') + '/'
+    os.symlink(atomDatFile, 'atom.dat') # create symbolic link to atom.dat in fitting directory.
+
   shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
 
-if args.nobump:
-  shutil.copy('input.fort.13', fitDirectory + 'bump.13')
-else:
-  with open('input.fort.13', 'r') as sources:
-    lines = sources.readlines()
-  with open('bump.13', 'w') as bumpFile:
-    for line in lines:
-      bumpFile.write(re.sub(r' 0.5000', ' 0.6250', line))
+  if args.input13 != "input.fort.13":
+    shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
 
-d = difflib.Differ()
-diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
-print '\n'.join(diff)
-diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
-logging.info( "diff begin " )
-logging.info( '\n'.join(diff))
-logging.info( "diff end " )
+  if args.nobump:
+    shutil.copy('input.fort.13', fitDirectory + 'bump.13')
+  else:
+    with open('input.fort.13', 'r') as sources:
+      lines = sources.readlines()
+    with open('bump.13', 'w') as bumpFile:
+      for line in lines:
+        bumpFile.write(re.sub(r' 0.5000', ' 0.6250', line))
 
-inputHandle = open('input.fort.13', 'r').read().split('\n')
-beginhead = False
-beginbody = False
-try: 
-  with open('head.13', 'w') as head, open('body.13', 'w') as body:
-    for line in inputHandle:
-      if (not line.startswith('!') and line.strip() != ''): # Ignore comments and empty lines.
-        if line.startswith('   *'):
-          beginhead = True
-        if beginhead == True:
-          print >>head, line
-        if beginbody == True:
-          print >>body, line
-        if line.startswith('  *'):
-          beginhead = False
-          beginbody = True
-except: 
-  print "Splitting the input file failed."
+  d = difflib.Differ()
+  diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
+  print '\n'.join(diff)
+  diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
+  logging.info( "diff begin " )
+  logging.info( '\n'.join(diff))
+  logging.info( "diff end " )
 
-# combine head and body into fort.13
-with open('fort.13', 'w') as outFile:
-  with open('head.13','r') as head, open('body.13','r') as body:
-    outFile.write(head.read())
-    outFile.write(body.read())
+  inputHandle = open('input.fort.13', 'r').read().split('\n')
+  beginhead = False
+  beginbody = False
+  try: 
+    with open('head.13', 'w') as head, open('body.13', 'w') as body:
+      for line in inputHandle:
+        if (not line.startswith('!') and line.strip() != ''): # Ignore comments and empty lines.
+          if line.startswith('   *'):
+            beginhead = True
+          if beginhead == True:
+            print >>head, line
+          if beginbody == True:
+            print >>body, line
+          if line.startswith('  *'):
+            beginhead = False
+            beginbody = True
+  except: 
+    print "Splitting the input file failed."
 
-# parse input fort.13 for data files needed. 
-dataFiles = []
-with open ('head.13', 'r') as head:
-  for line in head.read().split('\n'):
-    if len(line.split()) > 4:
-      dataFiles.append(line.split()[0])
+  # combine head and body into fort.13
+  with open('fort.13', 'w') as outFile:
+    with open('head.13','r') as head, open('body.13','r') as body:
+      outFile.write(head.read())
+      outFile.write(body.read())
 
-# Create symbolic link to data files needed.
-logging.info("Data files used: ")
-for datafile in set(dataFiles):
-  os.symlink(dataDirectory + datafile, fitDirectory + datafile)
-  logging.info(datafile)
+  # parse input fort.13 for data files needed. 
+  dataFiles = []
+  with open ('head.13', 'r') as head:
+    for line in head.read().split('\n'):
+      if len(line.split()) > 4:
+        dataFiles.append(line.split()[0])
 
-# Parses the body of the body.13 for any anomalies.
-p = subprocess.call('fort13flagcheck') # waits for return.
+  # Create symbolic link to data files needed.
+  logging.info("Data files used: ")
+  for datafile in set(dataFiles):
+    os.symlink(dataDirectory + datafile, fitDirectory + datafile)
+    logging.info(datafile)
 
-# Create dictionary of all level strings; use args.parameterString as key.
-fitLevelDictionary = {}
-fitLevelDictionary["L1"] = "f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
-fitLevelDictionary["L2"] = "f\nil\ncs\n2.e-5 100.0 2.e-5\nn\n0.005\nb\n0.1 \nz\n2.e-7\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
-fitLevelDictionary["L3"] = "f\nil\ncs\n2.e-6 100.0 2.e-6\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
-fitLevelDictionary["L4"] = "f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
-fitLevelDictionary["L5"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+  # Parses the body of the body.13 for any anomalies.
+  p = subprocess.call('fort13flagcheck') # waits for return.
 
-FITTINGPARAMETERS = fitLevelDictionary[args.parameterString]
-levelArray = sorted(fitLevelDictionary.keys())
-maxlevel = levelArray[-1]
-print "Max fitting level is: ", maxlevel
+  # Create dictionary of all level strings; use args.parameterString as key.
+  fitLevelDictionary = {}
+  fitLevelDictionary["L1"] = "f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDictionary["L2"] = "f\nil\ncs\n2.e-5 100.0 2.e-5\nn\n0.005\nb\n0.1 \nz\n2.e-7\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDictionary["L3"] = "f\nil\ncs\n2.e-6 100.0 2.e-6\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDictionary["L4"] = "f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDictionary["L5"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
 
-if args.vpfitVersion == ("9.5" or "95"):
-  print "VPFIT version: ", args.vpfitVersion
-  vpfitExecutable = 'vpfit95'
-elif args.vpfitVersion == ("10.0" or "10"):
-  print "VPFIT version: ", 
-  vpfitExecutable = 'vpfit10'
-else:
-  print "What VPFIT version are you wanting to use?"
+  FITTINGPARAMETERS = fitLevelDictionary[args.parameterString]
+  levelArray = sorted(fitLevelDictionary.keys())
+  maxlevel = levelArray[-1]
+  print "Max fitting level is: ", maxlevel
 
-# Create symbolic link to fitting directory.
-executableLink = subprocess.Popen(['which', vpfitExecutable], stdout=subprocess.PIPE)
-os.symlink(executableLink.communicate()[0].strip(), fitDirectory + 'vpfit')
-logging.info('VPFIT version: ' + args.vpfitVersion)
-logging.info('VPFIT executable: ' + vpfitExecutable)
+  if args.vpfitVersion == ("9.5" or "95"):
+    print "VPFIT version: ", args.vpfitVersion
+    vpfitExecutable = 'vpfit95'
+  elif args.vpfitVersion == ("10.0" or "10"):
+    print "VPFIT version: ", 
+    vpfitExecutable = 'vpfit10'
+  else:
+    print "What VPFIT version are you wanting to use?"
 
-# Change to use current directory settings. 
-os.environ['ATOMDIR'] = 'atom.dat'
-os.environ['VPFSETUP'] = 'vp_setup.dat'
-os.environ['VPFPLOTS'] = 'vp_splot.dat'
-logging.info("PATH for ATOMDIR:  " + os.environ['ATOMDIR'])
-logging.info("PATH for VPFSETUP: " + os.environ['VPFSETUP'])
-logging.info("PATH for VPFPLOTS: " + os.environ['VPFPLOTS'])
+  # Create symbolic link to fitting directory.
+  executableLink = subprocess.Popen(['which', vpfitExecutable], stdout=subprocess.PIPE)
+  os.symlink(executableLink.communicate()[0].strip(), fitDirectory + 'vpfit')
+  logging.info('VPFIT version: ' + args.vpfitVersion)
+  logging.info('VPFIT executable: ' + vpfitExecutable)
 
-with open('command.info', 'w') as fh:
-  print >>fh, "! ATOMDIR:" + atomDatFile
-  print >>fh, "! runCommand: printf " + repr(FITTINGPARAMETERS) + " | " + vpfitExecutable
+  # Change to use current directory settings. 
+  os.environ['ATOMDIR'] = 'atom.dat'
+  os.environ['VPFSETUP'] = 'vp_setup.dat'
+  os.environ['VPFPLOTS'] = 'vp_splot.dat'
+  logging.info("PATH for ATOMDIR:  " + os.environ['ATOMDIR'])
+  logging.info("PATH for VPFSETUP: " + os.environ['VPFSETUP'])
+  logging.info("PATH for VPFPLOTS: " + os.environ['VPFPLOTS'])
 
-# cat command.info fort.13 > command.fort.13
-with open('command.fort.13', 'w') as outFile:
-  with open('command.info', 'r') as com, open('fort.13', 'r') as fort13:
-    outFile.write(com.read())
-    outFile.write(fort13.read())
+  with open('command.info', 'w') as fh:
+    print >>fh, "! ATOMDIR:" + atomDatFile
+    print >>fh, "! runCommand: printf " + repr(FITTINGPARAMETERS) + " | " + vpfitExecutable
 
-shutil.copy('command.fort.13', TIMESTAMP + '.fort.13')
+  # cat command.info fort.13 > command.fort.13
+  with open('command.fort.13', 'w') as outFile:
+    with open('command.info', 'r') as com, open('fort.13', 'r') as fort13:
+      outFile.write(com.read())
+      outFile.write(fort13.read())
 
-startTime = datetime.datetime.now()
-logging.info("Fitting Parameters: " + repr(FITTINGPARAMETERS))
+  shutil.copy('command.fort.13', TIMESTAMP + '.fort.13')
 
-if args.nocomment == False:
-  initialFitComment = raw_input("Comment: ")
-  logging.info(initialFitComment)
+  startTime = datetime.datetime.now()
+  logging.info("Fitting Parameters: " + repr(FITTINGPARAMETERS))
 
-print TIMESTAMP
-print "Running... "
-# ===========
-# = Running =
-# ===========
-proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-result = proc.communicate(input=FITTINGPARAMETERS)
-endTime = datetime.datetime.now()
-runningTime = endTime - startTime
-print "Running time:", runningTime.__str__()
-logging.info("Time to execute: " + runningTime.__str__())
+  if args.nocomment == False:
+    initialFitComment = raw_input("Comment: ")
+    logging.info(initialFitComment)
 
-# cat command.info fort.26 > command.fort.26
-with open('command.fort.26', 'w') as outFile:
-  with open('command.info', 'r') as com, open('fort.26', 'r') as fort26:
-    outFile.write(com.read())
-    outFile.write(fort26.read())
-
-p2 = subprocess.call(['combine2613', 'fort.13', 'fort.26', 'fit.13'])
-
-# copy all fort.* to TIMESTAMP.fort.* 
-shutil.copy('fort.18', TIMESTAMP + '.fort.18')
-shutil.copy('fort.26', TIMESTAMP + '.fort.26')
-shutil.copy('fit.13', TIMESTAMP + '.fit.13')
-
-# ===================
-# = Analyze fort.18 =
-# ===================
-# if 125 iterations and no other errors
-# check (chi-sq going down every iteration; error not "too big"; value not "too big")
-iterationArray = []
-starts = []
-rejected = []
-hessian = []
-dropped = []
-with open('fort.18', 'r') as f18:
-  for line in f18.read().splitlines():
-    if re.search('iteration', line):
-      iterationArray.append(line.split()[2])
-      starts.append(line.split()[4])
-    if re.search('rejected', line):
-      rejected.append(line)
-    if re.search('hessian', line):
-      hessian.append(line)
-    if re.search('iteration', line):
-      dropped.append(line)
-
-if max(set(starts)) >= 2:
-  logging.warning("Initial fort.18 restarts: " + max(set(starts)))
-if int(iterationArray[-1]) == 125:
-  continueFlag = True
-  flag125hit = True
-  logging.info("Automated continue fitting to begin.")
-else:
-  continueFlag = False
-# Errors in fort.26 to parse for:
-# Stats: ... errs 
-# Stats: ... BAD
-
-# # echo "iter;  chisq;    Npix;   DoF; Ndropped; Filename; level; alpha-fit"
-# awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s \n"), $3, $4, $5, $6, $8, "'$TIMESTAMP'" "/" FILENAME}' fit.13 | paste - fit.log > temp
-# awk '/qa/{print "alpha"}' fit.13 | paste temp - > summary.txt
-
-CONTINUETIMESTAMP = []
-CONTINUETIMESTAMP.append(TIMESTAMP)
-
-# pseudocode
-# if flag125hit == True:
-#   rerun maxRuns
-# if scaleUp == True:
-#   continueScale()
-  
-maxRuns = 12
-RUNCOUNT = 1
-for level, s in enumerate(levelArray):
-  if args.parameterString in s:
-    currentLevel = level
-
-# while (RUNCOUNT < maxRuns) and (continueFlag == True):
-while (RUNCOUNT < maxRuns) and (continueFlag == True):
-  RUNCOUNT += 1
-  if (flag125hit == False) and (levelArray[currentLevel] != levelArray[-1]):
-    currentLevel += 1
-    print "Leveling up\nCurrent level: ", currentLevel
-    RUNCOUNT = 1
-    FITTINGPARAMETERS = fitLevelDictionary[levelArray[currentLevel]]
-    print "Fitting Parameters: " + repr(FITTINGPARAMETERS)
-    logging.info("Leveled up!")
-    logging.info("Fitting Parameters: " + repr(FITTINGPARAMETERS))
-  NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-  logging.info("Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP)
-  print "Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP
-  CONTINUETIMESTAMP.append(NEWTIMESTAMP)
-  with open(CONTINUETIMESTAMP[-2] + '.fit.13', 'r') as unbumped, open('fort.13', 'w') as bumpFile:
-    for line in unbumped.readlines():
-      bumpFile.write(re.sub(r' 0.5000', ' 0.6250', line))
-  shutil.copy('fort.13', CONTINUETIMESTAMP[-1] + '.fort.13') 
-  print NEWTIMESTAMP, ": continuing with run: ", RUNCOUNT
+  print TIMESTAMP
+  print "Running... "
+  # ===========
+  # = Running =
+  # ===========
   proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   result = proc.communicate(input=FITTINGPARAMETERS)
-  shutil.copy('fort.18', CONTINUETIMESTAMP[-1] + '.fort.18') # vpfit9.5 does weird things to the fort.18
-  shutil.copy('fort.26', CONTINUETIMESTAMP[-1] + '.fort.26')
+  endTime = datetime.datetime.now()
+  runningTime = endTime - startTime
+  print "Running time:", runningTime.__str__()
+  logging.info("Time to execute: " + runningTime.__str__())
+
+  # cat command.info fort.26 > command.fort.26
+  with open('command.fort.26', 'w') as outFile:
+    with open('command.info', 'r') as com, open('fort.26', 'r') as fort26:
+      outFile.write(com.read())
+      outFile.write(fort26.read())
+
   p2 = subprocess.call(['combine2613', 'fort.13', 'fort.26', 'fit.13'])
-  shutil.copy('fit.13', CONTINUETIMESTAMP[-1] + '.fit.13')
+
+  # copy all fort.* to TIMESTAMP.fort.* 
+  shutil.copy('fort.18', TIMESTAMP + '.fort.18')
+  shutil.copy('fort.26', TIMESTAMP + '.fort.26')
+  shutil.copy('fit.13', TIMESTAMP + '.fit.13')
+
+  # ===================
+  # = Analyze fort.18 =
+  # ===================
+  # if 125 iterations and no other errors
+  # check (chi-sq going down every iteration; error not "too big"; value not "too big")
+  # TODO: levelUp flag; continueFlag; etc. 
+  iterationArray = []
+  starts = []
+  rejected = []
+  hessian = []
+  dropped = []
   with open('fort.18', 'r') as f18:
     for line in f18.read().splitlines():
       if re.search('iteration', line):
         iterationArray.append(line.split()[2])
+        starts.append(line.split()[4])
+      if re.search('rejected', line):
+        rejected.append(line)
+      if re.search('hessian', line):
+        hessian.append(line)
+      if re.search('iteration', line):
+        dropped.append(line)
+
+  if max(set(starts)) >= 2:
+    logging.warning("Initial fort.18 restarts: " + max(set(starts)))
   if int(iterationArray[-1]) == 125:
     continueFlag = True
     flag125hit = True
+    logging.info("Automated continue fitting to begin.")
   else:
-    if currentLevel == maxlevel:
-      continueFlag = False
-    flag125hit = False
+    continueFlag = False
+  # Errors in fort.26 to parse for:
+  # Stats: ... errs 
+  # Stats: ... BAD
 
-if RUNCOUNT == maxRuns:
-  print "Not converged yet. Runs before stopping: ", RUNCOUNT
-  logging.warning("Not converged yet. Runs before stopping: " + str(RUNCOUNT))
-else:
-  print "It took ", RUNCOUNT, " runs to converge."
-  logging.info("It took " + str(RUNCOUNT) + " runs to converge.")
+  # # echo "iter;  chisq;    Npix;   DoF; Ndropped; Filename; level; alpha-fit"
+  # awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s \n"), $3, $4, $5, $6, $8, "'$TIMESTAMP'" "/" FILENAME}' fit.13 | paste - fit.log > temp
+  # awk '/qa/{print "alpha"}' fit.13 | paste temp - > summary.txt
 
-if args.donotcreatePlot == False: 
-  print "Creating fit comparison plots."
-  proc = subprocess.Popen(['plotfit', CONTINUETIMESTAMP[-1], 'input.fort.13', CONTINUETIMESTAMP[-1] + ".fit.13"])
+  CONTINUETIMESTAMP = []
+  CONTINUETIMESTAMP.append(TIMESTAMP)
 
-alphafit = False
-with open(CONTINUETIMESTAMP[-1] + '.fit.13', 'r') as finalFit13:
-  if re.search('qa', finalFit13.read()):
-    alphafit = True # If already started out fitting for alpha
+  # pseudocode
+  # if flag125hit == True:
+  #   rerun maxRuns
+  # if scaleUp == True:
+  #   continueScale()
 
-# Add argparse option to say which fittingflag would fit for alpha
-# Add argparse option to not fit for alpha
-if alphafit == False: 
-  print "Fitting for alpha..."
-  p3 = subprocess.call(['convert13-13da', CONTINUETIMESTAMP[-1] + '.fit.13'])
-  NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-  CONTINUETIMESTAMP.append( NEWTIMESTAMP + '.alpha')
-  shutil.move('alpha.13', NEWTIMESTAMP + '.alpha.fit.13')
-  print NEWTIMESTAMP + '.alpha.fit.13'
-  # Reusing above code.
-  RUNCOUNT = 0
-  continueFlag = True
-  FITTINGPARAMETERS = fitLevelDictionary[maxlevel]
+  maxRuns = 12
+  RUNCOUNT = 1
+  for level, s in enumerate(levelArray):
+    if args.parameterString in s:
+      currentLevel = level
+
+  # while (RUNCOUNT < maxRuns) and (continueFlag == True):
   while (RUNCOUNT < maxRuns) and (continueFlag == True):
     RUNCOUNT += 1
+    if (flag125hit == False) and (levelArray[currentLevel] != levelArray[-1]):
+      currentLevel += 1
+      print "Leveling up\nCurrent level: ", currentLevel
+      RUNCOUNT = 1
+      FITTINGPARAMETERS = fitLevelDictionary[levelArray[currentLevel]]
+      print "Fitting Parameters: " + repr(FITTINGPARAMETERS)
+      logging.info("Leveled up!")
+      logging.info("Fitting Parameters: " + repr(FITTINGPARAMETERS))
     NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-    logging.info("Beginning alpha run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP)
-    print "Beginning alpha run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP
+    logging.info("Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP)
+    print "Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP
     CONTINUETIMESTAMP.append(NEWTIMESTAMP)
-    with open(CONTINUETIMESTAMP[-2] + '.fit.13', 'r') as unbumped, open('fort.13', 'w') as bumpFile: # which file is this? 
-      print "List: ", CONTINUETIMESTAMP
-      print "File to bump: ", CONTINUETIMESTAMP[-2] + '.fit.13'
+    with open(CONTINUETIMESTAMP[-2] + '.fit.13', 'r') as unbumped, open('fort.13', 'w') as bumpFile:
       for line in unbumped.readlines():
         bumpFile.write(re.sub(r' 0.5000', ' 0.6250', line))
     shutil.copy('fort.13', CONTINUETIMESTAMP[-1] + '.fort.13') 
-    print "Continuing with alpha run: ", RUNCOUNT
+    print NEWTIMESTAMP, ": continuing with run: ", RUNCOUNT
     proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result = proc.communicate(input=FITTINGPARAMETERS)
     shutil.copy('fort.18', CONTINUETIMESTAMP[-1] + '.fort.18') # vpfit9.5 does weird things to the fort.18
@@ -397,12 +340,78 @@ if alphafit == False:
           iterationArray.append(line.split()[2])
     if int(iterationArray[-1]) == 125:
       continueFlag = True
+      flag125hit = True
     else:
-      continueFlag = False
-else:
-  print "Finished."
-  
-print "Exited gracefully."
+      if currentLevel == maxlevel:
+        continueFlag = False
+      flag125hit = False
+
+  if RUNCOUNT == maxRuns:
+    print "Not converged yet. Runs before stopping: ", RUNCOUNT
+    logging.warning("Not converged yet. Runs before stopping: " + str(RUNCOUNT))
+  else:
+    print "It took ", RUNCOUNT, " runs to converge."
+    logging.info("It took " + str(RUNCOUNT) + " runs to converge.")
+
+  if args.donotcreatePlot == False: 
+    print "Creating fit comparison plots."
+    proc = subprocess.Popen(['plotfit', CONTINUETIMESTAMP[-1], 'input.fort.13', CONTINUETIMESTAMP[-1] + ".fit.13"])
+
+  alphafit = False
+  with open(CONTINUETIMESTAMP[-1] + '.fit.13', 'r') as finalFit13:
+    if re.search('qa', finalFit13.read()):
+      alphafit = True # If already started out fitting for alpha
+
+  # Add argparse option to say which fittingflag would fit for alpha
+  # Add argparse option to not fit for alpha
+  if alphafit == False: 
+    print "Fitting for alpha..."
+    p3 = subprocess.call(['convert13-13da', CONTINUETIMESTAMP[-1] + '.fit.13'])
+    NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+    CONTINUETIMESTAMP.append( NEWTIMESTAMP + '.alpha')
+    shutil.move('alpha.13', NEWTIMESTAMP + '.alpha.fit.13')
+    print NEWTIMESTAMP + '.alpha.fit.13'
+    # Reusing above code.
+    RUNCOUNT = 0
+    continueFlag = True
+    FITTINGPARAMETERS = fitLevelDictionary[maxlevel]
+    while (RUNCOUNT < maxRuns) and (continueFlag == True):
+      RUNCOUNT += 1
+      NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+      logging.info("Beginning alpha run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP)
+      print "Beginning alpha run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP
+      CONTINUETIMESTAMP.append(NEWTIMESTAMP)
+      with open(CONTINUETIMESTAMP[-2] + '.fit.13', 'r') as unbumped, open('fort.13', 'w') as bumpFile: # which file is this? 
+        print "List: ", CONTINUETIMESTAMP
+        print "File to bump: ", CONTINUETIMESTAMP[-2] + '.fit.13'
+        for line in unbumped.readlines():
+          bumpFile.write(re.sub(r' 0.5000', ' 0.6250', line))
+      shutil.copy('fort.13', CONTINUETIMESTAMP[-1] + '.fort.13') 
+      print "Continuing with alpha run: ", RUNCOUNT
+      proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+      result = proc.communicate(input=FITTINGPARAMETERS)
+      shutil.copy('fort.18', CONTINUETIMESTAMP[-1] + '.fort.18') # vpfit9.5 does weird things to the fort.18
+      shutil.copy('fort.26', CONTINUETIMESTAMP[-1] + '.fort.26')
+      p2 = subprocess.call(['combine2613', 'fort.13', 'fort.26', 'fit.13'])
+      shutil.copy('fit.13', CONTINUETIMESTAMP[-1] + '.fit.13')
+      with open('fort.18', 'r') as f18:
+        for line in f18.read().splitlines():
+          if re.search('iteration', line):
+            iterationArray.append(line.split()[2])
+      if int(iterationArray[-1]) == 125:
+        continueFlag = True
+      else:
+        continueFlag = False
+  else:
+    print "Finished."
+
+  print "Exited gracefully."
+  pass
+
+if __name__ == '__main__':
+  main()
+
+
 # # TODO parse the body of fort.13 and fit.13 files and report any discrepancies. 
 # # TODO Create pdf of full velocity plot.
 # # TODO find some way to parse things that won't change (fit results, time, date) plus things
