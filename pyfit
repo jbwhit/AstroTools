@@ -321,6 +321,7 @@ def main():
     elif (flagDict['iterations125'] == False) and (currentLevel < levelArray.index(maxLevel)):
       currentLevel += 1
       RUNCOUNT = 0
+      flagDict['iterations125'] = True # To fool the flag to restart things. 
       print "Level up; RUNCOUNT reset."
       logging.info("Leveled up!")
       logging.info("Fitting Parameters: " + fitLevelDictionary[levelArray[currentLevel]])
@@ -352,11 +353,8 @@ def main():
   if alphafit == False: 
     print "Fitting for alpha..."
     p3 = subprocess.call(['convert13-13da', CONTINUETIMESTAMP[-1] + '.fit.13'])
-    # NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
     NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.alpha'
-    # CONTINUETIMESTAMP.append( NEWTIMESTAMP + '.alpha')
     CONTINUETIMESTAMP.append( NEWTIMESTAMP )
-    # shutil.move('alpha.13', NEWTIMESTAMP + '.alpha.fit.13')
     shutil.move('alpha.13', NEWTIMESTAMP + '.fit.13')
     print NEWTIMESTAMP + '.fit.13'
     rerunFlag = True
@@ -380,6 +378,7 @@ def main():
       elif (flagDict['iterations125'] == False) and (currentLevel < levelArray.index(maxLevel)):
         currentLevel += 1
         RUNCOUNT = 0
+        flagDict['iterations125'] = True # To fool the flag to restart things. 
         print "Level up; RUNCOUNT reset."
         logging.info("Leveled up!")
         logging.info("Fitting Parameters: " + fitLevelDictionary[levelArray[currentLevel]])
