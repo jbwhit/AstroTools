@@ -142,7 +142,7 @@ def main():
   parser.add_argument('--maxRuns', action="store", default=12, type=int, help='Max runs before quitting.')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
-  parser.add_argument('--version', action='version', version='%(prog)s 0.02')
+  parser.add_argument('--version', action='version', version='%(prog)s 0.0003')
   args = parser.parse_args()
   
   if args.vpfitVersion == ("9.5" or "95"):
