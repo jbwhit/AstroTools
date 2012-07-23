@@ -306,12 +306,11 @@ def main():
     rerunFlag = True
     
   while rerunFlag == True:
-    if (((flagDict['iterations125'] == True) or (currentLevel < levelArray.index(maxLevel))) and (RUNCOUNT < maxRuns)):
+    if ((flagDict['iterations125'] == True) and (RUNCOUNT < maxRuns)):
       RUNCOUNT += 1
-      print "Restarting."
-      print "flagDict['iterations125']: ", flagDict['iterations125']
-      print "currentLevel: " , currentLevel
-      print "RUNCOUNT: ", RUNCOUNT
+      print "125 iterations, restarting..."
+      print "currentLevel: " , levelArray[currentLevel]
+      print "Restart: ", RUNCOUNT
       NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
       CONTINUETIMESTAMP.append(NEWTIMESTAMP)
       logging.info("Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP)
