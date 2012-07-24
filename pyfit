@@ -362,7 +362,7 @@ def fort18Check(inFile, passDictionary):
         hessian.append(line)
       if re.search('iteration', line):
         dropped.append(line)
-  if max(set(starts)) >= 2:
+  if int(max(set(starts))) >= 2:
     logging.warning("Initial fort.18 restarts: " + str(set(starts)))
   if int(iterationArray[-1]) == 125:
     passDictionary['iterations125'] = True
