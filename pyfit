@@ -351,6 +351,7 @@ def fort18Check(inFile, passDictionary):
   rejected = []
   hessian = []
   dropped = []
+  passDictionary['iterations125'] = False
   with open(inFile, 'r') as f18:
     for line in f18.read().splitlines():
       if re.search('iteration', line):
