@@ -235,6 +235,7 @@ def main():
   RUNCOUNT = 0
   CONTINUETIMESTAMP = []
   CONTINUETIMESTAMP.append(TIMESTAMP)
+  rerunFlag = False
   if (flagDict['iterations125'] == True) or (currentLevel < levelArray.index(maxLevel)):
     rerunFlag = True
   
