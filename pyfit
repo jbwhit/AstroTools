@@ -236,7 +236,8 @@ def main():
   CONTINUETIMESTAMP.append(TIMESTAMP)
   if (flagDict['iterations125'] == True) or (currentLevel < levelArray.index(maxLevel)):
     rerunFlag = True
-    
+  
+  # TODO Create rerun and levelup function. 
   while rerunFlag == True:
     print "Test: 125flag: ", flagDict['iterations125']
     print "Test: RUNCOUNT: ", RUNCOUNT
@@ -289,6 +290,7 @@ def main():
 
   # Add argparse option to say which fittingflag would fit for alpha
   # Add argparse option to not fit for alpha
+  # Add LaTeX comment (or json dictionary)
   if alphafit == False: 
     print "Fitting for alpha..."
     p3 = subprocess.call(['convert13-13da', CONTINUETIMESTAMP[-1] + '.fit.13'])
