@@ -51,6 +51,23 @@ import simplejson as json
 
 latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+
+    def disable(self):
+        self.HEADER = ''
+        self.OKBLUE = ''
+        self.OKGREEN = ''
+        self.WARNING = ''
+        self.FAIL = ''
+        self.ENDC = ''
+# print bcolors.HEADER + "HEADER: No active frommets remain. Continue?" + bcolors.ENDC
+
 # Known limitations
 # datafiles must not have spaces in their names. 
 # qa is the flag for fitting alpha.
@@ -61,18 +78,18 @@ def main():
 
   parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
   parser.add_argument('input13', action="store", default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
-  parser.add_argument('--noContinue', action="store_true", default=False, help='Will not continue with alpha fitting.')
-  parser.add_argument('--noLevelUp', action="store_true", default=False, help='Will not level up through the fitLevels.')
   parser.add_argument('--noComment', action="store_true", default=False, help='Turn off comment prompt.')
   parser.add_argument('--noConfigs', action="store_true", default=False, help='Will not use the config files.')
   parser.add_argument('--noPlot', action="store_true", default=False, help='Will not make pdf plots.')
   parser.add_argument('--noBump', action="store_true", default=False, help='Will not bump the fort.13 off the min values.')
   parser.add_argument('--noAlpha', action="store_true", default=False, help='Do not go on to fit for alpha.')
+  parser.add_argument('--noLevelUp', action="store_true", default=False, help='Will not level up through the fitLevels.')
+  parser.add_argument('--noReRun', action="store_true", default=False, help='Rerun a fit.')
+  parser.add_argument('--maxRuns', action="store", default=12, type=int, help='Max runs before quitting.')
   parser.add_argument('--vpfit', action="store", dest="vpfitVersion", default='9.5', type=str, help='Which version of vpfit to use.')
-  parser.add_argument('--fitLevel', choices=('L1', 'L2', 'L3', 'L4', 'L5'), default='L5', 
+  parser.add_argument('--fitLevel', choices=('L1', 'L2', 'L3', 'L4', 'L5', 'M6'), default='L5', 
                       help='The VPFIT parameter step sizes to use.')
   parser.add_argument('--dataFile', action="store", default='blind', help='data file to use.')
-  parser.add_argument('--maxRuns', action="store", default=12, type=int, help='Max runs before quitting.')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
   parser.add_argument('--version', action='version', version='%(prog)s 0.0003')
@@ -87,11 +104,12 @@ def main():
   else:
     print "What VPFIT version are you wanting to use?"
   
-  flagDict = {}  
-  flagDict['noContinue'] = args.noContinue
+  flagDict = {}
   flagDict['noLevelUp'] = args.noLevelUp
   flagDict['noComment'] = args.noComment
   flagDict['noConfigs'] = args.noConfigs
+  flagDict['noAlpha'] = args.noAlpha
+  flagDict['noReRun'] = args.noReRun
   flagDict['iterations125'] = False
 
   os.makedirs(TIMESTAMP)
