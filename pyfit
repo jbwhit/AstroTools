@@ -37,7 +37,6 @@ import sys
 import re
 import shutil
 import argparse
-import shlex
 import datetime
 import time 
 import pprint
@@ -166,7 +165,7 @@ def main():
   try: 
     with open('head.13', 'w') as head, open('body.13', 'w') as body:
       for line in inputHandle:
-        if (not line.strip().startswith('!') and line.strip() != ''): # Ignore comments and empty lines.
+        if (not line.strip().startswith('!') and (line.strip() != '')): # Ignore comments and empty lines.
           if line.startswith('   *'):
             beginHead = True
           if beginHead == True:
@@ -206,6 +205,7 @@ def main():
   fitLevelDictionary["L3"] = "f\nil\ncs\n2.e-6 100.0 2.e-6\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
   fitLevelDictionary["L4"] = "f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
   fitLevelDictionary["L5"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDictionary["M6"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
 
   FITTINGPARAMETERS = fitLevelDictionary[args.fitLevel]
   levelArray = sorted(fitLevelDictionary.keys())
@@ -233,14 +233,10 @@ def main():
   with open('command.info', 'w') as fh:
     print >>fh, "! ATOMDIR:" + atomDatFile
     print >>fh, "! runCommand: printf " + repr(FITTINGPARAMETERS) + " | " + vpfitExecutable
-
   with (open('rerun.bash', 'w') as fh):
-    print >>fh, "#!/bin/bash"
-    print >>fh, "export ATOMDIR=", os.environ['ATOMDIR'])
-    print >>fh, "export VPFSETUP=", os.environ['VPFSETUP'])
-    print >>fh, "export VPFPLOTS=", os.environ['VPFPLOTS'])
-    print >>fh, "cp ", TIMESTAMP + ".fort.13 fort.13"
-    print >>fh, "printf " + repr(FITTINGPARAMETERS) + " | " + vpfitExecutable
+    print >>fh, "#!/bin/bash\nexport ATOMDIR=", os.environ['ATOMDIR'], "\nexport VPFSETUP=", os.environ['VPFSETUP'], \
+      "\nexport VPFPLOTS=", os.environ['VPFPLOTS'], "\ncp ", TIMESTAMP + ".fort.13 fort.13", \
+      "\nprintf " + repr(FITTINGPARAMETERS) + " | " + vpfitExecutable
     
   # cat command.info fort.13 > command.fort.13
   with open('command.fort.13', 'w') as outFile:
@@ -252,7 +248,7 @@ def main():
   print TIMESTAMP
   if args.noComment == False:
     initialFitComment = raw_input("Comment: ")
-    logging.info(initialFitComment)
+    logging.info("Comment: " + initialFitComment)
 
   print TIMESTAMP
   runVPFIT(vpfitExecutable, FITTINGPARAMETERS, TIMESTAMP)
