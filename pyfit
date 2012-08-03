@@ -234,6 +234,14 @@ def main():
     print >>fh, "! ATOMDIR:" + atomDatFile
     print >>fh, "! runCommand: printf " + repr(FITTINGPARAMETERS) + " | " + vpfitExecutable
 
+  with (open('rerun.bash', 'w') as fh):
+    print >>fh, "#!/bin/bash"
+    print >>fh, "export ATOMDIR=", os.environ['ATOMDIR'])
+    print >>fh, "export VPFSETUP=", os.environ['VPFSETUP'])
+    print >>fh, "export VPFPLOTS=", os.environ['VPFPLOTS'])
+    print >>fh, "cp ", TIMESTAMP + ".fort.13 fort.13"
+    print >>fh, "printf " + repr(FITTINGPARAMETERS) + " | " + vpfitExecutable
+    
   # cat command.info fort.13 > command.fort.13
   with open('command.fort.13', 'w') as outFile:
     with open('command.info', 'r') as com, open('fort.13', 'r') as fort13:
