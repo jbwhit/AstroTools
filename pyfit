@@ -72,9 +72,8 @@ class bcolors:
 # qa is the flag for fitting alpha.
 
 def main():
-  TIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-  print TIMESTAMP
-
+  timeStamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+  print timeStamp
   parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
   parser.add_argument('input13', action="store", default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
   parser.add_argument('--noComment', action="store_true", default=False, help='Turn off comment prompt.')
@@ -110,14 +109,14 @@ def main():
   flagDict['noAlpha'] = args.noAlpha
   flagDict['noReRun'] = args.noReRun
   flagDict['iterations125'] = False
-
-  os.makedirs(TIMESTAMP)
+  
+  os.makedirs(timeStamp)
   parentDirectory = os.getcwd() + '/'
-  os.chdir(TIMESTAMP)
+  os.chdir(timeStamp)
   fitDirectory = os.getcwd() + '/'
 
   # Create a fitting log.
-  logging.basicConfig(filename=TIMESTAMP + '.log', level=logging.DEBUG)
+  logging.basicConfig(filename=timeStamp + '.log', level=logging.DEBUG)
   for arg, value in sorted(vars(args).items()):
     logging.info("Argument %s: %r", arg, value)
 
@@ -197,7 +196,7 @@ def main():
 
   # Parses the body of the body.13 for any anomalies.
   p = subprocess.call('fort13flagcheck') # waits for return.
-
+  
   # Create dictionary of all level strings; use args.fitLevel as key.
   fitLevelDictionary = {}
   fitLevelDictionary["L1"] = "f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
@@ -235,8 +234,8 @@ def main():
     print >>fh, "! runCommand: printf " + repr(FITTINGPARAMETERS) + " | " + vpfitExecutable
   with (open('rerun.bash', 'w') as fh):
     print >>fh, "#!/bin/bash\nexport ATOMDIR=", os.environ['ATOMDIR'], "\nexport VPFSETUP=", os.environ['VPFSETUP'], \
-      "\nexport VPFPLOTS=", os.environ['VPFPLOTS'], "\ncp ", TIMESTAMP + ".fort.13 fort.13", \
-      "\nprintf " + repr(FITTINGPARAMETERS) + " | " + vpfitExecutable
+      "\nexport VPFPLOTS=", os.environ['VPFPLOTS'], "\ncp ", timeStamp + ".fort.13 fort.13", \
+      "\nprintf " + repr(stepSizeParameters) + " | " + vpfitExecutable
     
   # cat command.info fort.13 > command.fort.13
   with open('command.fort.13', 'w') as outFile:
@@ -244,19 +243,18 @@ def main():
       outFile.write(com.read())
       outFile.write(fort13.read())
 
-  logging.info("Fitting Parameters: " + repr(FITTINGPARAMETERS))
-  print TIMESTAMP
+  logging.info("Fitting Parameters: " + repr(stepSizeParameters))
+  print timeStamp
   if args.noComment == False:
     initialFitComment = raw_input("Comment: ")
     logging.info("Comment: " + initialFitComment)
-
-  print TIMESTAMP
-  runVPFIT(vpfitExecutable, FITTINGPARAMETERS, TIMESTAMP)
+  
+  runVPFIT(vpfitExecutable, stepSizeParameters, timeStamp)
   fort18Check('fort.18', flagDict)
   
   RUNCOUNT = 0
-  CONTINUETIMESTAMP = []
-  CONTINUETIMESTAMP.append(TIMESTAMP)
+  continueTimeStamp = []
+  continueTimeStamp.append(timeStamp)
   rerunFlag = False
   if (flagDict['iterations125'] == True) or (currentLevel < levelArray.index(maxLevel)):
     rerunFlag = True
