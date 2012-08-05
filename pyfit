@@ -247,7 +247,7 @@ def main():
   if fitLevelDict['maxRuns'] < 2:
     "No restarts."
     continue
-  elif :
+  elif (flagDict['iterations125'] == '125') or (flagDict['noLevelUp'] == True):
     flagDict['rerunFlag'] = True
     fitLevelDict['continueTimeStamp'].append(timeStamp)
     reRunFit()
