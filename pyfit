@@ -183,22 +183,28 @@ def main():
   p = subprocess.call('fort13flagcheck') # waits for return.
   
   # Create dictionary of all level strings; use args.fitLevel as key.
-  fitLevelDictionary = {}
-  fitLevelDictionary["L1"] = "f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
-  fitLevelDictionary["L2"] = "f\nil\ncs\n2.e-5 100.0 2.e-5\nn\n0.005\nb\n0.1 \nz\n2.e-7\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
-  fitLevelDictionary["L3"] = "f\nil\ncs\n2.e-6 100.0 2.e-6\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
-  fitLevelDictionary["L4"] = "f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
-  fitLevelDictionary["L5"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
-  fitLevelDictionary["M6"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
-
-  FITTINGPARAMETERS = fitLevelDictionary[args.fitLevel]
-  levelArray = sorted(fitLevelDictionary.keys())
-  maxRuns = args.maxRuns
-  for level, s in enumerate(levelArray):
-    if args.fitLevel in s:
-      currentLevel = level
-  maxLevel = levelArray[-1]
-  print "Max fitting level is: ", maxLevel
+  fitLevelDict = {}
+  fitLevelDict["L1"] = "f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDict["L2"] = "f\nil\ncs\n2.e-5 100.0 2.e-5\nn\n0.005\nb\n0.1 \nz\n2.e-7\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDict["L3"] = "f\nil\ncs\n2.e-6 100.0 2.e-6\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDict["L4"] = "f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDict["L5"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDict["M6"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDict['levelProgression'] = args.levelProgression.split(',') # store levelProgression as array in fitLevelDict
+  print "levelProgression: ", fitLevelDict['levelProgression']
+  fitLevelDict['maxRuns'] = args.maxRuns
+  fitLevelDict['currentFitLevel'] = args.fitLevel
+  fitLevelDict['maxLevel'] = fitLevelDict['levelProgression'][-1]
+  fitLevelDict['currentParameterString'] = fitLevelDict[fitLevelDict['currentFitLevel']]
+  if fitLevelDict['currentFitLevel'] not in fitLevelDict['levelProgression']:
+    print "fitLevel not found in levelProgression. (Problem if progressing...)."
+  if args.alphaLevel == "notSet":
+    fitLevelDict["alphaLevel"] = fitLevelDict['levelProgression'][-1]
+  else:
+    if args.alphaLevel in fitLevelDict:
+      fitLevelDict["alphaLevel"] = args.alphaLevel
+    else:
+      print "What alphaLevel are you trying to use? I see: ", args.alphaLevel
   
   # Create symbolic link to fitting directory.
   executableLink = subprocess.Popen(['which', vpfitExecutable], stdout=subprocess.PIPE)
@@ -216,11 +222,11 @@ def main():
 
   with open('command.info', 'w') as fh:
     print >>fh, "! ATOMDIR:" + atomDatFile
-    print >>fh, "! runCommand: printf " + repr(FITTINGPARAMETERS) + " | " + vpfitExecutable
-  with (open('rerun.bash', 'w') as fh):
+    print >>fh, "! runCommand: printf " + repr(fitLevelDict['currentParameterString']) + " | " + vpfitExecutable
+  with open('rerun.bash', 'w') as fh:
     print >>fh, "#!/bin/bash\nexport ATOMDIR=", os.environ['ATOMDIR'], "\nexport VPFSETUP=", os.environ['VPFSETUP'], \
       "\nexport VPFPLOTS=", os.environ['VPFPLOTS'], "\ncp ", timeStamp + ".fort.13 fort.13", \
-      "\nprintf " + repr(stepSizeParameters) + " | " + vpfitExecutable
+      "\nprintf " + repr(fitLevelDict['currentParameterString']) + " | " + vpfitExecutable
     
   # cat command.info fort.13 > command.fort.13
   with open('command.fort.13', 'w') as outFile:
@@ -228,14 +234,23 @@ def main():
       outFile.write(com.read())
       outFile.write(fort13.read())
 
-  logging.info("Fitting Parameters: " + repr(stepSizeParameters))
+  logging.info("Fitting Parameters: " + repr(fitLevelDict['currentParameterString']))
   print timeStamp
   if args.noComment == False:
     initialFitComment = raw_input("Comment: ")
     logging.info("Comment: " + initialFitComment)
   
-  runVPFIT(vpfitExecutable, stepSizeParameters, timeStamp)
+  runVPFIT(vpfitExecutable, timeStamp, startFort13='command.fort.13')
   fort18Check('fort.18', flagDict)
+  fitLevelDict['runCount'] = 1
+  fitLevelDict['continueTimeStamp'] = []
+  if fitLevelDict['maxRuns'] < 2:
+    "No restarts."
+    continue
+  elif :
+    flagDict['rerunFlag'] = True
+    fitLevelDict['continueTimeStamp'].append(timeStamp)
+    reRunFit()
   
   RUNCOUNT = 0
   continueTimeStamp = []
@@ -287,17 +302,16 @@ def main():
       continue
     
   if args.noPlot == False: 
+  if flagDict['noPlot'] == False: 
     print "Creating fit comparison plots."
-    proc = subprocess.Popen(['plotfit', CONTINUETIMESTAMP[-1], 'input.fort.13', CONTINUETIMESTAMP[-1] + ".fit.13"])
+    proc = subprocess.Popen(['plotfit', fitLevelDict['continueTimeStamp'][-1], 'input.fort.13', fitLevelDict['continueTimeStamp'][-1] + ".fit.13"])
 
-  alphafit = False
-  with open(CONTINUETIMESTAMP[-1] + '.fit.13', 'r') as finalFit13:
+  alphaAlreadyFit = False
+  with open(fitLevelDict['continueTimeStamp'][-1] + '.fit.13', 'r') as finalFit13:
     if re.search('qa', finalFit13.read()):
-      alphafit = True # If already started out fitting for alpha
-
-  # Add argparse option to say which fittingflag would fit for alpha
-  # Add LaTeX comment (or json dictionary)
-  if (args.noAlpha == False) and (alphafit == False): 
+      alphaAlreadyFit = True # If already started out fitting for alpha
+  
+  if (flagDict['noAlpha'] == False) and (alphaAlreadyFit == False): 
     print "Fitting for alpha..."
     p3 = subprocess.call(['convert13-13da', CONTINUETIMESTAMP[-1] + '.fit.13'])
     NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.alpha'
