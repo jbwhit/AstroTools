@@ -244,7 +244,7 @@ def main():
   fitLevelDict['continueTimeStamp'] = []
   fitLevelDict['continueTimeStamp'].append(hcd['timeStamp'])
   runVPFIT(startFort13='command.fort.13')
-  fort18Check('fort.18', flagDict)
+  fort18Check('fort.18')
   fitLevelDict['runCount'] = 1
   if fitLevelDict['maxRuns'] < 2:
     "No restarts."
@@ -297,7 +297,7 @@ def reRunFit(tag=''):
       bump(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', 'fort.13')
     shutil.copy('fort.13', fitLevelDict['continueTimeStamp'][-1] + '.fort.13')
     runVPFIT(startFort13='fort.13')
-    fort18Check('fort.18', flagDict)
+    fort18Check('fort.18')
     if flagDict['iterations125'] == True:
       if fitLevelDict['runCount'] < fitLevelDict['maxRuns']:
         flagDict['rerunFlag'] = True
