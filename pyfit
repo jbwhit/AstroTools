@@ -178,6 +178,7 @@ def main():
     os.symlink(dataDirectory + datafile, fitDirectory + datafile)
     logging.info(datafile)
 
+  # TODO make these the fort13flagcheck outputs get logged as errors/warnings in logger.
   # Parses the body of the body.13 for any anomalies.
   p = subprocess.call('fort13flagcheck') # waits for return.
   
@@ -346,13 +347,13 @@ def main():
   print TIMESTAMP
   pass
 
+
 def fort18Check(inFile, passDictionary):
   """
   Runs the inFile through a series of checks to test if anything 
   bad has happened during the fit. 
   """
   # check (chi-sq going down every iteration; error not "too big"; value not "too big")
-  # TODO: levelUp flag; continueFlag; etc. 
   iterationArray = []
   starts = []
   rejected = []
@@ -422,6 +423,7 @@ if __name__ == '__main__':
 # # TODO parse the body of fort.13 and fit.13 files and report any discrepancies. 
 # # TODO Create pdf of full velocity plot.
 # # TODO find some way to parse things that won't change (fit results, time, date) plus things
+# # TODO Add LaTeX comment (or json dictionary)
 
 # -----------------------
 # Higher level: physical components are the structures, the particular metals are not important. Abundance ratios are interesting.
@@ -430,6 +432,4 @@ if __name__ == '__main__':
 # -----------------------
 # data = [{"running time": runningTime}]
 # json
-
 # Parse datafile -- report/log if blind or unblind. 
-

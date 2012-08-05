@@ -57,6 +57,7 @@ qLowerCase = []
 qUpperCase = []
 for x in fileparse:
   if x.split()[0] != '!':
+    # TODO add trys before all of these. 
     if x.split()[zIndex][-2].isupper():
       zUpperCase.append(x.split()[zIndex][-2] + x.split()[zIndex][-1])
     if x.split()[zIndex][-2].islower():
