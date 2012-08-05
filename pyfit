@@ -192,7 +192,7 @@ def main():
   fitLevelDict["M6"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict['levelProgression'] = args.levelProgression.split(',') # store levelProgression as array in fitLevelDict
   print "levelProgression: ", fitLevelDict['levelProgression']
-  fitLevelDict['maxRuns'] = args.maxRuns
+  fitLevelDict['maxRuns'] = int(args.maxRuns)
   fitLevelDict['currentFitLevel'] = args.fitLevel
   fitLevelDict['maxLevel'] = fitLevelDict['levelProgression'][-1]
   fitLevelDict['currentParameterString'] = fitLevelDict[fitLevelDict['currentFitLevel']]
@@ -247,7 +247,7 @@ def main():
   fitLevelDict['continueTimeStamp'].append(timeStamp)
   if fitLevelDict['maxRuns'] < 2:
     "No restarts."
-  elif (flagDict['iterations125'] == '125') or (flagDict['noLevelUp'] == True):
+  elif (flagDict['iterations125'] == True) or (flagDict['noLevelUp'] == False):
     flagDict['rerunFlag'] = True
     reRunFit()
   
