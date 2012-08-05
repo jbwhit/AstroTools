@@ -276,44 +276,44 @@ def main():
   print timeStamp
   pass
 
-def reRunFit(tag=''):
+def reRunFit(passDictionary=fitLevelDict, tag=''):
   """docstring for reRunFit"""
   print "Resetting runCount"
-  fitLevelDict['runCount'] = 0
+  passDictionary['runCount'] = 0
   while flagDict['rerunFlag'] == True:
     flagDict['rerunFlag'] = False
-    fitLevelDict['runCount'] += 1
-    print "Level: ", fitLevelDict['currentFitLevel']
-    print "Restart: ", fitLevelDict['runCount']
+    passDictionary['runCount'] += 1
+    print "Level: ", passDictionary['currentFitLevel']
+    print "Restart: ", passDictionary['runCount']
     newTimeStamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + tag
-    fitLevelDict['continueTimeStamp'].append(newTimeStamp)
-    logging.info("Beginning run: " + str(fitLevelDict['runCount']) + " at " + newTimeStamp)
-    print "Beginning run: " + str(fitLevelDict['runCount']) + " at " + newTimeStamp + " in " + timeStamp
+    passDictionary['continueTimeStamp'].append(newTimeStamp)
+    logging.info("Beginning run: " + str(passDictionary['runCount']) + " at " + newTimeStamp)
+    print "Beginning run: " + str(passDictionary['runCount']) + " at " + newTimeStamp + " in " + timeStamp
     if flagDict['noBump']:
       "Not bumping values. Hope this is what you want."
-      shutil.copy(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', fitDirectory + 'bump.13')
+      shutil.copy(passDictionary['continueTimeStamp'][-2] + '.fit.13', fitDirectory + 'bump.13')
     else:
-      bump(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', 'fort.13')
+      bump(passDictionary['continueTimeStamp'][-2] + '.fit.13', 'fort.13')
     shutil.copy('fort.13', prependStamp + '.fort.13')
-    runVPFIT(vpfitExecutable, fitLevelDict, fitLevelDict['continueTimeStamp'][-1], startFort13='fort.13')
+    runVPFIT(vpfitExecutable, passDictionary, passDictionary['continueTimeStamp'][-1], startFort13='fort.13')
     fort18Check('fort.18', flagDict)
     if flagDict['iterations125'] == True:
-      if fitLevelDict['runCount'] < fitLevelDict['maxRuns']:
+      if passDictionary['runCount'] < passDictionary['maxRuns']:
         flagDict['rerunFlag'] = True
         continue
-    elif (fitLevelDict['levelProgression'].index(fitLevelDict['currentFitLevel']) < len(fitLevelDict['levelProgression']) - 1) and (flagDict['noLevelUp'] == False):
+    elif (passDictionary['levelProgression'].index(passDictionary['currentFitLevel']) < len(passDictionary['levelProgression']) - 1) and (flagDict['noLevelUp'] == False):
       print "Level up; run count reset."
-      fitLevelDict['currentFitLevel'] = fitLevelDict['levelProgression'][fitLevelDict['levelProgression'].index(fitLevelDict['currentFitLevel']) + 1]
-      fitLevelDict['runCount'] = 0
+      passDictionary['currentFitLevel'] = passDictionary['levelProgression'][passDictionary['levelProgression'].index(passDictionary['currentFitLevel']) + 1]
+      passDictionary['runCount'] = 0
       flagDict['rerunFlag'] = True
       continue
-    elif fitLevelDict['levelProgression'].index(fitLevelDict['currentFitLevel']) == len(fitLevelDict['levelProgression']) - 1:
+    elif passDictionary['levelProgression'].index(passDictionary['currentFitLevel']) == len(passDictionary['levelProgression']) - 1:
       print "Less than 125 iterations; currentFitLevel is maxLevel; converged!"
-      logging.info("It took " + str(fitLevelDict['runCount']) + " runs to converge.")
+      logging.info("It took " + str(passDictionary['runCount']) + " runs to converge.")
       continue
     else:
-      print "Did not converge after: ", fitLevelDict['runCount']
-      logging.warning("Not converged yet. Runs before stopping: " + str(fitLevelDict['runCount']))
+      print "Did not converge after: ", passDictionary['runCount']
+      logging.warning("Not converged yet. Runs before stopping: " + str(passDictionary['runCount']))
       continue
   pass
 
