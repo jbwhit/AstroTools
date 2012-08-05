@@ -123,7 +123,7 @@ def main():
     shutil.copy(hcd['setupDir'] + hcd['atomDatFile'], hcd['fitDirectory'])
     shutil.copy(hcd['setupDir'] + 'vp_setup.dat', hcd['fitDirectory'])
     shutil.copy(hcd['setupDir'] + 'vp_splot.dat', hcd['fitDirectory'])
-    hcd['dataDirectory'] = parser.get('data', 'hcd['dataDirectory']') + '/'
+    hcd['dataDirectory'] = parser.get('data', 'dataDirectory') + '/'
     os.symlink(hcd['atomDatFile'], 'atom.dat') # create symbolic link to atom.dat in fitting directory.
 
   shutil.copy(hcd['parentDirectory'] + args.input13, hcd['fitDirectory'] + "input.fort.13")
