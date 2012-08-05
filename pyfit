@@ -236,12 +236,13 @@ def main():
       outFile.write(fort13.read())
 
   logging.info("Fitting Parameters: " + repr(fitLevelDict['currentParameterString']))
-  print hcd['timeStamp']
+
   if args.noComment == False:
     initialFitComment = raw_input("Comment: ")
     logging.info("Comment: " + initialFitComment)
   
-  runVPFIT(vpfitExecutable, fitLevelDict, hcd['timeStamp'], startFort13='command.fort.13')
+  pprint.pprint( hcd)
+  runVPFIT(vpfitExecutable, fitLevelDict, startFort13='command.fort.13')
   fort18Check('fort.18', flagDict)
   fitLevelDict['runCount'] = 1
   fitLevelDict['continueTimeStamp'] = []
