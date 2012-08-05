@@ -64,18 +64,18 @@ def main():
   parser.add_argument('--noPlot', action="store_true", default=False, help='Will not make pdf plots.')
   parser.add_argument('--noBump', action="store_true", default=False, help='Will not bump the fort.13 off the min values.')
   parser.add_argument('--noAlpha', action="store_true", default=False, help='Do not go on to fit for alpha.')
+  parser.add_argument('--alphaLevel', action="store", default="notSet", type=str, help='With what fitLevel should alpha be fit?')
   parser.add_argument('--noLevelUp', action="store_true", default=False, help='Will not level up through the fitLevels.')
-  parser.add_argument('--noReRun', action="store_true", default=False, help='Rerun a fit.')
-  parser.add_argument('--maxRuns', action="store", default=12, type=int, help='Max runs before quitting.')
+  parser.add_argument('--maxRuns', action="store", default=12, type=int, help='Max runs before quitting. Setting to 1 means no restarts.')
   parser.add_argument('--vpfit', action="store", dest="vpfitVersion", default='9.5', type=str, help='Which version of vpfit to use.')
-  parser.add_argument('--fitLevel', choices=('L1', 'L2', 'L3', 'L4', 'L5', 'M6'), default='L5', 
-                      help='The VPFIT parameter step sizes to use.')
+  parser.add_argument('--levelProgression', action="store", default='L2,L3,L5', type=str, \
+                      help='Type in comma separated (no spaces) list of the order of the ways "leveling up" should go. ex: L2,L4,L5')
+  parser.add_argument('--fitLevel', default='L5', help='The VPFIT parameter step sizes to use.')
   parser.add_argument('--dataFile', action="store", default='blind', help='data file to use.')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
-  parser.add_argument('--version', action='version', version='%(prog)s 0.0003')
+  parser.add_argument('--version', action='version', version='%(prog)s 0.0004')
   args = parser.parse_args()
-  
   if args.vpfitVersion == ("9.5" or "95"):
     print "VPFIT version: ", args.vpfitVersion
     vpfitExecutable = 'vpfit95'
@@ -84,13 +84,13 @@ def main():
     vpfitExecutable = 'vpfit10'
   else:
     print "What VPFIT version are you wanting to use?"
-  
   flagDict = {}
   flagDict['noLevelUp'] = args.noLevelUp
   flagDict['noComment'] = args.noComment
   flagDict['noConfigs'] = args.noConfigs
   flagDict['noAlpha'] = args.noAlpha
-  flagDict['noReRun'] = args.noReRun
+  flagDict['noBump'] = args.noBump
+  flagDict['noPlot'] = args.noPlot
   flagDict['iterations125'] = False
   
   os.makedirs(timeStamp)
@@ -129,7 +129,8 @@ def main():
   if args.input13 != "input.fort.13":
     shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
 
-  if args.noBump:
+  if flagDict['noBump']:
+    "Not bumping values. Hope this is what you want."
     shutil.copy('input.fort.13', fitDirectory + 'bump.13')
   else:
     bump('input.fort.13', 'bump.13')
