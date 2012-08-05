@@ -241,12 +241,11 @@ def main():
     initialFitComment = raw_input("Comment: ")
     logging.info("Comment: " + initialFitComment)
   
-  pprint.pprint( hcd)
-  runVPFIT(vpfitExecutable, fitLevelDict, startFort13='command.fort.13')
-  fort18Check('fort.18', flagDict)
-  fitLevelDict['runCount'] = 1
   fitLevelDict['continueTimeStamp'] = []
   fitLevelDict['continueTimeStamp'].append(hcd['timeStamp'])
+  runVPFIT(vpfitExecutable, fitLevelDict['continueTimeStamp'][-1], startFort13='command.fort.13')
+  fort18Check('fort.18', flagDict)
+  fitLevelDict['runCount'] = 1
   if fitLevelDict['maxRuns'] < 2:
     "No restarts."
   elif (flagDict['iterations125'] == True) or (flagDict['noLevelUp'] == False):
@@ -296,7 +295,7 @@ def reRunFit(tag=''):
       shutil.copy(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', hcd['fitDirectory'] + 'bump.13')
     else:
       bump(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', 'fort.13')
-    shutil.copy('fort.13', prependStamp + '.fort.13')
+    shutil.copy('fort.13', fitLevelDict['continueTimeStamp'][-1] + '.fort.13')
     runVPFIT(vpfitExecutable, fitLevelDict, fitLevelDict['continueTimeStamp'][-1], startFort13='fort.13')
     fort18Check('fort.18', flagDict)
     if flagDict['iterations125'] == True:
@@ -319,7 +318,7 @@ def reRunFit(tag=''):
       continue
   pass
 
-def runVPFIT(vpfitExecutable, prependStamp, startFort13='command.fort.13'):
+def runVPFIT(vpfitExecutable, fitLevelDict['continueTimeStamp'][-1], startFort13='command.fort.13'):
   """docstring for runVPFIT"""
   print "Running... "
   if startFort13 != 'fort.13':
@@ -333,9 +332,9 @@ def runVPFIT(vpfitExecutable, prependStamp, startFort13='command.fort.13'):
   print "Running time:", runningTime.__str__()
   logging.info("Time to execute: " + runningTime.__str__())
   p2 = subprocess.call(['combine2613', 'fort.13', 'fort.26', 'fit.13'])
-  shutil.copy('fort.18', prependStamp + '.fort.18')
-  shutil.copy('fort.26', prependStamp + '.fort.26')
-  shutil.copy('fit.13', prependStamp + '.fit.13')
+  shutil.copy('fort.18', fitLevelDict['continueTimeStamp'][-1] + '.fort.18')
+  shutil.copy('fort.26', fitLevelDict['continueTimeStamp'][-1] + '.fort.26')
+  shutil.copy('fit.13', fitLevelDict['continueTimeStamp'][-1] + '.fit.13')
   pass
 
 
