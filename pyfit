@@ -50,23 +50,6 @@ import simplejson as json
 
 latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
 
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-
-    def disable(self):
-        self.HEADER = ''
-        self.OKBLUE = ''
-        self.OKGREEN = ''
-        self.WARNING = ''
-        self.FAIL = ''
-        self.ENDC = ''
-# print bcolors.HEADER + "HEADER: No active frommets remain. Continue?" + bcolors.ENDC
-
 # Known limitations
 # datafiles must not have spaces in their names. 
 # qa is the flag for fitting alpha.
