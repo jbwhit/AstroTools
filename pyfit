@@ -368,8 +368,24 @@ def fort18Check(inFile, passDictionary):
     logging.info("125 iterations.")
   pass
 
+def pyAnalysis3(inFile='fort.26'):
+  """docstring for pyAnalysis3"""
+  # echo "iter;  chisq;    Npix;   DoF; Ndropped; Filename"
+  print "Iter; chisq; Npix; DoF; Params; Ndrop; Filename"
+  # TODO print # parameters fit. 
+  # awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s\n"), $3, $4, $5, $6, $8, FILENAME}' 201*/*fit.13 
+  if not re.search('qa', open(inFile).read()):
+    for line in open(inFile).readlines():
+      if re.search('Stat', line):
+        parseThis = line.split()
+        print parseThis[2], parseThis[3], parseThis[4], parseThis[5], int(parseThis[4]) - int(parseThis[5]), parseThis[7], inFile 
   else:
-    continueFlag = False
+    for line in open(inFile).readlines():
+      if re.search('Stat', line):
+        parseThis = line.split()
+        print parseThis[2], parseThis[3], parseThis[4], parseThis[5], int(parseThis[4]) - int(parseThis[5]), parseThis[7], inFile,
+      if re.search('qa', line):
+        print line.split()[3], line.split()[4]
   pass
 
 def fort26check():
