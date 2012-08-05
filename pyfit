@@ -244,11 +244,11 @@ def main():
   fort18Check('fort.18', flagDict)
   fitLevelDict['runCount'] = 1
   fitLevelDict['continueTimeStamp'] = []
+  fitLevelDict['continueTimeStamp'].append(timeStamp)
   if fitLevelDict['maxRuns'] < 2:
     "No restarts."
   elif (flagDict['iterations125'] == '125') or (flagDict['noLevelUp'] == True):
     flagDict['rerunFlag'] = True
-    fitLevelDict['continueTimeStamp'].append(timeStamp)
     reRunFit()
   
   if flagDict['noPlot'] == False: 
