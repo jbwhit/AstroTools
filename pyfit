@@ -276,12 +276,12 @@ def main():
   print timeStamp
   pass
 
-def reRunFit(passDictionary=fitLevelDict, tag=''):
+def reRunFit(passDictionary=fitLevelDict, passFlagDict=flagDict, tag=''):
   """docstring for reRunFit"""
   print "Resetting runCount"
   passDictionary['runCount'] = 0
-  while flagDict['rerunFlag'] == True:
-    flagDict['rerunFlag'] = False
+  while passFlagDict['rerunFlag'] == True:
+    passFlagDict['rerunFlag'] = False
     passDictionary['runCount'] += 1
     print "Level: ", passDictionary['currentFitLevel']
     print "Restart: ", passDictionary['runCount']
@@ -289,23 +289,23 @@ def reRunFit(passDictionary=fitLevelDict, tag=''):
     passDictionary['continueTimeStamp'].append(newTimeStamp)
     logging.info("Beginning run: " + str(passDictionary['runCount']) + " at " + newTimeStamp)
     print "Beginning run: " + str(passDictionary['runCount']) + " at " + newTimeStamp + " in " + timeStamp
-    if flagDict['noBump']:
+    if passFlagDict['noBump']:
       "Not bumping values. Hope this is what you want."
       shutil.copy(passDictionary['continueTimeStamp'][-2] + '.fit.13', fitDirectory + 'bump.13')
     else:
       bump(passDictionary['continueTimeStamp'][-2] + '.fit.13', 'fort.13')
     shutil.copy('fort.13', prependStamp + '.fort.13')
     runVPFIT(vpfitExecutable, passDictionary, passDictionary['continueTimeStamp'][-1], startFort13='fort.13')
-    fort18Check('fort.18', flagDict)
-    if flagDict['iterations125'] == True:
+    fort18Check('fort.18', passFlagDict)
+    if passFlagDict['iterations125'] == True:
       if passDictionary['runCount'] < passDictionary['maxRuns']:
-        flagDict['rerunFlag'] = True
+        passFlagDict['rerunFlag'] = True
         continue
-    elif (passDictionary['levelProgression'].index(passDictionary['currentFitLevel']) < len(passDictionary['levelProgression']) - 1) and (flagDict['noLevelUp'] == False):
+    elif (passDictionary['levelProgression'].index(passDictionary['currentFitLevel']) < len(passDictionary['levelProgression']) - 1) and (passFlagDict['noLevelUp'] == False):
       print "Level up; run count reset."
       passDictionary['currentFitLevel'] = passDictionary['levelProgression'][passDictionary['levelProgression'].index(passDictionary['currentFitLevel']) + 1]
       passDictionary['runCount'] = 0
-      flagDict['rerunFlag'] = True
+      passFlagDict['rerunFlag'] = True
       continue
     elif passDictionary['levelProgression'].index(passDictionary['currentFitLevel']) == len(passDictionary['levelProgression']) - 1:
       print "Less than 125 iterations; currentFitLevel is maxLevel; converged!"
