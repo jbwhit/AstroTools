@@ -51,14 +51,15 @@ import simplejson as json
 latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
 flagDict = {}
 fitLevelDict = {}
+hcd = {} # Housecleaning dictionary
 
 # Known limitations
 # datafiles must not have spaces in their names. 
 # qa is the flag for fitting alpha.
 
 def main():
-  timeStamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-  print timeStamp
+  hcd['timeStamp'] = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+  print hcd['timeStamp']
   parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
   parser.add_argument('input13', action="store", default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
   parser.add_argument('--noComment', action="store_true", default=False, help='Turn off comment prompt.')
@@ -94,45 +95,44 @@ def main():
   flagDict['noPlot'] = args.noPlot
   flagDict['iterations125'] = False
   
-  os.makedirs(timeStamp)
-  parentDirectory = os.getcwd() + '/'
-  os.chdir(timeStamp)
-  fitDirectory = os.getcwd() + '/'
+  os.makedirs(hcd['timeStamp'])
+  hcd['parentDirectory'] = os.getcwd() + '/'
+  os.chdir(hcd['timeStamp'])
+  hcd['fitDirectory'] = os.getcwd() + '/'
 
   # Create a fitting log.
-  logging.basicConfig(filename=timeStamp + '.log', level=logging.DEBUG)
+  logging.basicConfig(filename=hcd['timeStamp'] + '.log', level=logging.DEBUG)
   for arg, value in sorted(vars(args).items()):
     logging.info("Argument %s: %r", arg, value)
 
-  logging.info("parentDirectory: " + parentDirectory)
-  logging.info("fitDirectory: " + fitDirectory)
+  logging.info("hcd['parentDirectory']: " + hcd['parentDirectory'])
+  logging.info("hcd['fitDirectory']: " + hcd['fitDirectory'])
 
   if args.noConfigs == True:
     print "Not using config files."
     print "Need to know locations of setup files and data files."
   else:
     parser = SafeConfigParser()
-    candidates = glob.glob(parentDirectory + 'config*')
-    found = parser.read(candidates)
+    found = parser.read(glob.glob(hcd['parentDirectory'] + 'config*'))
     print "Using these config files:"
     for configfile in set(found):
       print "  ", configfile
       logging.info("config loaded: " + configfile)
-    setupDir = parser.get('machine', 'setupdir') + '/'
-    atomDatFile = parser.get('update', args.atomdat)
-    shutil.copy(setupDir + atomDatFile, fitDirectory)
-    shutil.copy(setupDir + 'vp_setup.dat', fitDirectory)
-    shutil.copy(setupDir + 'vp_splot.dat', fitDirectory)
-    dataDirectory = parser.get('data', 'dataDirectory') + '/'
-    os.symlink(atomDatFile, 'atom.dat') # create symbolic link to atom.dat in fitting directory.
+    hcd['setupDir'] = parser.get('machine', 'setupdir') + '/'
+    hcd['atomDatFile'] = parser.get('update', args.atomdat)
+    shutil.copy(hcd['setupDir'] + hcd['atomDatFile'], hcd['fitDirectory'])
+    shutil.copy(hcd['setupDir'] + 'vp_setup.dat', hcd['fitDirectory'])
+    shutil.copy(hcd['setupDir'] + 'vp_splot.dat', hcd['fitDirectory'])
+    hcd['dataDirectory'] = parser.get('data', 'hcd['dataDirectory']') + '/'
+    os.symlink(hcd['atomDatFile'], 'atom.dat') # create symbolic link to atom.dat in fitting directory.
 
-  shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
+  shutil.copy(hcd['parentDirectory'] + args.input13, hcd['fitDirectory'] + "input.fort.13")
   if args.input13 != "input.fort.13":
-    shutil.copy(parentDirectory + args.input13, fitDirectory + "input.fort.13")
+    shutil.copy(hcd['parentDirectory'] + args.input13, hcd['fitDirectory'] + "input.fort.13")
 
   if flagDict['noBump']:
     "Not bumping values. Hope this is what you want."
-    shutil.copy('input.fort.13', fitDirectory + 'bump.13')
+    shutil.copy('input.fort.13', hcd['fitDirectory'] + 'bump.13')
   else:
     bump('input.fort.13', 'bump.13')
 
@@ -144,6 +144,7 @@ def main():
   logging.info( '\n'.join(diff))
   logging.info( "diff end " )
 
+  # TODO cleanup this mess
   inputHandle = open('bump.13', 'r').read().split('\n')
   beginHead, beginBody = False, False
   try: 
@@ -176,7 +177,7 @@ def main():
         dataFiles.append(line.split()[0])
   logging.info("Data files used: ")
   for datafile in set(dataFiles):
-    os.symlink(dataDirectory + datafile, fitDirectory + datafile)
+    os.symlink(hcd['dataDirectory'] + datafile, hcd['fitDirectory'] + datafile)
     logging.info(datafile)
 
   # TODO make these the fort13flagcheck outputs get logged as errors/warnings in logger.
@@ -207,8 +208,8 @@ def main():
       print "What alphaLevel are you trying to use? I see: ", args.alphaLevel
   
   # Create symbolic link to fitting directory.
-  executableLink = subprocess.Popen(['which', vpfitExecutable], stdout=subprocess.PIPE)
-  os.symlink(executableLink.communicate()[0].strip(), fitDirectory + 'vpfit')
+  hcd['executableLink'] = subprocess.Popen(['which', vpfitExecutable], stdout=subprocess.PIPE)
+  os.symlink(hcd['executableLink'].communicate()[0].strip(), hcd['fitDirectory'] + 'vpfit')
   logging.info('VPFIT version: ' + args.vpfitVersion)
   logging.info('VPFIT executable: ' + vpfitExecutable)
 
@@ -221,11 +222,11 @@ def main():
   logging.info("PATH for VPFPLOTS: " + os.environ['VPFPLOTS'])
 
   with open('command.info', 'w') as fh:
-    print >>fh, "! ATOMDIR:" + atomDatFile
+    print >>fh, "! ATOMDIR:" + hcd['atomDatFile']
     print >>fh, "! runCommand: printf " + repr(fitLevelDict['currentParameterString']) + " | " + vpfitExecutable
   with open('rerun.bash', 'w') as fh:
     print >>fh, "#!/bin/bash\nexport ATOMDIR=", os.environ['ATOMDIR'], "\nexport VPFSETUP=", os.environ['VPFSETUP'], \
-      "\nexport VPFPLOTS=", os.environ['VPFPLOTS'], "\ncp ", timeStamp + ".fort.13 fort.13", \
+      "\nexport VPFPLOTS=", os.environ['VPFPLOTS'], "\ncp ", hcd['timeStamp'] + ".fort.13 fort.13", \
       "\nprintf " + repr(fitLevelDict['currentParameterString']) + " | " + vpfitExecutable
     
   # cat command.info fort.13 > command.fort.13
@@ -235,16 +236,16 @@ def main():
       outFile.write(fort13.read())
 
   logging.info("Fitting Parameters: " + repr(fitLevelDict['currentParameterString']))
-  print timeStamp
+  print hcd['timeStamp']
   if args.noComment == False:
     initialFitComment = raw_input("Comment: ")
     logging.info("Comment: " + initialFitComment)
   
-  runVPFIT(vpfitExecutable, fitLevelDict, timeStamp, startFort13='command.fort.13')
+  runVPFIT(vpfitExecutable, fitLevelDict, hcd['timeStamp'], startFort13='command.fort.13')
   fort18Check('fort.18', flagDict)
   fitLevelDict['runCount'] = 1
   fitLevelDict['continueTimeStamp'] = []
-  fitLevelDict['continueTimeStamp'].append(timeStamp)
+  fitLevelDict['continueTimeStamp'].append(hcd['timeStamp'])
   if fitLevelDict['maxRuns'] < 2:
     "No restarts."
   elif (flagDict['iterations125'] == True) or (flagDict['noLevelUp'] == False):
@@ -255,77 +256,77 @@ def main():
     print "Creating fit comparison plots."
     proc = subprocess.Popen(['plotfit', fitLevelDict['continueTimeStamp'][-1], 'input.fort.13', fitLevelDict['continueTimeStamp'][-1] + ".fit.13"])
 
-  alphaAlreadyFit = False
+  flagDict['alphaAlreadyFit'] = False
   with open(fitLevelDict['continueTimeStamp'][-1] + '.fit.13', 'r') as finalFit13:
     if re.search('qa', finalFit13.read()):
-      alphaAlreadyFit = True # If already started out fitting for alpha
+      flagDict['alphaAlreadyFit'] = True # If already started out fitting for alpha
   
-  if (flagDict['noAlpha'] == False) and (alphaAlreadyFit == False): 
+  if (flagDict['noAlpha'] == False) and (flagDict['alphaAlreadyFit'] == False): 
     print "Fitting for alpha..."
     p3 = subprocess.call(['convert13-13da', fitLevelDict['continueTimeStamp'][-1] + '.fit.13'])
     flagDict['noLevelUp'] = True
     fitLevelDict['currentFitLevel'] = fitLevelDict["alphaLevel"]
     time.sleep(2) # ensures a different timestamp for the alpha fit
-    newTimeStamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.alpha'
-    fitLevelDict['continueTimeStamp'].append( newTimeStamp )
-    shutil.move('alpha.13', newTimeStamp + '.fit.13')
-    print newTimeStamp + '.fit.13'
+    hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.alpha'
+    fitLevelDict['continueTimeStamp'].append( hcd['newTimeStamp'] )
+    shutil.move('alpha.13', hcd['newTimeStamp'] + '.fit.13')
+    print hcd['newTimeStamp'] + '.fit.13'
     reRunFit(tag='.alpha')
   
   print "Program exited gracefully."
-  print timeStamp
+  print hcd['timeStamp']
   pass
 
-def reRunFit(passDictionary=fitLevelDict, passFlagDict=flagDict, tag=''):
+def reRunFit(tag=''):
   """docstring for reRunFit"""
   print "Resetting runCount"
-  passDictionary['runCount'] = 0
-  while passFlagDict['rerunFlag'] == True:
-    passFlagDict['rerunFlag'] = False
-    passDictionary['runCount'] += 1
-    print "Level: ", passDictionary['currentFitLevel']
-    print "Restart: ", passDictionary['runCount']
-    newTimeStamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + tag
-    passDictionary['continueTimeStamp'].append(newTimeStamp)
-    logging.info("Beginning run: " + str(passDictionary['runCount']) + " at " + newTimeStamp)
-    print "Beginning run: " + str(passDictionary['runCount']) + " at " + newTimeStamp + " in " + timeStamp
-    if passFlagDict['noBump']:
+  fitLevelDict['runCount'] = 0
+  while flagDict['rerunFlag'] == True:
+    flagDict['rerunFlag'] = False
+    fitLevelDict['runCount'] += 1
+    print "Level: ", fitLevelDict['currentFitLevel']
+    print "Restart: ", fitLevelDict['runCount']
+    hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + tag
+    fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
+    logging.info("Beginning run: " + str(fitLevelDict['runCount']) + " at " + hcd['newTimeStamp'])
+    print "Beginning run: " + str(fitLevelDict['runCount']) + " at " + hcd['newTimeStamp'] + " in " + fitLevelDict['continueTimeStamp'][0]
+    if flagDict['noBump']:
       "Not bumping values. Hope this is what you want."
-      shutil.copy(passDictionary['continueTimeStamp'][-2] + '.fit.13', fitDirectory + 'bump.13')
+      shutil.copy(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', hcd['fitDirectory'] + 'bump.13')
     else:
-      bump(passDictionary['continueTimeStamp'][-2] + '.fit.13', 'fort.13')
+      bump(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', 'fort.13')
     shutil.copy('fort.13', prependStamp + '.fort.13')
-    runVPFIT(vpfitExecutable, passDictionary, passDictionary['continueTimeStamp'][-1], startFort13='fort.13')
-    fort18Check('fort.18', passFlagDict)
-    if passFlagDict['iterations125'] == True:
-      if passDictionary['runCount'] < passDictionary['maxRuns']:
-        passFlagDict['rerunFlag'] = True
+    runVPFIT(vpfitExecutable, fitLevelDict, fitLevelDict['continueTimeStamp'][-1], startFort13='fort.13')
+    fort18Check('fort.18', flagDict)
+    if flagDict['iterations125'] == True:
+      if fitLevelDict['runCount'] < fitLevelDict['maxRuns']:
+        flagDict['rerunFlag'] = True
         continue
-    elif (passDictionary['levelProgression'].index(passDictionary['currentFitLevel']) < len(passDictionary['levelProgression']) - 1) and (passFlagDict['noLevelUp'] == False):
+    elif (fitLevelDict['levelProgression'].index(fitLevelDict['currentFitLevel']) < len(fitLevelDict['levelProgression']) - 1) and (flagDict['noLevelUp'] == False):
       print "Level up; run count reset."
-      passDictionary['currentFitLevel'] = passDictionary['levelProgression'][passDictionary['levelProgression'].index(passDictionary['currentFitLevel']) + 1]
-      passDictionary['runCount'] = 0
-      passFlagDict['rerunFlag'] = True
+      fitLevelDict['currentFitLevel'] = fitLevelDict['levelProgression'][fitLevelDict['levelProgression'].index(fitLevelDict['currentFitLevel']) + 1]
+      fitLevelDict['runCount'] = 0
+      flagDict['rerunFlag'] = True
       continue
-    elif passDictionary['levelProgression'].index(passDictionary['currentFitLevel']) == len(passDictionary['levelProgression']) - 1:
+    elif fitLevelDict['levelProgression'].index(fitLevelDict['currentFitLevel']) == len(fitLevelDict['levelProgression']) - 1:
       print "Less than 125 iterations; currentFitLevel is maxLevel; converged!"
-      logging.info("It took " + str(passDictionary['runCount']) + " runs to converge.")
+      logging.info("It took " + str(fitLevelDict['runCount']) + " runs to converge.")
       continue
     else:
-      print "Did not converge after: ", passDictionary['runCount']
-      logging.warning("Not converged yet. Runs before stopping: " + str(passDictionary['runCount']))
+      print "Did not converge after: ", fitLevelDict['runCount']
+      logging.warning("Not converged yet. Runs before stopping: " + str(fitLevelDict['runCount']))
       continue
   pass
 
-def runVPFIT(vpfitExecutable, passDictionary, prependStamp, startFort13='command.fort.13'):
+def runVPFIT(vpfitExecutable, prependStamp, startFort13='command.fort.13'):
   """docstring for runVPFIT"""
   print "Running... "
   if startFort13 != 'fort.13':
     shutil.copy(startFort13, 'fort.13')
   startTime = datetime.datetime.now()
-  logging.info("Fitting Parameters: " + repr(passDictionary['currentParameterString']))
+  logging.info("Fitting Parameters: " + repr(fitLevelDict['currentParameterString']))
   proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-  result = proc.communicate(input=passDictionary['currentParameterString'])
+  result = proc.communicate(input=fitLevelDict['currentParameterString'])
   endTime = datetime.datetime.now()
   runningTime = endTime - startTime
   print "Running time:", runningTime.__str__()
@@ -337,7 +338,7 @@ def runVPFIT(vpfitExecutable, passDictionary, prependStamp, startFort13='command
   pass
 
 
-def fort18Check(inFile, passDictionary):
+def fort18Check(inFile):
   """
   Runs the inFile through a series of checks to test if anything 
   bad has happened during the fit. 
@@ -348,7 +349,7 @@ def fort18Check(inFile, passDictionary):
   rejected = []
   hessian = []
   dropped = []
-  passDictionary['iterations125'] = False
+  flagDict['iterations125'] = False
   with open(inFile, 'r') as f18:
     for line in f18.read().splitlines():
       if re.search('iteration', line):
@@ -363,7 +364,7 @@ def fort18Check(inFile, passDictionary):
   if int(max(set(starts))) >= 2:
     logging.warning("Initial fort.18 restarts: " + str(set(starts)))
   if int(iterationArray[-1]) == 125:
-    passDictionary['iterations125'] = True
+    flagDict['iterations125'] = True
     logging.info("125 iterations.")
   pass
 
@@ -393,7 +394,7 @@ def fort26check():
   # Stats: ... errs 
   # Stats: ... BAD
   # # echo "iter;  chisq;    Npix;   DoF; Ndropped; Filename; level; alpha-fit"
-  # awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s \n"), $3, $4, $5, $6, $8, "'$timeStamp'" "/" FILENAME}' fit.13 | paste - fit.log > temp
+  # awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s \n"), $3, $4, $5, $6, $8, "'$hcd['timeStamp']'" "/" FILENAME}' fit.13 | paste - fit.log > temp
   # awk '/qa/{print "alpha"}' fit.13 | paste temp - > summary.txt
   pass
 
