@@ -252,56 +252,6 @@ def main():
     fitLevelDict['continueTimeStamp'].append(timeStamp)
     reRunFit()
   
-  RUNCOUNT = 0
-  continueTimeStamp = []
-  continueTimeStamp.append(timeStamp)
-  rerunFlag = False
-  if (flagDict['iterations125'] == True) or (currentLevel < levelArray.index(maxLevel)):
-    rerunFlag = True
-  
-  # TODO Create rerun and levelup function. 
-  while rerunFlag == True:
-    print "Test: 125flag: ", flagDict['iterations125']
-    print "Test: RUNCOUNT: ", RUNCOUNT
-    print "Test: currentLevel: ", levelArray[currentLevel]
-    if ((flagDict['iterations125'] == True) and (RUNCOUNT < maxRuns)):
-      print "Branch A"
-      RUNCOUNT += 1
-      print "125 iterations, restarting..."
-      print "currentLevel: " , levelArray[currentLevel]
-      print "Restart: ", RUNCOUNT
-      NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-      CONTINUETIMESTAMP.append(NEWTIMESTAMP)
-      logging.info("Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP)
-      print "Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP + " in " + TIMESTAMP
-      bump(CONTINUETIMESTAMP[-2] + '.fit.13', 'fort.13')
-      runVPFIT(vpfitExecutable, fitLevelDictionary[levelArray[currentLevel]], CONTINUETIMESTAMP[-1])
-      fort18Check('fort.18', flagDict)
-    elif (flagDict['iterations125'] == False) and (currentLevel < levelArray.index(maxLevel)):
-      print "Branch B"
-      currentLevel += 1
-      RUNCOUNT = 0
-      flagDict['iterations125'] = True # To fool the flag to restart things. 
-      print "Level up; RUNCOUNT reset."
-      logging.info("Leveled up!")
-      logging.info("Fitting Parameters: " + repr(fitLevelDictionary[levelArray[currentLevel]]))
-      continue
-    elif (flagDict['iterations125'] == False) and (currentLevel == levelArray.index(maxLevel)):
-      print "Branch C"
-      print "Less than 125 iterations."
-      print "currentLevel is maxLevel"
-      print "converged!"
-      logging.info("It took " + str(RUNCOUNT) + " runs to converge.")
-      rerunFlag = False
-      continue
-    else:
-      print "Branch D"
-      print "Did not converge after: ", RUNCOUNT
-      logging.warning("Not converged yet. Runs before stopping: " + str(RUNCOUNT))
-      rerunFlag = False
-      continue
-    
-  if args.noPlot == False: 
   if flagDict['noPlot'] == False: 
     print "Creating fit comparison plots."
     proc = subprocess.Popen(['plotfit', fitLevelDict['continueTimeStamp'][-1], 'input.fort.13', fitLevelDict['continueTimeStamp'][-1] + ".fit.13"])
@@ -313,52 +263,61 @@ def main():
   
   if (flagDict['noAlpha'] == False) and (alphaAlreadyFit == False): 
     print "Fitting for alpha..."
-    p3 = subprocess.call(['convert13-13da', CONTINUETIMESTAMP[-1] + '.fit.13'])
-    NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.alpha'
-    CONTINUETIMESTAMP.append( NEWTIMESTAMP )
-    shutil.move('alpha.13', NEWTIMESTAMP + '.fit.13')
-    print NEWTIMESTAMP + '.fit.13'
-    rerunFlag = True
-    RUNCOUNT = 0
-    currentLevel = levelArray.index(maxLevel)
-    flagDict['iterations125'] = True
-    while rerunFlag == True:
-      if ((flagDict['iterations125'] == True)  and (RUNCOUNT < maxRuns)):
-        RUNCOUNT += 1
-        print "Restarting."
-        print "flagDict['iterations125']: ", flagDict['iterations125']
-        print "currentLevel: " , currentLevel
-        print "RUNCOUNT: ", RUNCOUNT
-        NEWTIMESTAMP = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.alpha'
-        CONTINUETIMESTAMP.append(NEWTIMESTAMP)
-        logging.info("Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP)
-        print "Beginning run: " + str(RUNCOUNT) + " at " + NEWTIMESTAMP
-        bump(CONTINUETIMESTAMP[-2] + '.fit.13', 'fort.13')
-        runVPFIT(vpfitExecutable, fitLevelDictionary[levelArray[currentLevel]], CONTINUETIMESTAMP[-1])
-        fort18Check('fort.18', flagDict)
-      elif (flagDict['iterations125'] == False) and (currentLevel < levelArray.index(maxLevel)):
-        currentLevel += 1
-        RUNCOUNT = 0
-        flagDict['iterations125'] = True # To fool the flag to restart things. 
-        print "Level up; RUNCOUNT reset."
-        logging.info("Leveled up!")
-        logging.info("Fitting Parameters: " + fitLevelDictionary[levelArray[currentLevel]])
-        continue
-      elif (flagDict['iterations125'] == False) and (currentLevel == levelArray.index(maxLevel)):
-        print "Less than 125 iterations."
-        print "currentLevel is maxLevel"
-        print "converged!"
-        logging.info("It took " + str(RUNCOUNT) + " runs to converge.")
-        rerunFlag = False
-        continue
-      else:
-        print "Did not converge after: ", RUNCOUNT
-        logging.warning("Not converged yet. Runs before stopping: " + str(RUNCOUNT))
-        rerunFlag = False
-        continue
+    p3 = subprocess.call(['convert13-13da', fitLevelDict['continueTimeStamp'][-1] + '.fit.13'])
+    flagDict['noLevelUp'] = True
+    fitLevelDict['currentFitLevel'] = fitLevelDict["alphaLevel"]
+    time.sleep(2) # ensures a different timestamp for the alpha fit
+    newTimeStamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.alpha'
+    fitLevelDict['continueTimeStamp'].append( newTimeStamp )
+    shutil.move('alpha.13', newTimeStamp + '.fit.13')
+    print newTimeStamp + '.fit.13'
+    reRunFit(tag='.alpha')
+  
+  print "Program exited gracefully."
+  print timeStamp
+  pass
 
-  print "Exited gracefully."
-  print TIMESTAMP
+def reRunFit(tag=''):
+  """docstring for reRunFit"""
+  print "Resetting runCount"
+  fitLevelDict['runCount'] = 0
+  while flagDict['rerunFlag'] == True:
+    flagDict['rerunFlag'] = False
+    fitLevelDict['runCount'] += 1
+    print "Level: ", fitLevelDict['currentFitLevel']
+    print "Restart: ", fitLevelDict['runCount']
+    newTimeStamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + tag
+    fitLevelDict['continueTimeStamp'].append(newTimeStamp)
+    logging.info("Beginning run: " + str(fitLevelDict['runCount']) + " at " + newTimeStamp)
+    print "Beginning run: " + str(fitLevelDict['runCount']) + " at " + newTimeStamp + " in " + timeStamp
+    if flagDict['noBump']:
+      "Not bumping values. Hope this is what you want."
+      shutil.copy(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', fitDirectory + 'bump.13')
+    else:
+      bump(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', 'fort.13')
+    shutil.copy('fort.13', prependStamp + '.fort.13')
+    runVPFIT(vpfitExecutable, fitLevelDict['continueTimeStamp'][-1], startFort13='fort.13')
+    fort18Check('fort.18', flagDict)
+    if flagDict['iterations125'] == True:
+      if fitLevelDict['runCount'] < fitLevelDict['maxRuns']:
+        flagDict['rerunFlag'] = True
+        continue
+    elif (fitLevelDict['levelProgression'].index(fitLevelDict['currentFitLevel']) < len(fitLevelDict['levelProgression']) - 1) and (flagDict['noLevelUp'] == False):
+      print "Level up; run count reset."
+      fitLevelDict['currentFitLevel'] = fitLevelDict['levelProgression'][fitLevelDict['levelProgression'].index(fitLevelDict['currentFitLevel']) + 1]
+      fitLevelDict['runCount'] = 0
+      flagDict['rerunFlag'] = True
+      continue
+    elif fitLevelDict['levelProgression'].index(fitLevelDict['currentFitLevel']) == len(fitLevelDict['levelProgression']) - 1:
+      print "Less than 125 iterations; currentFitLevel is maxLevel; converged!"
+      logging.info("It took " + str(fitLevelDict['runCount']) + " runs to converge.")
+      continue
+    else:
+      print "Did not converge after: ", fitLevelDict['runCount']
+      logging.warning("Not converged yet. Runs before stopping: " + str(fitLevelDict['runCount']))
+      continue
+  pass
+
   pass
 
 
