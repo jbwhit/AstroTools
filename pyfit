@@ -240,7 +240,7 @@ def main():
     initialFitComment = raw_input("Comment: ")
     logging.info("Comment: " + initialFitComment)
   
-  runVPFIT(vpfitExecutable, timeStamp, startFort13='command.fort.13')
+  runVPFIT(vpfitExecutable, fitLevelDict, timeStamp, startFort13='command.fort.13')
   fort18Check('fort.18', flagDict)
   fitLevelDict['runCount'] = 1
   fitLevelDict['continueTimeStamp'] = []
@@ -295,7 +295,7 @@ def reRunFit(tag=''):
     else:
       bump(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', 'fort.13')
     shutil.copy('fort.13', prependStamp + '.fort.13')
-    runVPFIT(vpfitExecutable, fitLevelDict['continueTimeStamp'][-1], startFort13='fort.13')
+    runVPFIT(vpfitExecutable, fitLevelDict, fitLevelDict['continueTimeStamp'][-1], startFort13='fort.13')
     fort18Check('fort.18', flagDict)
     if flagDict['iterations125'] == True:
       if fitLevelDict['runCount'] < fitLevelDict['maxRuns']:
@@ -317,15 +317,15 @@ def reRunFit(tag=''):
       continue
   pass
 
-def runVPFIT(vpfitExecutable, prependStamp, startFort13='command.fort.13'):
+def runVPFIT(vpfitExecutable, passDictionary, prependStamp, startFort13='command.fort.13'):
   """docstring for runVPFIT"""
   print "Running... "
   if startFort13 != 'fort.13':
     shutil.copy(startFort13, 'fort.13')
   startTime = datetime.datetime.now()
-  logging.info("Fitting Parameters: " + repr(fitLevelDict['currentParameterString']))
+  logging.info("Fitting Parameters: " + repr(passDictionary['currentParameterString']))
   proc = subprocess.Popen([vpfitExecutable], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-  result = proc.communicate(input=fitLevelDict['currentParameterString'])
+  result = proc.communicate(input=passDictionary['currentParameterString'])
   endTime = datetime.datetime.now()
   runningTime = endTime - startTime
   print "Running time:", runningTime.__str__()
