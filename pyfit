@@ -144,35 +144,29 @@ def main():
   logging.info( '\n'.join(diff))
   logging.info( "diff end " )
 
-  inputHandle = open('bump.13', 'r').read().split('\n')
-  beginHead, beginBody = False, False
-  try: 
+  dataFiles = []
+  with open('bump.13', 'r') as bumpFile:
+    beginHead, beginBody = False, False
     with open('head.13', 'w') as head, open('body.13', 'w') as body:
-      for line in inputHandle:
+      for line in bumpFile:
         if (not line.strip().startswith('!') and (line.strip() != '')): # Ignore comments and empty lines.
           if line.startswith('   *'):
             beginHead = True
           if beginHead == True:
             print >>head, line
+            if len(line.split()) > 4:
+              dataFiles.append(line.split()[0])
           if beginBody == True:
             print >>body, line
           if line.startswith('  *'):
             beginHead = False
             beginBody = True
-  except: 
-    print "Splitting the input file failed."
-
   # combine head and body into fort.13
   with open('fort.13', 'w') as outFile:
     with open('head.13','r') as head, open('body.13','r') as body:
       outFile.write(head.read())
       outFile.write(body.read())
 
-  dataFiles = []
-  with open ('head.13', 'r') as head:
-    for line in head.read().split('\n'):
-      if len(line.split()) > 4:
-        dataFiles.append(line.split()[0])
   logging.info("Data files used: ")
   for datafile in set(dataFiles):
     os.symlink(hcd['dataDirectory'] + datafile, hcd['fitDirectory'] + datafile)
@@ -189,6 +183,8 @@ def main():
   fitLevelDict["L4"] = "f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict["L5"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict["M6"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDict["M7"] = "f\nil\ncs\n1.e-7 100.0 1.e-8\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDict["M8"] = "f\nil\ncs\n1.e-6 100.0 1.e-8\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict['levelProgression'] = args.levelProgression.split(',') # store levelProgression as array in fitLevelDict
   print "levelProgression: ", fitLevelDict['levelProgression']
   fitLevelDict['maxRuns'] = int(args.maxRuns)
@@ -269,6 +265,7 @@ def main():
     fitLevelDict['continueTimeStamp'].append( hcd['newTimeStamp'] )
     shutil.move('alpha.13', hcd['newTimeStamp'] + '.fit.13')
     print hcd['newTimeStamp'] + '.fit.13'
+    flagDict['rerunFlag'] = True
     reRunFit(tag='.alpha')
   
   print "Program exited gracefully."

@@ -5,7 +5,6 @@
 # $3 newfit
 
 printf "{fb,2}\npdf/$1\nq\n" | fitcmp vpfit -o $2 -n $3 --nonfancy
-# printf "{fb,2}\npdf/$1\nq\n" | fitcmp vpfit -o $2 -n $3 
 
 gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=$1.pdf -dBATCH $1*.pdf
 
