@@ -144,7 +144,6 @@ def main():
   logging.info( '\n'.join(diff))
   logging.info( "diff end " )
 
-  # TODO cleanup this mess
   inputHandle = open('bump.13', 'r').read().split('\n')
   beginHead, beginBody = False, False
   try: 
@@ -169,7 +168,6 @@ def main():
       outFile.write(head.read())
       outFile.write(body.read())
 
-  # parse input fort.13 for data files needed. 
   dataFiles = []
   with open ('head.13', 'r') as head:
     for line in head.read().split('\n'):
@@ -415,6 +413,10 @@ if __name__ == '__main__':
 # # TODO Create pdf of full velocity plot.
 # # TODO find some way to parse things that won't change (fit results, time, date) plus things
 # # TODO Add LaTeX comment (or json dictionary)
+# TODO fix bug: if select fitLevel that isn't in the "progression" but don't select alphaFit it 
+# TODO fix superjob bug where it doesn't fit for alpha... 
+# TODO Add command line comment.
+# TODO Estimate stopping criteria by looking at DoF, etc. 
 
 # -----------------------
 # Higher level: physical components are the structures, the particular metals are not important. Abundance ratios are interesting.
