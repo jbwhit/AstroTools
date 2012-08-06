@@ -148,7 +148,7 @@ def main():
   with open('bump.13', 'r') as bumpFile:
     beginHead, beginBody = False, False
     with open('head.13', 'w') as head, open('body.13', 'w') as body:
-      for line in bumpFile:
+      for line in bumpFile.read().splitlines():
         if (not line.strip().startswith('!') and (line.strip() != '')): # Ignore comments and empty lines.
           if line.startswith('   *'):
             beginHead = True
