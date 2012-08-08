@@ -63,6 +63,7 @@ def main():
   parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
   parser.add_argument('input13', action="store", nargs='?', default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
   parser.add_argument('--noComment', action="store_true", default=False, help='Turn off comment prompt.')
+  parser.add_argument('--comment', action="store", default='', help='Give commandline comment.')
   parser.add_argument('--noConfigs', action="store_true", default=False, help='Will not use the config files.')
   parser.add_argument('--noPlot', action="store_true", default=False, help='Will not make pdf plots.')
   parser.add_argument('--noBump', action="store_true", default=False, help='Will not bump the fort.13 off the min values.')
@@ -231,8 +232,11 @@ def main():
 
   logging.info("Fitting Parameters: " + repr(fitLevelDict['currentParameterString']))
 
-  if args.noComment == False:
+  if (args.noComment == False) and (args.comment != ''):
     initialFitComment = raw_input("Comment: ")
+    logging.info("Comment: " + initialFitComment)
+  elif (args.noComment == False):
+    initialFitComment = args.comment
     logging.info("Comment: " + initialFitComment)
   
   fitLevelDict['continueTimeStamp'] = []
@@ -339,6 +343,7 @@ def fort18Check(inFile):
   bad has happened during the fit. 
   """
   # check (chi-sq going down every iteration; error not "too big"; value not "too big")
+  # TODO what components were rejected, exactly
   iterationArray = []
   starts = []
   rejected = []
@@ -412,9 +417,12 @@ if __name__ == '__main__':
 # # TODO Add LaTeX comment (or json dictionary)
 # TODO fix bug: if select fitLevel that isn't in the "progression" but don't select alphaFit it 
 # TODO fix superjob bug where it doesn't fit for alpha... 
-# TODO Add command line comment.
 # TODO Estimate stopping criteria by looking at DoF, etc. 
-# TODO think of possible use cases: not alpha; only alpha; not leveling up; leveling up. 
+# TODO think of possible use cases: 
+# - not alpha; 
+# - only alpha; 
+# - not leveling up
+# - leveling up via a progression.
 # TODO Parse and save output of fort.18/26/comment/inputfile/output file/flags...
 
 # -----------------------
