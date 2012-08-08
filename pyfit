@@ -232,7 +232,7 @@ def main():
 
   logging.info("Fitting Parameters: " + repr(fitLevelDict['currentParameterString']))
 
-  if (args.noComment == False) and (args.comment != ''):
+  if (args.noComment == False) and (args.comment == ''):
     initialFitComment = raw_input("Comment: ")
     logging.info("Comment: " + initialFitComment)
   elif (args.noComment == False):
