@@ -42,20 +42,22 @@ import time
 import pprint
 import glob
 import logging
+import cPickle as pickle
 import readline
 import subprocess as subprocess
 import difflib
 from ConfigParser import SafeConfigParser
 import simplejson as json
 
+# Known limitations
+# datafiles must not have spaces in their names. 
+# qa is the flag for fitting alpha.
+
 latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
 flagDict = {}
 fitLevelDict = {}
 hcd = {} # Housecleaning dictionary
-
-# Known limitations
-# datafiles must not have spaces in their names. 
-# qa is the flag for fitting alpha.
+overview = {} # parse results
 
 def main():
   hcd['timeStamp'] = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
@@ -105,9 +107,12 @@ def main():
   logging.basicConfig(filename=hcd['timeStamp'] + '.log', level=logging.DEBUG)
   for arg, value in sorted(vars(args).items()):
     logging.info("Argument %s: %r", arg, value)
-
-  logging.info("hcd['parentDirectory']: " + hcd['parentDirectory'])
-  logging.info("hcd['fitDirectory']: " + hcd['fitDirectory'])
+    overview[arg] = value
+  
+  logging.info("parentDirectory: " + hcd['parentDirectory'])
+  logging.info("fitDirectory: " + hcd['fitDirectory'])
+  overview['parentDirectory'] = hcd['parentDirectory']
+  overview['fitDirectory'] = hcd['fitDirectory']
 
   if args.noConfigs == True:
     print "Not using config files."
@@ -119,6 +124,7 @@ def main():
     for configfile in set(found):
       print "  ", configfile
       logging.info("config loaded: " + configfile)
+    overview['configs'] = set(found)
     hcd['setupDir'] = parser.get('machine', 'setupdir') + '/'
     hcd['atomDatFile'] = parser.get('update', args.atomdat)
     shutil.copy(hcd['setupDir'] + hcd['atomDatFile'], hcd['fitDirectory'])
@@ -141,10 +147,8 @@ def main():
   diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
   print '\n'.join(diff)
   diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
-  logging.info( "diff begin " )
-  logging.info( '\n'.join(diff))
-  logging.info( "diff end " )
-
+  overview['diff'] = '\n'.join(diff)
+  
   dataFiles = []
   with open('bump.13', 'r') as bumpFile:
     beginHead, beginBody = False, False
@@ -171,8 +175,8 @@ def main():
   logging.info("Data files used: ")
   for datafile in set(dataFiles):
     os.symlink(hcd['dataDirectory'] + datafile, hcd['fitDirectory'] + datafile)
-    logging.info(datafile)
 
+  overview['dataFiles'] = set(dataFiles)
   # TODO make these the fort13flagcheck outputs get logged as errors/warnings in logger.
   # Parses the body of the body.13 for any anomalies.
   p = subprocess.call('fort13flagcheck') # waits for return.
@@ -207,7 +211,9 @@ def main():
   os.symlink(hcd['executableLink'].communicate()[0].strip(), hcd['fitDirectory'] + 'vpfit')
   logging.info('VPFIT version: ' + args.vpfitVersion)
   logging.info('VPFIT executable: ' + hcd['vpfitExecutable'])
-
+  overview['vpfit version'] = args.vpfitVersion
+  overview['vpfit executable'] = hcd['vpfitExecutable']
+  
   # Change to use current directory settings. 
   os.environ['ATOMDIR'] = 'atom.dat'
   os.environ['VPFSETUP'] = 'vp_setup.dat'
@@ -215,6 +221,9 @@ def main():
   logging.info("PATH for ATOMDIR:  " + os.environ['ATOMDIR'])
   logging.info("PATH for VPFSETUP: " + os.environ['VPFSETUP'])
   logging.info("PATH for VPFPLOTS: " + os.environ['VPFPLOTS'])
+  overview['ATOMDIR'] = os.environ['ATOMDIR']
+  overview['VPFSETUP'] = os.environ['VPFSETUP']
+  overview['VPFPLOTS'] = os.environ['VPFPLOTS']
 
   with open('command.info', 'w') as fh:
     print >>fh, "! ATOMDIR:" + hcd['atomDatFile']
@@ -231,16 +240,20 @@ def main():
       outFile.write(fort13.read())
 
   logging.info("Fitting Parameters: " + repr(fitLevelDict['currentParameterString']))
-
+  overview['fitParameters'] = repr(fitLevelDict['currentParameterString'])
+  
   if (args.noComment == False) and (args.comment == ''):
     initialFitComment = raw_input("Comment: ")
     logging.info("Comment: " + initialFitComment)
+    overview['comment'] = initialFitComment
   elif (args.noComment == False):
     initialFitComment = args.comment
     logging.info("Comment: " + initialFitComment)
+    overview['comment'] = initialFitComment
   
   fitLevelDict['continueTimeStamp'] = []
   fitLevelDict['continueTimeStamp'].append(hcd['timeStamp'])
+
   runVPFIT(startFort13='command.fort.13')
   fort18Check('fort.18')
   fitLevelDict['runCount'] = 1
@@ -273,6 +286,8 @@ def main():
     reRunFit(tag='.alpha')
   
   print "Program exited gracefully."
+  with open(hcd['timeStamp']+'.p', 'wb') as fp:
+    pickle.dump(overview, fp)
   print hcd['timeStamp']
   pass
 
@@ -310,10 +325,12 @@ def reRunFit(tag=''):
     elif fitLevelDict['levelProgression'].index(fitLevelDict['currentFitLevel']) == len(fitLevelDict['levelProgression']) - 1:
       print "Less than 125 iterations; currentFitLevel is maxLevel; converged!"
       logging.info("It took " + str(fitLevelDict['runCount']) + " runs to converge.")
+      overview['finalComment'] = "It took " + str(fitLevelDict['runCount']) + " runs to converge."
       continue
     else:
       print "Did not converge after: ", fitLevelDict['runCount']
       logging.warning("Not converged yet. Runs before stopping: " + str(fitLevelDict['runCount']))
+      overview['finalComment'] = "Not converged yet. Runs before stopping: " + str(fitLevelDict['runCount'])
       continue
   pass
 
@@ -424,6 +441,8 @@ if __name__ == '__main__':
 # - not leveling up
 # - leveling up via a progression.
 # TODO Parse and save output of fort.18/26/comment/inputfile/output file/flags...
+# TODO each directory should have a .p dictionary read out. A new function should be created to parse what is needed/wanted from any 
+# dictionaries found in the fit directories. 
 
 # -----------------------
 # Higher level: physical components are the structures, the particular metals are not important. Abundance ratios are interesting.
