@@ -61,7 +61,7 @@ def main():
   hcd['timeStamp'] = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
   print hcd['timeStamp']
   parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
-  parser.add_argument('input13', action="store", default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
+  parser.add_argument('input13', action="store", nargs='?', default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
   parser.add_argument('--noComment', action="store_true", default=False, help='Turn off comment prompt.')
   parser.add_argument('--noConfigs', action="store_true", default=False, help='Will not use the config files.')
   parser.add_argument('--noPlot', action="store_true", default=False, help='Will not make pdf plots.')
@@ -414,6 +414,8 @@ if __name__ == '__main__':
 # TODO fix superjob bug where it doesn't fit for alpha... 
 # TODO Add command line comment.
 # TODO Estimate stopping criteria by looking at DoF, etc. 
+# TODO think of possible use cases: not alpha; only alpha; not leveling up; leveling up. 
+# TODO Parse and save output of fort.18/26/comment/inputfile/output file/flags...
 
 # -----------------------
 # Higher level: physical components are the structures, the particular metals are not important. Abundance ratios are interesting.
