@@ -188,8 +188,8 @@ def main():
   fitLevelDict["L4"] = "f\nil\ncs\n2.e-7 100.0 2.e-7\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict["L5"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.002\nb\n0.05\nz\n2.e-7\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict["M6"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
-  fitLevelDict["M7"] = "f\nil\ncs\n1.e-7 100.0 1.e-8\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
-  fitLevelDict["M8"] = "f\nil\ncs\n1.e-6 100.0 1.e-8\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDict["M7"] = "f\nil\ncs\n1.e-7 100.0 1.e-7\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDict["M8"] = "f\nil\ncs\n1.e-6 100.0 1.e-6\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict['levelProgression'] = args.levelProgression.split(',') # store levelProgression as array in fitLevelDict
   print "levelProgression: ", fitLevelDict['levelProgression']
   fitLevelDict['maxRuns'] = int(args.maxRuns)
