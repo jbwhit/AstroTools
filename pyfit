@@ -440,9 +440,12 @@ if __name__ == '__main__':
 # - only alpha; 
 # - not leveling up
 # - leveling up via a progression.
+# TODO Total runs
+# TODO Alpha runs
 # TODO Parse and save output of fort.18/26/comment/inputfile/output file/flags...
 # TODO each directory should have a .p dictionary read out. A new function should be created to parse what is needed/wanted from any 
 # dictionaries found in the fit directories. 
+# TODO plot da/a vs. chisq. 
 
 # -----------------------
 # Higher level: physical components are the structures, the particular metals are not important. Abundance ratios are interesting.
