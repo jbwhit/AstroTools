@@ -80,7 +80,7 @@ def main():
   parser.add_argument('--dataFile', action="store", default='blind', help='data file to use.')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
-  parser.add_argument('--version', action='version', version='%(prog)s 0.0004')
+  parser.add_argument('--version', action='version', version='%(prog)s 0.0005')
   args = parser.parse_args()
   if args.vpfitVersion == ("9.5" or "95"):
     print "VPFIT version: ", args.vpfitVersion
@@ -286,6 +286,7 @@ def main():
     reRunFit(tag='.alpha')
   
   print "Program exited gracefully."
+  overview['totalRuns'] = overview['alphaRuns'] + overview['normalRuns'] # Total fitting runs. 
   with open(hcd['timeStamp']+'.p', 'wb') as fp:
     pickle.dump(overview, fp)
   print hcd['timeStamp']
@@ -435,12 +436,12 @@ if __name__ == '__main__':
 # TODO fix bug: if select fitLevel that isn't in the "progression" but don't select alphaFit it 
 # TODO fix superjob bug where it doesn't fit for alpha... 
 # TODO Estimate stopping criteria by looking at DoF, etc. 
-# TODO think of possible use cases: 
-# - not alpha; 
-# - only alpha; 
+# TODO think of possible use cases:
+# - normalFit; (default?)
+# - normalFitThenAlphaFit; 
+# - alphaFit;
+# - normalLeveling up via a progression.
 # - not leveling up
-# - leveling up via a progression.
-# TODO Total runs
 # TODO Alpha runs
 # TODO Parse and save output of fort.18/26/comment/inputfile/output file/flags...
 # TODO each directory should have a .p dictionary read out. A new function should be created to parse what is needed/wanted from any 
