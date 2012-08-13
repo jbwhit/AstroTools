@@ -69,7 +69,8 @@ def main():
   parser.add_argument('--noConfigs', action="store_true", default=False, help='Will not use the config files.')
   parser.add_argument('--noPlot', action="store_true", default=False, help='Will not make pdf plots.')
   parser.add_argument('--noBump', action="store_true", default=False, help='Will not bump the fort.13 off the min values.')
-  parser.add_argument('--noAlpha', action="store_true", default=False, help='Do not go on to fit for alpha.')
+  parser.add_argument('--fitType', action="store", default='normalFit', choices=('normalFit', 'normalFitAlphaFit', 'alphaFit', 'vchunkFit'), \
+                      help='Choose pyfit behavior.')
   parser.add_argument('--alphaLevel', action="store", default="notSet", type=str, help='With what fitLevel should alpha be fit?')
   parser.add_argument('--noLevelUp', action="store_true", default=False, help='Will not level up through the fitLevels.')
   parser.add_argument('--maxRuns', action="store", default=12, type=int, help='Max runs before quitting. Setting to 1 means no restarts.')
@@ -77,7 +78,7 @@ def main():
   parser.add_argument('--levelProgression', action="store", default='L2,L3,L5', type=str, \
                       help='Type in comma separated (no spaces) list of the order of the ways "leveling up" should go. ex: L2,L4,L5')
   parser.add_argument('--fitLevel', default='L5', help='The VPFIT parameter step sizes to use.')
-  parser.add_argument('--dataFile', action="store", default='blind', help='data file to use.')
+  parser.add_argument('--dataFile', action="store", default='blind', help='data file to use.') # Clearly not used.
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
   parser.add_argument('--version', action='version', version='%(prog)s 0.0005')
@@ -93,7 +94,7 @@ def main():
   flagDict['noLevelUp'] = args.noLevelUp
   flagDict['noComment'] = args.noComment
   flagDict['noConfigs'] = args.noConfigs
-  flagDict['noAlpha'] = args.noAlpha
+  flagDict['fitType'] = args.fitType
   flagDict['noBump'] = args.noBump
   flagDict['noPlot'] = args.noPlot
   flagDict['iterations125'] = False
@@ -124,7 +125,7 @@ def main():
     for configfile in set(found):
       print "  ", configfile
       logging.info("config loaded: " + configfile)
-    overview['configs'] = set(found)
+    overview['configs'] = [x for x in set(found)]
     hcd['setupDir'] = parser.get('machine', 'setupdir') + '/'
     hcd['atomDatFile'] = parser.get('update', args.atomdat)
     shutil.copy(hcd['setupDir'] + hcd['atomDatFile'], hcd['fitDirectory'])
@@ -176,7 +177,7 @@ def main():
   for datafile in set(dataFiles):
     os.symlink(hcd['dataDirectory'] + datafile, hcd['fitDirectory'] + datafile)
 
-  overview['dataFiles'] = set(dataFiles)
+  overview['dataFiles'] = [x for x in set(dataFiles)]
   # TODO make these the fort13flagcheck outputs get logged as errors/warnings in logger.
   # Parses the body of the body.13 for any anomalies.
   p = subprocess.call('fort13flagcheck') # waits for return.
@@ -251,47 +252,69 @@ def main():
     logging.info("Comment: " + initialFitComment)
     overview['comment'] = initialFitComment
   
+  with open(hcd['timeStamp']+'.p', 'wb') as fp:
+    pickle.dump(overview, fp)
   fitLevelDict['continueTimeStamp'] = []
-  fitLevelDict['continueTimeStamp'].append(hcd['timeStamp'])
-
-  runVPFIT(startFort13='command.fort.13')
-  fort18Check('fort.18')
-  fitLevelDict['runCount'] = 1
-  if fitLevelDict['maxRuns'] < 2:
-    "No restarts."
-  elif (flagDict['iterations125'] == True) or (flagDict['noLevelUp'] == False):
+  if flagDict['fitType'] == 'normalFit':
+    fitLevelDict['continueTimeStamp'].append(hcd['timeStamp'])
+    runVPFIT(startFort13='command.fort.13')
+    fort18Check('fort.18')
+    fitLevelDict['runCount'] = 1
+    if fitLevelDict['maxRuns'] < 2:
+      print "No restarts."
+    elif (flagDict['iterations125'] == True) or (flagDict['noLevelUp'] == False):
+      flagDict['rerunFlag'] = True
+      reRunFit()
+    plotComparison()
+  if flagDict['fitType'] == 'alphaFit':
+    hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.alpha'
+    fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
+    shutil.move('fort.13', hcd['newTimeStamp'] + '.fit.13') # move fort.13 to right-named thing.
     flagDict['rerunFlag'] = True
-    reRunFit()
-  
-  if flagDict['noPlot'] == False: 
-    print "Creating fit comparison plots."
-    proc = subprocess.Popen(['plotfit', fitLevelDict['continueTimeStamp'][-1], 'input.fort.13', fitLevelDict['continueTimeStamp'][-1] + ".fit.13"])
-
-  flagDict['alphaAlreadyFit'] = False
-  with open(fitLevelDict['continueTimeStamp'][-1] + '.fit.13', 'r') as finalFit13:
-    if re.search('qa', finalFit13.read()):
-      flagDict['alphaAlreadyFit'] = True # If already started out fitting for alpha
-  
-  if (flagDict['noAlpha'] == False) and (flagDict['alphaAlreadyFit'] == False): 
+    reRunFit(tag='.alpha')
+    plotComparison()
+  if flagDict['fitType'] == 'vchunkFit':
+    hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.vchunk'
+    fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
+    shutil.move('fort.13', hcd['newTimeStamp'] + '.fit.13')
+    print hcd['newTimeStamp'] + '.fit.13'
+    flagDict['rerunFlag'] = True
+    reRunFit(tag='.vchunk')
+  if flagDict['fitType'] == 'normalFitAlphaFit':
+    fitLevelDict['continueTimeStamp'].append(hcd['timeStamp'])
+    runVPFIT(startFort13='command.fort.13')
+    fort18Check('fort.18')
+    fitLevelDict['runCount'] = 1
+    if fitLevelDict['maxRuns'] < 2:
+      print "No restarts."
+    elif (flagDict['iterations125'] == True) or (flagDict['noLevelUp'] == False):
+      flagDict['rerunFlag'] = True
+      reRunFit()
     print "Fitting for alpha..."
-    p3 = subprocess.call(['convert13-13da', fitLevelDict['continueTimeStamp'][-1] + '.fit.13'])
-    flagDict['noLevelUp'] = True
-    fitLevelDict['currentFitLevel'] = fitLevelDict["alphaLevel"]
     time.sleep(2) # ensures a different timestamp for the alpha fit
     hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.alpha'
-    fitLevelDict['continueTimeStamp'].append( hcd['newTimeStamp'] )
+    p3 = subprocess.call(['convert13-13da', fitLevelDict['continueTimeStamp'][-1] + '.fit.13'])
     shutil.move('alpha.13', hcd['newTimeStamp'] + '.fit.13')
+    flagDict['noLevelUp'] = True
+    fitLevelDict['currentFitLevel'] = fitLevelDict["alphaLevel"]
+    fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
     print hcd['newTimeStamp'] + '.fit.13'
     flagDict['rerunFlag'] = True
     reRunFit(tag='.alpha')
+    plotComparison()
   
   print "Program exited gracefully."
+  print hcd['timeStamp']
   overview['totalRuns'] = overview['alphaRuns'] + overview['normalRuns'] # Total fitting runs. 
   with open(hcd['timeStamp']+'.p', 'wb') as fp:
     pickle.dump(overview, fp)
-  print hcd['timeStamp']
   pass
 
+def plotComparison():
+  """docstring for plotComparison"""
+  if flagDict['noPlot'] == False: 
+    proc = subprocess.Popen(['plotfit', fitLevelDict['continueTimeStamp'][-1], 'input.fort.13', fitLevelDict['continueTimeStamp'][-1] + ".fit.13"])
+  pass
 def reRunFit(tag=''):
   """docstring for reRunFit"""
   print "Resetting runCount"
@@ -353,7 +376,6 @@ def runVPFIT(startFort13='command.fort.13'):
   shutil.copy('fort.26', fitLevelDict['continueTimeStamp'][-1] + '.fort.26')
   shutil.copy('fit.13', fitLevelDict['continueTimeStamp'][-1] + '.fit.13')
   pass
-
 
 def fort18Check(inFile):
   """
@@ -428,26 +450,15 @@ def bump(inFile, outFile):
 if __name__ == '__main__':
   main()
 
-
 # # TODO parse the body of fort.13 and fit.13 files and report any discrepancies. 
-# # TODO Create pdf of full velocity plot.
 # # TODO find some way to parse things that won't change (fit results, time, date) plus things
 # # TODO Add LaTeX comment (or json dictionary)
 # TODO fix bug: if select fitLevel that isn't in the "progression" but don't select alphaFit it 
-# TODO fix superjob bug where it doesn't fit for alpha... 
 # TODO Estimate stopping criteria by looking at DoF, etc. 
-# TODO think of possible use cases:
-# - normalFit; (default?)
-# - normalFitThenAlphaFit; 
-# - alphaFit;
-# - normalLeveling up via a progression.
-# - not leveling up
-# TODO Alpha runs
 # TODO Parse and save output of fort.18/26/comment/inputfile/output file/flags...
-# TODO each directory should have a .p dictionary read out. A new function should be created to parse what is needed/wanted from any 
-# dictionaries found in the fit directories. 
+# TODO new function should be created to parse what is needed/wanted from any .p dictionaries found in the fit directories.
 # TODO plot da/a vs. chisq. 
-
+# TODO make velocity plot (figure out how to automate or choose v=0 component to feed into fitcmp)
 # -----------------------
 # Higher level: physical components are the structures, the particular metals are not important. Abundance ratios are interesting.
 # End-run analysis should be a separate program so can be rerun separately/repeatedly ?
@@ -456,3 +467,9 @@ if __name__ == '__main__':
 # data = [{"running time": runningTime}]
 # json
 # Parse datafile -- report/log if blind or unblind. 
+# TODO delete below if works
+# flagDict['alphaAlreadyFit'] = False
+# with open(fitLevelDict['continueTimeStamp'][-1] + '.fit.13', 'r') as finalFit13:
+#   if re.search('qa', finalFit13.read()):
+#     flagDict['alphaAlreadyFit'] = True # If already started out fitting for alpha
+
