@@ -143,12 +143,11 @@ def main():
     shutil.copy('input.fort.13', hcd['fitDirectory'] + 'bump.13')
   else:
     bump('input.fort.13', 'bump.13')
-
-  d = difflib.Differ()
-  diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
-  print '\n'.join(diff)
-  diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
-  overview['diff'] = '\n'.join(diff)
+    d = difflib.Differ()
+    diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
+    print '\n'.join(diff)
+    diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
+    overview['diff'] = '\n'.join(diff)
   
   dataFiles = []
   with open('bump.13', 'r') as bumpFile:
@@ -233,8 +232,7 @@ def main():
     print >>fh, "#!/bin/bash\nexport ATOMDIR=", os.environ['ATOMDIR'], "\nexport VPFSETUP=", os.environ['VPFSETUP'], \
       "\nexport VPFPLOTS=", os.environ['VPFPLOTS'], "\ncp ", hcd['timeStamp'] + ".fort.13 fort.13", \
       "\nprintf " + repr(fitLevelDict['currentParameterString']) + " | " + hcd['vpfitExecutable']
-    
-  # cat command.info fort.13 > command.fort.13
+  
   with open('command.fort.13', 'w') as outFile:
     with open('command.info', 'r') as com, open('fort.13', 'r') as fort13:
       outFile.write(com.read())
@@ -393,13 +391,20 @@ def fort18Check(inFile):
   with open(inFile, 'r') as f18:
     for line in f18.read().splitlines():
       if re.search('iteration', line):
-        iterationArray.append(line.split()[2])
+        iterationArray.append(line.split()[2].zfill(3))
         starts.append(line.split()[4])
       if re.search('rejected', line):
         rejected.append(line)
-      if re.search('hessian', line):
+      if re.search('Hessian', line):
         hessian.append(line)
-      if re.search('iteration', line):
+      if re.search('chi', line):
+        chisqnu = float(line.split()[4][:-2]) / float(line.split()[5])
+      if re.search('Parameter', line):
+        "errors"
+      if re.search('statistics', line):
+        "Runs test"
+      if re.search('Statistics for each region', line):
+        "chi-squared"
         dropped.append(line)
   if int(max(set(starts))) >= 2:
     logging.warning("Initial fort.18 restarts: " + str(set(starts)))
@@ -430,12 +435,23 @@ def pyAnalysis3(inFile='fort.26'):
 
 def fort26check():
   """docstring for fort26check"""
-  # Errors in fort.26 to parse for:
-  # Stats: ... errs 
-  # Stats: ... BAD
-  # # echo "iter;  chisq;    Npix;   DoF; Ndropped; Filename; level; alpha-fit"
-  # awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s \n"), $3, $4, $5, $6, $8, "'$hcd['timeStamp']'" "/" FILENAME}' fit.13 | paste - fit.log > temp
-  # awk '/qa/{print "alpha"}' fit.13 | paste temp - > summary.txt
+  with open(filename, 'r') as fp:
+    for line in fp.read().splitlines():
+      if re.search('qa', line):
+        alpha = line.split()[7]
+        alphaErr = line.split()[8]
+      if re.search('Stats', line):
+        iterations = line.split()[2]
+        chisq = line.split()[3]
+        Npix = line.split()[4]
+        DoF = line.split()[5]
+        numberParameters = Npix - DoF
+        chanceProbability = line.split()[6]
+        Ndropped = line.split()[7]
+      if re.search('BAD', line):
+        logging.error(line)
+      if re.search('err', line):
+        logging.error(line)        
   pass
 
 def bump(inFile, outFile):
@@ -459,6 +475,7 @@ if __name__ == '__main__':
 # TODO new function should be created to parse what is needed/wanted from any .p dictionaries found in the fit directories.
 # TODO plot da/a vs. chisq. 
 # TODO make velocity plot (figure out how to automate or choose v=0 component to feed into fitcmp)
+# absolute run number; fitType run (alpha/normal/vshift)
 # -----------------------
 # Higher level: physical components are the structures, the particular metals are not important. Abundance ratios are interesting.
 # End-run analysis should be a separate program so can be rerun separately/repeatedly ?
