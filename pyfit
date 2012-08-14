@@ -251,60 +251,17 @@ def main():
   
   with open(hcd['timeStamp']+'.p', 'wb') as fp:
     pickle.dump(overview, fp)
-  fitLevelDict['continueTimeStamp'] = []
-  if flagDict['fitType'] == 'normalFit':
-    fitLevelDict['continueTimeStamp'].append(hcd['timeStamp'])
-    runVPFIT(startFort13='command.fort.13')
-    fort18Check('fort.18')
-    fitLevelDict['runCount'] = 1
-    if fitLevelDict['maxRuns'] < 2:
-      print "No restarts."
-    elif (flagDict['iterations125'] == True) or (flagDict['noLevelUp'] == False):
-      flagDict['rerunFlag'] = True
-      reRunFit()
-    plotComparison()
-  if flagDict['fitType'] == 'alphaFit':
-    hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.alpha'
-    fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
-    shutil.move('fort.13', hcd['newTimeStamp'] + '.fit.13') # move fort.13 to right-named thing.
-    flagDict['rerunFlag'] = True
-    reRunFit(tag='.alpha')
-    plotComparison()
-  if flagDict['fitType'] == 'vchunkFit':
-    hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.vchunk'
-    fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
-    shutil.move('fort.13', hcd['newTimeStamp'] + '.fit.13')
-    print hcd['newTimeStamp'] + '.fit.13'
-    flagDict['rerunFlag'] = True
-    reRunFit(tag='.vchunk')
-  if flagDict['fitType'] == 'normalFitAlphaFit':
-    fitLevelDict['continueTimeStamp'].append(hcd['timeStamp'])
-    runVPFIT(startFort13='command.fort.13')
-    fort18Check('fort.18')
-    fitLevelDict['runCount'] = 1
-    if fitLevelDict['maxRuns'] < 2:
-      print "No restarts."
-    elif (flagDict['iterations125'] == True) or (flagDict['noLevelUp'] == False):
-      flagDict['rerunFlag'] = True
-      reRunFit()
-    print "Fitting for alpha..."
-    time.sleep(2) # ensures a different timestamp for the alpha fit
-    hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + '.alpha'
-    p3 = subprocess.call(['convert13-13da', fitLevelDict['continueTimeStamp'][-1] + '.fit.13'])
-    shutil.move('alpha.13', hcd['newTimeStamp'] + '.fit.13')
-    flagDict['noLevelUp'] = True
-    fitLevelDict['currentFitLevel'] = fitLevelDict["alphaLevel"]
-    fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
-    print hcd['newTimeStamp'] + '.fit.13'
-    flagDict['rerunFlag'] = True
-    reRunFit(tag='.alpha')
-    plotComparison()
   
-  print "Program exited gracefully."
+  fitLevelDict['continueTimeStamp'] = []
+  overview['totalRunCount'] = 0
+
   print hcd['timeStamp']
+  
+  functionDict[flagDict['fitType']]()
   overview['totalRuns'] = overview['alphaRuns'] + overview['normalRuns'] # Total fitting runs. 
   with open(hcd['timeStamp']+'.p', 'wb') as fp:
     pickle.dump(overview, fp)
+  print "Program exited gracefully."
   pass
 
 def plotComparison():
@@ -377,6 +334,54 @@ def runVPFIT(startFort13='command.fort.13'):
   shutil.copy('fit.13', fitLevelDict['continueTimeStamp'][-1] + '.fit.13')
   pass
 
+def normalFit():
+  """docstring for normalFit"""
+  fitLevelDict['continueTimeStamp'].append(hcd['timeStamp'])
+  runVPFIT(startFort13='command.fort.13')
+  fort18Check('fort.18')
+  fitLevelDict['runCount'] = 1
+  if fitLevelDict['maxRuns'] < 2:
+    print "No restarts."
+  elif (flagDict['iterations125'] == True) or (flagDict['noLevelUp'] == False):
+    flagDict['rerunFlag'] = True
+    reRunFit()
+  plotComparison()
+  pass
+def vchunkFit():
+  """docstring for vchunkFit"""
+  hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.vchunk'
+  fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
+  shutil.move('fort.13', hcd['newTimeStamp'] + '.fit.13')
+  print hcd['newTimeStamp'] + '.fit.13'
+  flagDict['rerunFlag'] = True
+  reRunFit(tag='.vchunk')
+  pass
+def alphaFit():
+  """docstring for alphaFit"""
+  hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.alpha'
+  fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
+  shutil.move('fort.13', hcd['newTimeStamp'] + '.fit.13') # move fort.13 to right-named thing.
+  flagDict['rerunFlag'] = True
+  reRunFit(tag='.alpha')
+  plotComparison()    
+  pass
+def normalFitAlphaFit():
+  """docstring for normalFitAlphaFit"""
+  flagDict['fitType'] = 'normalFit'
+  functionDict[flagDict['fitType']]()
+  print "Fitting for alpha..."
+  flagDict['fitType'] = 'alphaFit'
+  p3 = subprocess.call(['convert13-13da', fitLevelDict['continueTimeStamp'][-1] + '.fit.13'])
+  hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.alpha'
+  shutil.move('alpha.13', hcd['newTimeStamp'] + '.fit.13')
+  fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
+  flagDict['rerunFlag'] = True
+  flagDict['noLevelUp'] = True
+  fitLevelDict['currentFitLevel'] = fitLevelDict["alphaLevel"]
+  reRunFit(tag='.alpha')
+  plotComparison()    
+  pass
+
 def fort18Check(inFile):
   """
   Runs the inFile through a series of checks to test if anything 
@@ -415,29 +420,9 @@ def fort18Check(inFile):
     logging.info("125 iterations.")
   pass
 
-def pyAnalysis3(inFile='fort.26'):
-  """docstring for pyAnalysis3"""
-  # echo "iter;  chisq;    Npix;   DoF; Ndropped; Filename"
-  print "Iter; chisq; Npix; DoF; Params; Ndrop; Filename"
-  # TODO print # parameters fit. 
-  # awk '/Stat/{printf("%3i  %3.7f %6i %6i %6i     %s\n"), $3, $4, $5, $6, $8, FILENAME}' 201*/*fit.13 
-  if not re.search('qa', open(inFile).read()):
-    for line in open(inFile).readlines():
-      if re.search('Stat', line):
-        parseThis = line.split()
-        print parseThis[2], parseThis[3], parseThis[4], parseThis[5], int(parseThis[4]) - int(parseThis[5]), parseThis[7], inFile 
-  else:
-    for line in open(inFile).readlines():
-      if re.search('Stat', line):
-        parseThis = line.split()
-        print parseThis[2], parseThis[3], parseThis[4], parseThis[5], int(parseThis[4]) - int(parseThis[5]), parseThis[7], inFile,
-      if re.search('qa', line):
-        print line.split()[3], line.split()[4]
-  pass
-
-def fort26check():
+def fort26check(inFile):
   """docstring for fort26check"""
-  with open(filename, 'r') as fp:
+  with open(inFile, 'r') as fp:
     for line in fp.read().splitlines():
       if re.search('qa', line):
         alpha = line.split()[7]
@@ -453,7 +438,7 @@ def fort26check():
       if re.search('BAD', line):
         logging.error(line)
       if re.search('err', line):
-        logging.error(line)        
+        logging.error(line)
   pass
 
 def bump(inFile, outFile):
@@ -471,8 +456,8 @@ if __name__ == '__main__':
 # # TODO parse the body of fort.13 and fit.13 files and report any discrepancies. 
 # # TODO find some way to parse things that won't change (fit results, time, date) plus things
 # # TODO Add LaTeX comment (or json dictionary)
-# TODO fix bug: if select fitLevel that isn't in the "progression" but don't select alphaFit it 
-# TODO Estimate stopping criteria by looking at DoF, etc. 
+# TODO fix bug: if select fitLevel that isn't in the "progression" but don't select alphaFit it
+# TODO Estimate stopping criteria by looking at DoF, etc.
 # TODO Parse and save output of fort.18/26/comment/inputfile/output file/flags...
 # TODO new function should be created to parse what is needed/wanted from any .p dictionaries found in the fit directories.
 # TODO plot da/a vs. chisq. 
