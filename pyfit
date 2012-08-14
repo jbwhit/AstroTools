@@ -50,17 +50,18 @@ from ConfigParser import SafeConfigParser
 import simplejson as json
 
 # Known limitations
-# datafiles must not have spaces in their names. 
+# datafiles must not have spaces in their names.
 # qa is the flag for fitting alpha.
 
 latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
 flagDict = {}
 fitLevelDict = {}
 hcd = {} # Housecleaning dictionary
-overview = {} # parse results
+currentDict = {}
+overview = {} # results dictionary
 
 def main():
-  hcd['timeStamp'] = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+  hcd['timeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f")
   print hcd['timeStamp']
   parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
   parser.add_argument('input13', action="store", nargs='?', default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
@@ -191,7 +192,6 @@ def main():
   fitLevelDict["M7"] = "f\nil\ncs\n1.e-7 100.0 1.e-7\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict["M8"] = "f\nil\ncs\n1.e-6 100.0 1.e-6\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict['levelProgression'] = args.levelProgression.split(',') # store levelProgression as array in fitLevelDict
-  print "levelProgression: ", fitLevelDict['levelProgression']
   fitLevelDict['maxRuns'] = int(args.maxRuns)
   fitLevelDict['currentFitLevel'] = args.fitLevel
   fitLevelDict['maxLevel'] = fitLevelDict['levelProgression'][-1]
@@ -224,7 +224,7 @@ def main():
   overview['ATOMDIR'] = os.environ['ATOMDIR']
   overview['VPFSETUP'] = os.environ['VPFSETUP']
   overview['VPFPLOTS'] = os.environ['VPFPLOTS']
-
+  
   with open('command.info', 'w') as fh:
     print >>fh, "! ATOMDIR:" + hcd['atomDatFile']
     print >>fh, "! runCommand: printf " + repr(fitLevelDict['currentParameterString']) + " | " + hcd['vpfitExecutable']
@@ -238,7 +238,6 @@ def main():
       outFile.write(com.read())
       outFile.write(fort13.read())
 
-  logging.info("Fitting Parameters: " + repr(fitLevelDict['currentParameterString']))
   overview['fitParameters'] = repr(fitLevelDict['currentParameterString'])
   
   if (args.noComment == False) and (args.comment == ''):
@@ -313,6 +312,7 @@ def plotComparison():
   if flagDict['noPlot'] == False: 
     proc = subprocess.Popen(['plotfit', fitLevelDict['continueTimeStamp'][-1], 'input.fort.13', fitLevelDict['continueTimeStamp'][-1] + ".fit.13"])
   pass
+  
 def reRunFit(tag=''):
   """docstring for reRunFit"""
   print "Resetting runCount"
@@ -322,7 +322,7 @@ def reRunFit(tag=''):
     fitLevelDict['runCount'] += 1
     print "Level: ", fitLevelDict['currentFitLevel']
     print "Restart: ", fitLevelDict['runCount']
-    hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S") + tag
+    hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + tag
     fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
     logging.info("Beginning run: " + str(fitLevelDict['runCount']) + " at " + hcd['newTimeStamp'])
     print "Beginning run: " + str(fitLevelDict['runCount']) + " at " + hcd['newTimeStamp'] + " in " + fitLevelDict['continueTimeStamp'][0]
@@ -360,8 +360,10 @@ def runVPFIT(startFort13='command.fort.13'):
   """docstring for runVPFIT"""
   print "Running... "
   if startFort13 != 'fort.13':
+    # Move input file to be fort.13 (for currentParameterString to be correct)
     shutil.copy(startFort13, 'fort.13')
   startTime = datetime.datetime.now()
+  overview['totalRunCount'] += 1
   logging.info("Fitting Parameters: " + repr(fitLevelDict['currentParameterString']))
   proc = subprocess.Popen([hcd['vpfitExecutable']], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   result = proc.communicate(input=fitLevelDict['currentParameterString'])
