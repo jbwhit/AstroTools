@@ -41,6 +41,7 @@ with open('body.13') as infile:
   for line in infile: 
     fileparse.append(line)
 
+# indexList
 speciesIndex = 0
 NIndex = 1
 zIndex = 2
@@ -49,15 +50,18 @@ qIndex = 4
 zeroIndex = 5
 temperatureIndex = 6
 
+nUpperCase = []
+nLowerCase = []
 zLowerCase = []
 zUpperCase = []
 bLowerCase = []
 bUpperCase = []
 qLowerCase = []
 qUpperCase = []
+
 for x in fileparse:
-  if x.split()[0] != '!':
-    # TODO add trys before all of these. 
+  if not x.strip().startswith('!'):
+    # TODO add trys before all of these.
     if x.split()[zIndex][-2].isupper():
       zUpperCase.append(x.split()[zIndex][-2] + x.split()[zIndex][-1])
     if x.split()[zIndex][-2].islower():
@@ -71,6 +75,16 @@ for x in fileparse:
     if x.split()[qIndex][-2].islower():
       qLowerCase.append(x.split()[qIndex][-2] + x.split()[qIndex][-1])
 
+def appendString(chunk, dictionary):
+  """docstring for appendString"""
+  if chunk[-2].isalpha():
+    if chunk[-2].isupper():
+    elif chunk[-2].islower():
+  elif chunk[-1].isalpha():
+    if chunk[-1].isupper():
+    elif chunk[-1].islower():
+  pass
+
 # Get the unique upper and lowercase sets for each flag used.
 zUpperSet = set(zUpperCase)
 zLowerSet = set(zLowerCase)
@@ -80,39 +94,25 @@ qUpperSet = set(qUpperCase)
 qLowerSet = set(qLowerCase)
 
 # Include n-values and q values?
+errorString = "\n\n\n =================== \n  = SERIOUS ERROR =  \n =================== \n\n\n"
+
 
 # Check if too many "master" flags being fit.
 if len(zLowerCase) != len(zLowerSet):
-  print "\n\n"
-  print " =================== "
-  print "  = SERIOUS ERROR =  "
-  print " =================== "
-  print "\n\n"
+  print errorString
   print "   TOO MANY LOWERCASE FLAGS in z-values. "
 
 if len(bLowerCase) != len(bLowerSet):
-  print "\n\n"
-  print " =================== "
-  print "  = SERIOUS ERROR =  "
-  print " =================== "
-  print "\n\n"
+  print errorString
   print "   TOO MANY LOWERCASE FLAGS in b-values. "
 
 if len(qLowerCase) != len(qLowerSet):
-  print "\n\n"
-  print " =================== "
-  print "  = SERIOUS ERROR =  "
-  print " =================== "
-  print "\n\n"  
+  print errorString
   print "   TOO MANY LOWERCASE FLAGS in ALPHA. "
 
 # Check if there are fixed flags without corresponding master flags.
 if len(zUpperSet.difference([x.upper() for x in zLowerSet])) > 0:
-  print "\n\n"
-  print " =================== "
-  print "  = SERIOUS ERROR =  "
-  print " =================== "
-  print "\n\n"
+  print errorString
   print "   There are", len(zUpperSet.difference([x.upper() for x in zLowerSet])), "z-values that are fixed and not allowed to vary."
   print "   Flags:", 
   for upperproblem in zUpperSet.difference([x.upper() for x in zLowerSet]):
@@ -120,11 +120,7 @@ if len(zUpperSet.difference([x.upper() for x in zLowerSet])) > 0:
   print
 
 if len(bUpperSet.difference([x.upper() for x in bLowerSet])) > 0:
-  print "\n\n"
-  print " =================== "
-  print "  = SERIOUS ERROR =  "
-  print " =================== "
-  print "\n\n"
+  print errorString
   print "   There are", len(bUpperSet.difference([x.upper() for x in bLowerSet])), "b-values that are fixed and not allowed to vary."
   print "   Flags:", 
   for upperproblem in bUpperSet.difference([x.upper() for x in bLowerSet]):
@@ -140,11 +136,7 @@ if len(qUpperSet.difference([x.upper() for x in qLowerSet])) == 0:
 if len(qUpperSet.difference([x.upper() for x in qLowerSet])) == 1:
   print "\n\n   alpha == zero.\n\n"
 if len(qUpperSet.difference([x.upper() for x in qLowerSet])) > 1:
-  print "\n\n"
-  print " =================== "
-  print "  = SERIOUS ERROR =  "
-  print " =================== "
-  print "\n\n"
+  print errorString
   print "   There are", len(qUpperSet.difference([x.upper() for x in qLowerSet])), "q-values that are fixed and not allowed to vary."
   print "   Flags:", 
   for upperproblem in qUpperSet.difference([x.upper() for x in qLowerSet]):
