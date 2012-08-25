@@ -1,0 +1,43 @@
+#!/bin/bash
+# setup superfast logins to the shreknodes
+# Created by Jonathan Whitmore 2012-08-24
+
+# If an argument is passed, set as supercomputer username
+if [ $# -eq 1 ]
+then
+  username=$1
+# Else, use the current username as the supercomputer username
+else
+  username=$LOGNAME
+fi
+
+echo "Install openssh and ssh_copy_id"
+
+# Mac install instructions: 
+echo "If you are on a mac w/ macports installed, copy/paste this:"
+echo "    sudo port install openssh +ssh_copy_id"
+
+echo "Create a public/private rsa-key pair. If you don't know what I'm talking about run: "
+echo "    ssh-keygen"
+echo "    - just hit return at the prompts (don't enter a passphrase)."
+
+allowedNodes='001 002 003 004 005 006 007 008 009 010 203 204 205 206 207 212 213 215 216'
+echo "Allowed login nodes: " $allowedNodes
+echo "    - if this is wrong MODIFY THIS SCRIPT."
+
+echo "You know it's working when it says: The authenticity of host ... can't be established."
+echo "    - if prompted, type: yes"
+
+
+echo "The username that you are trying to log in with is: " $username
+echo "    if that's wrong, rerun like:"
+echo "    fastlogin yoursupercomputerusername"
+
+for node in $allowedNodes
+do
+  echo "Adding: " shrek$node.ssi.swin.edu.au
+  ssh-copy-id -i ~/.ssh/id_rsa.pub $username@shrek$node.ssi.swin.edu.au
+done
+
+echo "Congrats! To see what you've done type: "
+echo "    ssh -XY $username@shrek007.ssi.swin.edu.au"

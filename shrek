@@ -1,0 +1,20 @@
+#!/bin/bash
+# automatically logs into the free-est shrek node
+
+# If an argument is passed, set as supercomputer username
+if [ $# -eq 1 ]
+then
+  username=$1
+# Else, use the current username as the supercomputer username
+else
+  username=$LOGNAME
+fi
+
+echo "The username that you are trying to log in with is: " $username
+echo "    if that's wrong, rerun like:"
+echo "    shrek yoursupercomputerusername"
+
+shrekNumber=$(jwfreeshrek)
+
+echo "Logging into node: " $shrekNumber
+ssh -XY $username@shrek$shrekNumber.ssi.swin.edu.au
