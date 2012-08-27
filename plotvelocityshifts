@@ -44,6 +44,7 @@ def main():
   parser.add_argument('fort26File', action="store", nargs='?', default='fort.26', type=str, help='vshift file in fort.26 format.') 
   parser.add_argument('--title', action="store", default="Velocity Chunks", type=str)
   parser.add_argument('--plotName', action="store", default="velshift.pdf", type=str)
+  parser.add_argument('--textName', action="store", default="legend.ascii", type=str)
   args = parser.parse_args()
   with open(args.qvalFile, 'r') as qvals:
     qvalDict = {}
@@ -65,12 +66,16 @@ def main():
       if re.search('>>', line):
         qvalDict[vshiftDict[line.split()[1]]]['v'] = float(line.split()[3]) * 1000.
         qvalDict[vshiftDict[line.split()[1]]]['e'] = float(line.split()[4]) * 1000.
-
+  temp = []
   for transition in vshiftDict.itervalues():
+    temp.append((transition, qvalDict[transition]['x']))
     errorbar(qvalDict[transition]['x'], qvalDict[transition]['v'], yerr=qvalDict[transition]['e'], fmt='bo')
   title(args.title)
   xlabel("x (-2cq/w)")
   ylabel("dv (m/s)")
+  with open(args.textName, 'w') as text:
+    for line in sorted(temp, key=lambda x: x[1]):
+      print >>text, line[0], line[1]
   savefig(args.plotName)
   pass
 
