@@ -84,10 +84,10 @@ def main():
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
   parser.add_argument('--version', action='version', version='%(prog)s 0.0005')
   args = parser.parse_args()
-  if args.vpfitVersion == ("9.5" or "95"):
+  if args.vpfitVersion == ("9.5" or "95" or "vpfit9.5"):
     print "VPFIT version: ", args.vpfitVersion
     hcd['vpfitExecutable'] = 'vpfit95'
-  elif args.vpfitVersion == ("10.0" or "10"):
+  elif args.vpfitVersion == ("10.0" or "10" or "vpfit10.0"):
     print "VPFIT version: ", 
     hcd['vpfitExecutable'] = 'vpfit10'
   else:
@@ -99,6 +99,8 @@ def main():
   flagDict['noBump'] = args.noBump
   flagDict['noPlot'] = args.noPlot
   flagDict['iterations125'] = False
+  
+  # Housekeeping upon initial start
   
   os.makedirs(hcd['timeStamp'])
   hcd['parentDirectory'] = os.getcwd() + '/'
@@ -254,7 +256,6 @@ def main():
   
   fitLevelDict['continueTimeStamp'] = []
   overview['totalRunCount'] = 0
-
   print hcd['timeStamp']
   
   functionDict[flagDict['fitType']]()
@@ -324,10 +325,10 @@ def runVPFIT(startFort13='command.fort.13'):
   logging.info("Fitting Parameters: " + repr(fitLevelDict['currentParameterString']))
   proc = subprocess.Popen([hcd['vpfitExecutable']], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   result = proc.communicate(input=fitLevelDict['currentParameterString'])
-  endTime = datetime.datetime.now()
-  runningTime = endTime - startTime
+  runningTime = datetime.datetime.now() - startTime
   print "Running time:", runningTime.__str__()
   logging.info("Time to execute: " + runningTime.__str__())
+  currentDict['runningTime'] = runningTime.__str__()
   p2 = subprocess.call(['combine2613', 'fort.13', 'fort.26', 'fit.13'])
   shutil.copy('fort.18', fitLevelDict['continueTimeStamp'][-1] + '.fort.18')
   shutil.copy('fort.26', fitLevelDict['continueTimeStamp'][-1] + '.fort.26')
@@ -339,6 +340,7 @@ def normalFit():
   fitLevelDict['continueTimeStamp'].append(hcd['timeStamp'])
   runVPFIT(startFort13='command.fort.13')
   fort18Check('fort.18')
+  # overview[overview['totalRunCount']] = currentDict
   fitLevelDict['runCount'] = 1
   if fitLevelDict['maxRuns'] < 2:
     print "No restarts."
@@ -347,6 +349,7 @@ def normalFit():
     reRunFit()
   plotComparison()
   pass
+  
 def vchunkFit():
   """docstring for vchunkFit"""
   hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.vchunk'
@@ -356,6 +359,7 @@ def vchunkFit():
   flagDict['rerunFlag'] = True
   reRunFit(tag='.vchunk')
   pass
+  
 def alphaFit():
   """docstring for alphaFit"""
   hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.alpha'
@@ -365,6 +369,7 @@ def alphaFit():
   reRunFit(tag='.alpha')
   plotComparison()    
   pass
+  
 def normalFitAlphaFit():
   """docstring for normalFitAlphaFit"""
   flagDict['fitType'] = 'normalFit'
@@ -388,6 +393,7 @@ def fort18Check(inFile):
   bad has happened during the fit. 
   """
   # check (chi-sq going down every iteration; error not "too big"; value not "too big")
+  # TODO deal with: "iterations stopped early"
   # TODO what components were rejected, exactly
   iterationArray = []
   starts = []
@@ -453,14 +459,17 @@ def bump(inFile, outFile):
 if __name__ == '__main__':
   main()
 
-# # TODO parse the body of fort.13 and fit.13 files and report any discrepancies. 
-# # TODO find some way to parse things that won't change (fit results, time, date) plus things
-# # TODO Add LaTeX comment (or json dictionary)
+# TODO parse the body of fort.13 and fit.13 files and report any discrepancies. 
+# TODO find some way to parse things that won't change (fit results, time, date) plus things
+# TODO Add LaTeX comment (or json dictionary)
+# TODO auto-increment start.####.13
+# TODO create a fit stop flag -- create a file touch stop after current iteration 
 # TODO fix bug: if select fitLevel that isn't in the "progression" but don't select alphaFit it
 # TODO Estimate stopping criteria by looking at DoF, etc.
 # TODO Parse and save output of fort.18/26/comment/inputfile/output file/flags...
 # TODO new function should be created to parse what is needed/wanted from any .p dictionaries found in the fit directories.
 # TODO plot da/a vs. chisq. 
+# TODO each run gets a dictionary?
 # TODO make velocity plot (figure out how to automate or choose v=0 component to feed into fitcmp)
 # absolute run number; fitType run (alpha/normal/vshift)
 # -----------------------
@@ -476,4 +485,3 @@ if __name__ == '__main__':
 # with open(fitLevelDict['continueTimeStamp'][-1] + '.fit.13', 'r') as finalFit13:
 #   if re.search('qa', finalFit13.read()):
 #     flagDict['alphaAlreadyFit'] = True # If already started out fitting for alpha
-
