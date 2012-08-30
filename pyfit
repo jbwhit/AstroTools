@@ -470,6 +470,7 @@ if __name__ == '__main__':
 # TODO new function should be created to parse what is needed/wanted from any .p dictionaries found in the fit directories.
 # TODO plot da/a vs. chisq. 
 # TODO each run gets a dictionary?
+# TODO check that chi^2 (AICc) goes down within each fort.18 and between restarts
 # TODO make velocity plot (figure out how to automate or choose v=0 component to feed into fitcmp)
 # absolute run number; fitType run (alpha/normal/vshift)
 # -----------------------
