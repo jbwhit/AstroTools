@@ -463,12 +463,14 @@ if __name__ == '__main__':
 # TODO find some way to parse things that won't change (fit results, time, date) plus things
 # TODO Add LaTeX comment (or json dictionary)
 # TODO auto-increment start.####.13
+# TODO noBump not working right.
 # TODO create a fit stop flag -- create a file touch stop after current iteration 
 # TODO fix bug: if select fitLevel that isn't in the "progression" but don't select alphaFit it
 # TODO Estimate stopping criteria by looking at DoF, etc.
 # TODO Parse and save output of fort.18/26/comment/inputfile/output file/flags...
 # TODO new function should be created to parse what is needed/wanted from any .p dictionaries found in the fit directories.
 # TODO plot da/a vs. chisq. 
+# TODO add scp dropbox functionality.
 # TODO each run gets a dictionary?
 # TODO check that chi^2 (AICc) goes down within each fort.18 and between restarts
 # TODO make velocity plot (figure out how to automate or choose v=0 component to feed into fitcmp)
