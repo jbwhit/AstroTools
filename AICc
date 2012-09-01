@@ -5,7 +5,7 @@
 # Akaike information criterion http://en.wikipedia.org/wiki/Akaike_information_criterion
 #  -- values can be compared as long as data is the same between comparisons. i.e. it makes no sense in the absolute sense, only in the model selection, given the data.
 # k = number of parameters in the model
-# n = samplesize
+# n = Npix
 # AICc = chisquare + 2k + (2k(k + 1))/(n - k - 1) 
 # 
 # Copyright Jonathan Whitmore
@@ -39,9 +39,9 @@ import os
 import re
 import optparse
 
-def AICc(chisquare, Nparameters, samplesize):
+def AICc(chisquare, Nparameters, Npix):
   """Returns the AICc statistic for given inputs"""
-  AICc = chisquare + 2 * Nparameters + (2 * Nparameters * (Nparameters + 1)) / (samplesize - Nparameters - 1)
+  AICc = chisquare + 2 * Nparameters + (2 * Nparameters * (Nparameters + 1)) / (Npix - Nparameters - 1)
   return AICc
 
 def main():
