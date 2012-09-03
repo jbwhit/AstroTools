@@ -35,73 +35,97 @@ import re
 import string
 import heapq
 import numpy as np
+import cPickle as pickle
+import argparse
+import zlib
 
-def main(inFile):
+def main():
   """
   Runs the inFile through a series of checks to test if anything 
   bad has happened during the fit. 
   """
-  # check (chi-sq and AICc? going down every iteration; error not "too big"; value not "too big")
-  fort18Dict = {}
+  # TODO check (chi-sq and AICc? going down every iteration; error not "too big"; value not "too big")
+  # TODO ''.join(args.inFile.split()[:-1]) + .p
+  analysisDict = {}
+  fitIterationDict = {}
   fitFinished = False
   iterationList = []
   region = 0
-  fort18Dict['region'] = {}
-  fort18Dict['finalFit'] = []
-  fort18Dict['velocityFit'] = []
-  topN = 7
+  analysisDict['region'] = {}
+  analysisDict['finalFit'] = []
+  analysisDict['velocityFit'] = [] # fitType = X not the other way around. 
+  analysisDict['warnings'] = []
+  analysisDict['checks'] = {}
+  topN = 10
   columnNames = ["Species", "z_val", "z_err", "b_val", "b_err", "N_val", "N_err", "da_val", "da_err"]
-  rejected = []
-  hessian = []
-  dropped = []
-  with open(inFile, 'r') as f18:
-    lineCOUNT = 0 
+  AICcheck = []
+  chiSquarecheck = []
+  parser = argparse.ArgumentParser(description='Parse.')
+  parser.add_argument('inFile', action="store", nargs='?', default='fort.18', type=str) # Positional 
+  parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+  parser.add_argument('fitIterationsFile', action="store", nargs='?', default='test.iterations.p', type=str) # Positional 
+  args = parser.parse_args()
+  with open(args.inFile, 'r') as f18:
+    lineCOUNT = 0
     for line in f18.read().splitlines():
       lineCOUNT += 1
       if re.search('iteration', line):
         iterationCOUNT = line.split()[2].zfill(3)
         startCOUNT = line.split()[4].zfill(2).strip('(,)')
         iterationList.append(startCOUNT+iterationCOUNT)
-        fort18Dict[iterationList[-1]] = {}
-        fort18Dict[iterationList[-1]]['body'] = []
-        fort18Dict[iterationList[-1]]['errors'] = []
+        analysisDict[iterationList[-1]] = {}
+        fitIterationDict[iterationList[-1]] = {}
+        analysisDict[iterationList[-1]]['body'] = []
+        fitIterationDict[iterationList[-1]]['body'] = []
       if re.search('rejected', line):
-        print "Rejected, iteration: ", iterationList[-1]
+        analysisDict['warnings'].append([iterationList[-1], 'rejected'])
       if re.search('Hessian', line):
-        print "Hessian, iteration: ", iterationList[-1]
+        analysisDict['warnings'].append([iterationList[-1], 'Hessian'])
       if re.search('iterations stopped early', line):
-        print "stopped early, iteration: ", iterationList[-1]
+        analysisDict['warnings'].append([iterationList[-1], 'stopped early'])
       if re.search('chi-squared', line):
-        fort18Dict[iterationList[-1]]['chi-squared'] = float(line.split()[4].strip(','))
-        fort18Dict[iterationList[-1]]['DoF'] = float(line.split()[5])
-        fort18Dict[iterationList[-1]]['reduced-chi-square'] = \
-            fort18Dict[iterationList[-1]]['chi-squared']/fort18Dict[iterationList[-1]]['DoF']
+        analysisDict[iterationList[-1]]['chi-squared'] = float(line.split()[4].strip(','))
+        analysisDict[iterationList[-1]]['DoF'] = float(line.split()[5])
+        analysisDict[iterationList[-1]]['reduced-chi-square'] = \
+            analysisDict[iterationList[-1]]['chi-squared']/analysisDict[iterationList[-1]]['DoF']
       if len(line.split()) == 10:
-        fort18Dict[iterationList[-1]]['body'].append(line)
+        fitIterationDict[iterationList[-1]]['body'].append(line)
       if re.search('statistics for whole fit', line):
         fitFinished = True
+        finalIteration = iterationList[-1]
+        # reset lineCOUNT so that the Npix can be parsed.
         lineCOUNT = 0 
       if fitFinished == True and lineCOUNT == 2:
-        fort18Dict['Npix'] = int(line.split()[3])
+        analysisDict['Npix'] = int(line.split()[3])
+      # The following finds the errors printed in .13 format.
       if len(line.split()) == 9 and fitFinished == False:
-        fort18Dict[iterationList[-1]]['errors'].append(line)
+        try:
+          fitIterationDict[iterationList[-1]]['errors'].append(line)
+        except:
+          fitIterationDict[iterationList[-1]]['errors'] = []
+          fitIterationDict[iterationList[-1]]['errors'].append(line)
       if len(line.split()) == 11 and line.split()[0] == ">>":
-        fort18Dict['velocityFit'].append(np.array(line.split()))
+        analysisDict['velocityFit'].append(np.array(line.split()))
       if len(line.split()) == 15 and line.split()[0] != ">>":
-        fort18Dict['finalFit'].append(np.array(line.split()))
+        analysisDict['finalFit'].append(np.array(line.split()))
       if re.search('Prob', line):
         region += 1
-        fort18Dict['region'][region] = {}
-        fort18Dict['region'][region]['wav'] = [line.split()[0], line.split()[1]]
-        fort18Dict['region'][region]['chi-squared'] = float(line.split()[2])
-        fort18Dict['region'][region]['Npix'] = float(line.split()[3])
-        fort18Dict['region'][region]['DoF'] = float(line.split()[4])
-        fort18Dict['region'][region]['reduced-chi-square'] = float(line.split()[2])/float(line.split()[4])
-        print fort18Dict['region'][region]['wav'], fort18Dict['region'][region]['reduced-chi-square']
+        analysisDict['region'][region] = {}
+        analysisDict['region'][region]['wav'] = [line.split()[0], line.split()[1]]
+        analysisDict['region'][region]['chi-squared'] = float(line.split()[2])
+        analysisDict['region'][region]['Npix'] = float(line.split()[3])
+        analysisDict['region'][region]['DoF'] = float(line.split()[4])
+        analysisDict['region'][region]['reduced-chi-square'] = float(line.split()[2])/float(line.split()[4])
+  # Reading through of inFile complete.
+  fitIterationDict['iterationList'] = iterationList
+  analysisDict['iterationList'] = iterationList
+  analysisDict['finalIteration'] = fitIterationDict[finalIteration]['body']
   for x in iterationList:
-    fort18Dict[x]['Nparameters'] = fort18Dict['Npix'] - fort18Dict[x]['DoF']
-    fort18Dict[x]['AICc'] = AICc(fort18Dict[x]['chi-squared'], fort18Dict[x]['Nparameters'], fort18Dict['Npix'])  
-  testArray = np.column_stack(fort18Dict['finalFit'])
+    analysisDict[x]['Nparameters'] = analysisDict['Npix'] - analysisDict[x]['DoF']
+    analysisDict[x]['AICc'] = AICc(analysisDict[x]['chi-squared'], analysisDict[x]['Nparameters'], analysisDict['Npix'])
+    AICcheck.append(analysisDict[x]['AICc'])
+    chiSquarecheck.append(analysisDict[x]['chi-squared'])
+  testArray = np.column_stack(analysisDict['finalFit'])
   analyseArray = []
   for x, row in enumerate(testArray):
     analyseArray.append([])
@@ -112,19 +136,31 @@ def main(inFile):
         analyseArray[x].append(testArray[x][y])
   for column in [2, 4, 6]:
     indexes = [list(analyseArray[column]).index(x) for x in heapq.nlargest(topN, analyseArray[column])]
-    print "Top", topN, "errors in column:", columnNames[column]
+    analysisDict[columnNames[column]] = []
     for index in indexes:
-      print fort18Dict['finalFit'][index][0], fort18Dict['finalFit'][index][1][-2:], fort18Dict['finalFit'][index][column]
-  if len(fort18Dict['velocityFit']) > 0:
-    print "VELOCITY FIT"
-  if int(iterationList[-1][-3:]) == 125:
-    print "125 Iterations!"
+      analysisDict[columnNames[column]].append([analysisDict['finalFit'][index][0], analysisDict['finalFit'][index][1][-2:], analysisDict['finalFit'][index][column]])
+  if len(analysisDict['velocityFit']) > 0:
+    analysisDict['fitType'] = 'velocityFit'
+  # sanity checks that AICc and chi-squared are going down each iteration.
+  if AICcheck == sorted(AICcheck, reverse=True):
+    analysisDict['checks']['AICc'] = 'Pass'
+  else:
+    analysisDict['checks']['AICc'] = 'Fail'
+  if chiSquarecheck == sorted(chiSquarecheck, reverse=True):
+    analysisDict['checks']['chiSquarecheck'] = 'Pass'
+  else:
+    analysisDict['checks']['chiSquarecheck'] = 'Fail'
+  with open(args.analysisFile, 'wb') as fp:
+    fp.write(zlib.compress(pickle.dumps(analysisDict, pickle.HIGHEST_PROTOCOL),9))
+  with open(args.fitIterationsFile, 'wb') as fp:
+    fp.write(zlib.compress(pickle.dumps(fitIterationDict, pickle.HIGHEST_PROTOCOL),9))
   pass
 
 def AICc(chisquare, Nparameters, Npix):
   """Returns the AICc statistic for given inputs"""
-  AICc = chisquare + 2 * Nparameters + (2 * Nparameters * (Nparameters + 1)) / (Npix - Nparameters - 1)
+  AICc = chisquare + 2.0 * Nparameters + (2.0 * Nparameters * (Nparameters + 1.0)) / (Npix - Nparameters - 1.0)
   return AICc
 
 if __name__ == '__main__':
-  main(sys.argv[1])
+  main()
+
