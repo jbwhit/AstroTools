@@ -1,10 +1,11 @@
 #!/bin/bash
-# for trigger in al; #
-# for trigger in aa ae ah ar; #
-for trigger in af ai aj am ac al;
-do
-  trigger2=$(echo $trigger | tr '[a-z]' '[A-Z]')
-  echo $trigger $trigger2
-  grep -v $trigger stat.13 | grep -v $trigger2 > stat.$trigger.13
-done
+# removes lines from both lowercase and UPPERCASE of input
+# $ removeComponent af oldfort.13 newfort.13
+# removes lines containing af and AF 
+# $1 line
+# $2 oldfort.13
+# $3 newfort.13
 
+trigger2=$(echo $1 | tr '[a-z]' '[A-Z]')
+echo "Removing: " $1 $trigger2
+grep -v $1 $2 | grep -v $trigger2 > $3
