@@ -31,115 +31,74 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # 
 
-# checks the file "body.13" for component flag errors
+# checks the file "body.7" for component flag errors
 
 import re
 import string
 
 fileparse=[]
-with open('body.13') as infile:
-  for line in infile: 
-    fileparse.append(line)
+with open('body.7') as infile:
+  for line in infile:
+    if (not line.strip().startswith('!') and (not line.strip().startswith('%')) and (line.strip() != '')):
+    fileparse.append(line.split())
 
-# indexList
-speciesIndex = 0
-NIndex = 1
-zIndex = 2
-bIndex = 3
-qIndex = 4
-zeroIndex = 5
-temperatureIndex = 6
+indexDict = {}
+indexDict['species'] = {} 
+indexDict['N'] = {} 
+indexDict['z'] = {} 
+indexDict['b'] = {} 
+indexDict['q'] = {} 
+indexDict['zero'] = {} 
+indexDict['temp'] = {} 
 
-nUpperCase = []
-nLowerCase = []
-zLowerCase = []
-zUpperCase = []
-bLowerCase = []
-bUpperCase = []
-qLowerCase = []
-qUpperCase = []
+indexDict['species']['index'] = 0
+indexDict['N']['index'] = 1
+indexDict['z']['index'] = 2
+indexDict['b']['index'] = 3
+indexDict['q']['index'] = 4
+indexDict['zero']['index'] = 5
+indexDict['temp']['index'] = 6
 
-for x in fileparse:
-  if not x.strip().startswith('!'):
-    # TODO add trys before all of these.
-    if x.split()[zIndex][-2].isupper():
-      zUpperCase.append(x.split()[zIndex][-2] + x.split()[zIndex][-1])
-    if x.split()[zIndex][-2].islower():
-      zLowerCase.append(x.split()[zIndex][-2] + x.split()[zIndex][-1])
-    if x.split()[bIndex][-2].isupper():
-      bUpperCase.append(x.split()[bIndex][-2] + x.split()[bIndex][-1])
-    if x.split()[bIndex][-2].islower():
-      bLowerCase.append(x.split()[bIndex][-2] + x.split()[bIndex][-1])
-    if x.split()[qIndex][-2].isupper():
-      qUpperCase.append(x.split()[qIndex][-2] + x.split()[qIndex][-1])
-    if x.split()[qIndex][-2].islower():
-      qLowerCase.append(x.split()[qIndex][-2] + x.split()[qIndex][-1])
+for label in ['N','z','b','q']:
+  indexDict[label]['upper'] = []
+  indexDict[label]['lower'] = []
 
-def appendString(chunk, dictionary):
-  """docstring for appendString"""
-  if chunk[-2].isalpha():
-    if chunk[-2].isupper():
-    elif chunk[-2].islower():
-  elif chunk[-1].isalpha():
-    if chunk[-1].isupper():
-    elif chunk[-1].islower():
-  pass
+for line in fileparse:
+  for label in ['N','z','b','q']:
+    try:
+      if line[indexDict[label]['index']][-2].isupper():
+        indexDict[label]['upper'].append(line[indexDict[label]['index']][-2] + line[indexDict[label]['index']][-1])
+    except:
+      pass
+    try:
+      if line[indexDict[label]['index']][-2].islower():
+        indexDict[label]['lower'].append(line[indexDict[label]['index']][-2] + line[indexDict[label]['index']][-1])
+    except:
+      pass
 
 # Get the unique upper and lowercase sets for each flag used.
-zUpperSet = set(zUpperCase)
-zLowerSet = set(zLowerCase)
-bUpperSet = set(bUpperCase)
-bLowerSet = set(bLowerCase)
-qUpperSet = set(qUpperCase)
-qLowerSet = set(qLowerCase)
+for label in ['N','z','b','q']:
+  indexDict[label]['upperSet'] = set(indexDict[label]['upper'])
+  indexDict[label]['lowerSet'] = set(indexDict[label]['lower'])
 
-# Include n-values and q values?
-errorString = "\n\n\n =================== \n  = SERIOUS ERROR =  \n =================== \n\n\n"
+warningString = "\n =================== \n  = WARNING =  \n =================== \n"
 
-
-# Check if too many "master" flags being fit.
-if len(zLowerCase) != len(zLowerSet):
-  print errorString
-  print "   TOO MANY LOWERCASE FLAGS in z-values. "
-
-if len(bLowerCase) != len(bLowerSet):
-  print errorString
-  print "   TOO MANY LOWERCASE FLAGS in b-values. "
-
-if len(qLowerCase) != len(qLowerSet):
-  print errorString
-  print "   TOO MANY LOWERCASE FLAGS in ALPHA. "
-
-# Check if there are fixed flags without corresponding master flags.
-if len(zUpperSet.difference([x.upper() for x in zLowerSet])) > 0:
-  print errorString
-  print "   There are", len(zUpperSet.difference([x.upper() for x in zLowerSet])), "z-values that are fixed and not allowed to vary."
-  print "   Flags:", 
-  for upperproblem in zUpperSet.difference([x.upper() for x in zLowerSet]):
-    print upperproblem,
-  print
-
-if len(bUpperSet.difference([x.upper() for x in bLowerSet])) > 0:
-  print errorString
-  print "   There are", len(bUpperSet.difference([x.upper() for x in bLowerSet])), "b-values that are fixed and not allowed to vary."
-  print "   Flags:", 
-  for upperproblem in bUpperSet.difference([x.upper() for x in bLowerSet]):
-    print upperproblem,
-  print
-
-if len(qUpperSet.difference([x.upper() for x in qLowerSet])) == 0:
-  print "\n\n"
-  print " =================== "
-  print "  Fitting for alpha! "
-  print " =================== "
-  print "\n\n"
-if len(qUpperSet.difference([x.upper() for x in qLowerSet])) == 1:
-  print "\n\n   alpha == zero.\n\n"
-if len(qUpperSet.difference([x.upper() for x in qLowerSet])) > 1:
-  print errorString
-  print "   There are", len(qUpperSet.difference([x.upper() for x in qLowerSet])), "q-values that are fixed and not allowed to vary."
-  print "   Flags:", 
-  for upperproblem in qUpperSet.difference([x.upper() for x in qLowerSet]):
-    print upperproblem,
-  print
-
+for label in ['N','z','b','q']:
+  if len(indexDict[label]['lower']) != len(indexDict[label]['lowerSet']):
+    print warningString
+    print "Too many lowercase flags warning: ", label
+  temp = indexDict[label]['upperSet'].difference([x.upper() for x in indexDict[label]['lower']])
+  if (label != 'q') and (len(temp) > 0):
+    print warningString
+    print "There are: ", len(temp), label, "fixed values."
+    for upperproblem in temp:
+      print upperproblem,
+    print
+  elif (label == 'q') and len(temp) == 0:
+    print "Fitting for alpha."
+  elif (label == 'q') and len(temp) == 1:
+    print "alpha fixed at zero"
+  elif (label == 'q') and len(temp) > 1:
+    print warningString, warningString, warningString
+    print "Fitting more than 1 alpha value!"
+    print warningString, warningString, warningString
