@@ -35,6 +35,7 @@
 import os
 import sys
 import re
+import csv
 import shutil
 import argparse
 import datetime
@@ -100,12 +101,17 @@ def main():
   flagDict['noPlot'] = args.noPlot
   flagDict['iterations125'] = False
   
-  # Housekeeping upon initial start
+  # =======================
+  # = Begin pre-fit setup =
+  # =======================
   
+  # Create fit directory
   os.makedirs(hcd['timeStamp'])
   hcd['parentDirectory'] = os.getcwd() + '/'
   os.chdir(hcd['timeStamp'])
   hcd['fitDirectory'] = os.getcwd() + '/'
+  overview['parentDirectory'] = hcd['parentDirectory']
+  overview['fitDirectory'] = hcd['fitDirectory']
 
   # Create a fitting log.
   logging.basicConfig(filename=hcd['timeStamp'] + '.log', level=logging.DEBUG)
@@ -113,51 +119,36 @@ def main():
     logging.info("Argument %s: %r", arg, value)
     overview[arg] = value
   
-  logging.info("parentDirectory: " + hcd['parentDirectory'])
-  logging.info("fitDirectory: " + hcd['fitDirectory'])
-  overview['parentDirectory'] = hcd['parentDirectory']
-  overview['fitDirectory'] = hcd['fitDirectory']
-
-  if args.noConfigs == True:
-    print "Not using config files."
-    print "Need to know locations of setup files and data files."
-  else:
-    parser = SafeConfigParser()
-    found = parser.read(glob.glob(hcd['parentDirectory'] + 'config*'))
-    print "Using these config files:"
-    for configfile in set(found):
-      print "  ", configfile
-      logging.info("config loaded: " + configfile)
-    overview['configs'] = [x for x in set(found)]
-    hcd['setupDir'] = parser.get('machine', 'setupdir') + '/'
-    hcd['atomDatFile'] = parser.get('update', args.atomdat)
-    shutil.copy(hcd['setupDir'] + hcd['atomDatFile'], hcd['fitDirectory'])
-    shutil.copy(hcd['setupDir'] + 'vp_setup.dat', hcd['fitDirectory'])
-    shutil.copy(hcd['setupDir'] + 'vp_splot.dat', hcd['fitDirectory'])
-    hcd['dataDirectory'] = parser.get('data', 'dataDirectory') + '/'
-    os.symlink(hcd['atomDatFile'], 'atom.dat') # create symbolic link to atom.dat in fitting directory.
+  # if args.noConfigs == True:
+  #   print "Not using config files."
+  #   print "Need to know locations of setup files and data files."
+  # else:
+  parser = SafeConfigParser()
+  found = parser.read(glob.glob(hcd['parentDirectory'] + 'config*'))
+  print "Using these config files:"
+  for configfile in set(found):
+    print "  ", configfile
+    logging.info("config loaded: " + configfile)
+  overview['configs'] = [x for x in set(found)]
+  hcd['setupDir'] = parser.get('machine', 'setupdir') + '/'
+  hcd['atomDatFile'] = parser.get('update', args.atomdat)
+  shutil.copy(hcd['setupDir'] + hcd['atomDatFile'], hcd['fitDirectory'])
+  shutil.copy(hcd['setupDir'] + 'vp_setup.dat', hcd['fitDirectory'])
+  shutil.copy(hcd['setupDir'] + 'vp_splot.dat', hcd['fitDirectory'])
+  hcd['dataDirectory'] = parser.get('data', 'dataDirectory') + '/'
+  os.symlink(hcd['atomDatFile'], 'atom.dat') # create symbolic link to atom.dat in fitting directory.
 
   shutil.copy(hcd['parentDirectory'] + args.input13, hcd['fitDirectory'] + "input.fort.13")
   if args.input13 != "input.fort.13":
     shutil.copy(hcd['parentDirectory'] + args.input13, hcd['fitDirectory'] + "input.fort.13")
 
-  if flagDict['noBump']:
-    "Not bumping values. Hope this is what you want."
-    shutil.copy('input.fort.13', hcd['fitDirectory'] + 'bump.13')
-  else:
-    bump('input.fort.13', 'bump.13')
-    d = difflib.Differ()
-    diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
-    print '\n'.join(diff)
-    diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
-    overview['diff'] = '\n'.join(diff)
-  
   dataFiles = []
-  with open('bump.13', 'r') as bumpFile:
+  with open("input.fort.13", 'r') as f13:
     beginHead, beginBody = False, False
-    with open('head.13', 'w') as head, open('body.13', 'w') as body:
-      for line in bumpFile.read().splitlines():
-        if (not line.strip().startswith('!') and (line.strip() != '')): # Ignore comments and empty lines.
+    with open('head.6', 'w') as head, open('body.7', 'w') as body:
+      for line in f13.read().splitlines():
+        # Ignore comments and empty lines
+        if (not line.strip().startswith('!') and (not line.strip().startswith('%')) and (line.strip() != '')): 
           if line.startswith('   *'):
             beginHead = True
           if beginHead == True:
@@ -171,19 +162,16 @@ def main():
             beginBody = True
   # combine head and body into fort.13
   with open('fort.13', 'w') as outFile:
-    with open('head.13','r') as head, open('body.13','r') as body:
+    with open('head.6','r') as head, open('body.7','r') as body:
       outFile.write(head.read())
       outFile.write(body.read())
-
+  
+  # parse the head to get data files used. 
   logging.info("Data files used: ")
   for datafile in set(dataFiles):
     os.symlink(hcd['dataDirectory'] + datafile, hcd['fitDirectory'] + datafile)
-
   overview['dataFiles'] = [x for x in set(dataFiles)]
-  # TODO make these the fort13flagcheck outputs get logged as errors/warnings in logger.
-  # Parses the body of the body.13 for any anomalies.
-  p = subprocess.call('fort13flagcheck') # waits for return.
-  
+
   # Create dictionary of all level strings; use args.fitLevel as key.
   fitLevelDict["L1"] = "f\nil\ncs\n2.e-4 100.0 2.e-4\nn\n0.01 \nb\n0.2 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict["L2"] = "f\nil\ncs\n2.e-5 100.0 2.e-5\nn\n0.005\nb\n0.1 \nz\n2.e-7\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
@@ -208,11 +196,9 @@ def main():
     else:
       print "What alphaLevel are you trying to use? I see: ", args.alphaLevel
   
-  # Create symbolic link to fitting directory.
+  # Create symbolic link of vpfit executable into fitting directory (for fitcmp purposes).
   hcd['executableLink'] = subprocess.Popen(['which', hcd['vpfitExecutable']], stdout=subprocess.PIPE)
   os.symlink(hcd['executableLink'].communicate()[0].strip(), hcd['fitDirectory'] + 'vpfit')
-  logging.info('VPFIT version: ' + args.vpfitVersion)
-  logging.info('VPFIT executable: ' + hcd['vpfitExecutable'])
   overview['vpfit version'] = args.vpfitVersion
   overview['vpfit executable'] = hcd['vpfitExecutable']
   
@@ -220,12 +206,47 @@ def main():
   os.environ['ATOMDIR'] = 'atom.dat'
   os.environ['VPFSETUP'] = 'vp_setup.dat'
   os.environ['VPFPLOTS'] = 'vp_splot.dat'
-  logging.info("PATH for ATOMDIR:  " + os.environ['ATOMDIR'])
-  logging.info("PATH for VPFSETUP: " + os.environ['VPFSETUP'])
-  logging.info("PATH for VPFPLOTS: " + os.environ['VPFPLOTS'])
   overview['ATOMDIR'] = os.environ['ATOMDIR']
   overview['VPFSETUP'] = os.environ['VPFSETUP']
   overview['VPFPLOTS'] = os.environ['VPFPLOTS']
+
+  # =========================
+  # = End of pre-fit setup. =
+  # =========================
+
+  # pseudocode
+  for run in range(maxRuns):
+    if run == 0:
+      runStringList.append('input.fort.13')
+    else:
+      runStringList.append(timeStamp + tag)
+    fun(fitType)
+      if bump:
+        bump
+      else:
+        nobump
+      if run == 0:
+        cp 'input.fort.13'
+    fort18analysis()
+    cp cat head.6 finalIteration > timeStamp.fit.13
+    if converged (or max runs)
+    cp timeStamp.fit.13 
+    timeStamp.[normal|alpha|vchunk].13
+
+  if flagDict['noBump']:
+    "Not bumping values. Hope this is what you want."
+    shutil.copy('input.fort.13', hcd['fitDirectory'] + 'bump.13')
+  else:
+    bump('input.fort.13', 'bump.13')
+    d = difflib.Differ()
+    diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
+    print '\n'.join(diff)
+    diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
+    overview['diff'] = '\n'.join(diff)
+
+  # TODO make these the fort13flagcheck outputs get logged as errors/warnings in logger.
+  # Parses the body of the body.7 for any anomalies.
+  p = subprocess.call('fort13flagcheck') # waits for return.
   
   with open('command.info', 'w') as fh:
     print >>fh, "! ATOMDIR:" + hcd['atomDatFile']
@@ -234,11 +255,12 @@ def main():
     print >>fh, "#!/bin/bash\nexport ATOMDIR=", os.environ['ATOMDIR'], "\nexport VPFSETUP=", os.environ['VPFSETUP'], \
       "\nexport VPFPLOTS=", os.environ['VPFPLOTS'], "\ncp ", hcd['timeStamp'] + ".fort.13 fort.13", \
       "\nprintf " + repr(fitLevelDict['currentParameterString']) + " | " + hcd['vpfitExecutable']
-  
-  with open('command.fort.13', 'w') as outFile:
-    with open('command.info', 'r') as com, open('fort.13', 'r') as fort13:
-      outFile.write(com.read())
-      outFile.write(fort13.read())
+
+  # # TODO fix this -- put this header in each iteration fort.13 
+  # with open('command.fort.13', 'w') as outFile:
+  #   with open('command.info', 'r') as com, open('fort.13', 'r') as fort13:
+  #     outFile.write(com.read())
+  #     outFile.write(fort13.read())
 
   overview['fitParameters'] = repr(fitLevelDict['currentParameterString'])
   
@@ -263,6 +285,27 @@ def main():
   with open(hcd['timeStamp']+'.p', 'wb') as fp:
     pickle.dump(overview, fp)
   print "Program exited gracefully."
+  # TODO touch finished
+  # TODO check that each finished thing the chi-squared has gone down. 
+  # Create a J200-200_1.6927.log.csv ln -s log.csv for each absorber -- append to it things wanted to see.
+  # start.000001.13 ParentComment: species used; regions used (head.00001.6) body.0000.7
+  # start.000001.test.00001.13 TweakComment: remove component 'ac'
+  # start.000001.test.00002.13 TweakComment: fitparameters L3
+  # start.000001.test.00003.13 TweakComment: fitparameters L4 -- probably shouldn't have a new file for different fit parameters. 
+  # start.000001.head.002.body.00004.13
+  # start.000001.head.003.body.00004.13
+  # start.000001.head.003.body.00005.test.004.13
+  # start.000001.test.00004.13 TweakComment: fitparameters L4 remove FeII 'ac'
+  # finished.000001.test.00002.13 TweakComment: 
+  # split 1 into 3 components (estimate Equivalent Width; 3 velocity components from the 1)
+  # remove 1 component (estimate Equivalent Width; two velocity components)
+  # 
+  # fd = open('document.csv','a')
+  # import csv
+  # with open('eggs.csv', 'ab') as logFile:
+  #   spamWriter = csv.writer(logFile)
+  #   spamWriter.writerow(['Spam', 'Lovely, Spam'])
+  # bob = csv.reader(open('eggs.csv','rb'))
   pass
 
 def plotComparison():
