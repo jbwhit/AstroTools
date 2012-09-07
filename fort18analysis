@@ -44,8 +44,6 @@ def main():
   Runs the inFile through a series of checks to test if anything 
   bad has happened during the fit. 
   """
-  # TODO check (chi-sq and AICc? going down every iteration; error not "too big"; value not "too big")
-  # TODO ''.join(args.inFile.split()[:-1]) + .p
   analysisDict = {}
   fitIterationDict = {}
   fitFinished = False
@@ -53,7 +51,8 @@ def main():
   region = 0
   analysisDict['region'] = {}
   analysisDict['finalFit'] = []
-  analysisDict['velocityFit'] = [] # fitType = X not the other way around. 
+  analysisDict['fitType'] = [] 
+  analysisDict['vchunkFit'] = [] 
   analysisDict['warnings'] = []
   analysisDict['checks'] = {}
   topN = 10
@@ -62,10 +61,12 @@ def main():
   chiSquarecheck = []
   parser = argparse.ArgumentParser(description='Parse.')
   parser.add_argument('inFile', action="store", nargs='?', default='fort.18', type=str) # Positional 
-  parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
-  parser.add_argument('fitIterationsFile', action="store", nargs='?', default='test.iterations.p', type=str) # Positional 
+  parser.add_argument('outFileStem', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+  # parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+  # parser.add_argument('fitIterationsFile', action="store", nargs='?', default='test.iterations.p', type=str) # Positional 
   args = parser.parse_args()
   with open(args.inFile, 'r') as f18:
+    analysisDict['inFile'] = args.inFile
     lineCOUNT = 0
     for line in f18.read().splitlines():
       lineCOUNT += 1
@@ -75,7 +76,6 @@ def main():
         iterationList.append(startCOUNT+iterationCOUNT)
         analysisDict[iterationList[-1]] = {}
         fitIterationDict[iterationList[-1]] = {}
-        analysisDict[iterationList[-1]]['body'] = []
         fitIterationDict[iterationList[-1]]['body'] = []
       if re.search('rejected', line):
         analysisDict['warnings'].append([iterationList[-1], 'rejected'])
@@ -105,9 +105,13 @@ def main():
           fitIterationDict[iterationList[-1]]['errors'] = []
           fitIterationDict[iterationList[-1]]['errors'].append(line)
       if len(line.split()) == 11 and line.split()[0] == ">>":
-        analysisDict['velocityFit'].append(np.array(line.split()))
+        analysisDict['vchunkFit'].append(np.array(line.split()))
       if len(line.split()) == 15 and line.split()[0] != ">>":
         analysisDict['finalFit'].append(np.array(line.split()))
+      if len(line.split()) == 15 and re.search('qa', line):
+        analysisDict['fitType'] = 'alphaFit'
+        analysisDict['alpha'] = line.split()[7]
+        analysisDict['alpha_err'] = line.split()[8]
       if re.search('Prob', line):
         region += 1
         analysisDict['region'][region] = {}
@@ -119,7 +123,12 @@ def main():
   # Reading through of inFile complete.
   fitIterationDict['iterationList'] = iterationList
   analysisDict['iterationList'] = iterationList
-  analysisDict['finalIteration'] = fitIterationDict[finalIteration]['body']
+  for line in fitIterationDict[finalIteration]['body']:
+    p = re.compile('   0.00E\+00  ')
+    analysisDict['finalIteration'].append(p.sub('   1.00E+00  ', line))
+  with open(args.outFileStem + '.finalbody.7', 'w') as fp:
+    for line in analysisDict['finalIteration']:
+      print >>fp, line
   for x in iterationList:
     analysisDict[x]['Nparameters'] = analysisDict['Npix'] - analysisDict[x]['DoF']
     analysisDict[x]['AICc'] = AICc(analysisDict[x]['chi-squared'], analysisDict[x]['Nparameters'], analysisDict['Npix'])
@@ -139,8 +148,9 @@ def main():
     analysisDict[columnNames[column]] = []
     for index in indexes:
       analysisDict[columnNames[column]].append([analysisDict['finalFit'][index][0], analysisDict['finalFit'][index][1][-2:], analysisDict['finalFit'][index][column]])
-  if len(analysisDict['velocityFit']) > 0:
-    analysisDict['fitType'] = 'velocityFit'
+  if len(analysisDict['vchunkFit']) > 0:
+    analysisDict['fitType'] = 'vchunkFit'
+
   # sanity checks that AICc and chi-squared are going down each iteration.
   if AICcheck == sorted(AICcheck, reverse=True):
     analysisDict['checks']['AICc'] = 'Pass'
@@ -150,9 +160,9 @@ def main():
     analysisDict['checks']['chiSquarecheck'] = 'Pass'
   else:
     analysisDict['checks']['chiSquarecheck'] = 'Fail'
-  with open(args.analysisFile, 'wb') as fp:
+  with open(args.outFileStem + '.analysis.p.gz', 'wb') as fp:
     fp.write(zlib.compress(pickle.dumps(analysisDict, pickle.HIGHEST_PROTOCOL),9))
-  with open(args.fitIterationsFile, 'wb') as fp:
+  with open(args.outFileStem + '.iterations.p.gz', 'wb') as fp:
     fp.write(zlib.compress(pickle.dumps(fitIterationDict, pickle.HIGHEST_PROTOCOL),9))
   pass
 
