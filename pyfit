@@ -237,15 +237,10 @@ def main():
       runNameList.append(datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + runDict[run]['tag'])
     shutil.copy('fort.13', runNameList[-1] + '.fort.13')
     runDict[run]['levelName'] = levelList[levelIndex]
-    runDict[run]['fitString'] = repr(fitLevelDict[runDict[run]['levelName']])
+    runDict[run]['fitString'] = fitLevelDict[runDict[run]['levelName']]
     print "Running..."
-    print hcd['vpfitExecutable']
     proc = subprocess.Popen([hcd['vpfitExecutable']], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    print runDict[run]['fitString']
-    # proc.wait()
     result = proc.communicate(input=runDict[run]['fitString'])
-    print result
-    time.sleep(2)
     runningTime = datetime.datetime.now() - startTime
     runningTimeDelta = runningTime.__str__()
     runDict[run]['runningTime'] = runningTimeDelta
@@ -339,12 +334,13 @@ def bump(inFile, outFile):
   pass
 
 def cat(outfilename, *infilenames):
-  """reproduces cat file1 file2... > outfilename behavior."""
+  """reproduces cat file1 file2... > outfilename behavior."""  
   with open(outfilename, 'w') as outFile:
     for infilename in infilenames:
       with open(infilename) as inFile:
         shutil.copyfileobj(inFile, outFile)
-
+  
+  
 if __name__ == '__main__':
   main()
 
