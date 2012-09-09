@@ -40,7 +40,7 @@ fileparse=[]
 with open('body.7') as infile:
   for line in infile:
     if (not line.strip().startswith('!') and (not line.strip().startswith('%')) and (line.strip() != '')):
-    fileparse.append(line.split())
+      fileparse.append(line.split())
 
 indexDict = {}
 indexDict['species'] = {} 

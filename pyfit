@@ -80,7 +80,7 @@ def main():
                       help='Choose pyfit behavior.')
   parser.add_argument('--maxRuns', action="store", default=1, type=int, help='Max runs before quitting. Setting to 1 means no restarts.')
   parser.add_argument('--vpfit', action="store", dest="vpfitVersion", default='9.5', type=str, help='Which version of vpfit to use.')
-  parser.add_argument('--level', action="store", default='', type=str, \
+  parser.add_argument('--level', action="store", default='L5', type=str, \
                       help='Type in comma separated (no spaces) list of the order of the ways "leveling up" should go. ex: L2,L4,L5')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
@@ -182,9 +182,8 @@ def main():
   
   levelIndex = 0
   levelList = []
-  if args.level.split(',') == ['']:
-    levelList.append(args.fitLevel)
-  # levelName = # "L5"; levelList[levelIndex]
+  for x in args.level.split(','):
+    levelList.append(x)
   levelString = fitLevelDict[levelList[levelIndex]] 
     
   # Create symbolic link of vpfit executable into fitting directory (for fitcmp purposes).
@@ -221,6 +220,7 @@ def main():
 
   run = 0
   chiSquareList = []
+  flagDict['rerunFlag'] = True
   while flagDict['rerunFlag'] == True:
     flagDict['rerunFlag'] = False
     converged = False
@@ -228,7 +228,7 @@ def main():
     startTime = datetime.datetime.now()
     runDict[run] = {}
     runDict[run]['tag'] = tag[flagDict['fitType']]
-    if run == 0:
+    if run == 1:
       runNameList.append('input.fort')
       shutil.copy(runNameList[-1] + ".13", 'fort.13')
     else:
@@ -274,9 +274,10 @@ def main():
         continue
       else:
         status = "converged"
-    if status = "converged": 
+    if status == "converged": 
       if levelIndex < len(levelList) - 1:
         levelIndex += 1
+        run = 0
         flagDict['rerunFlag'] = True
         continue
       else:
@@ -298,11 +299,8 @@ def main():
           continue
       # TODO send message to googledocs (dropbox script); spreadsheet, absorption system.
       # fort18report(runNameList[-1])
-      run = 0
-      flagDict['rerunFlag'] = True
-      continue
-    logging.info("It took " + str(run) + " runs to converge.")
-    overview['finalComment'] = "It took " + str(run) + " runs to converge."
+      logging.info("It took " + str(run) + " runs to converge.")
+      overview['finalComment'] = "It took " + str(run) + " runs to converge."
       continue
     else:
       print "Did not converge after: ", run
