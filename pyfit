@@ -84,7 +84,7 @@ def main():
                       help='Type in comma separated (no spaces) list of the order of the ways "leveling up" should go. ex: L2,L4,L5')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
-  parser.add_argument('--version', action='version', version='%(prog)s 0.0006')
+  parser.add_argument('--version', action='version', version='%(prog)s 0.06')
   # parser.add_argument('--noConfigs', action="store_true", default=False, help='Will not use the config files.')
   # parser.add_argument('--dataFile', action="store", default='blind', help='data file to use.') # Clearly not used.
   args = parser.parse_args()
