@@ -50,7 +50,7 @@ import re
 import shutil
 import simplejson as json
 import string
-import subprocess as subprocess
+import subprocess
 import sys
 import time 
 import zlib
@@ -239,8 +239,13 @@ def main():
     runDict[run]['levelName'] = levelList[levelIndex]
     runDict[run]['fitString'] = repr(fitLevelDict[runDict[run]['levelName']])
     print "Running..."
+    print hcd['vpfitExecutable']
     proc = subprocess.Popen([hcd['vpfitExecutable']], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    print runDict[run]['fitString']
+    # proc.wait()
     result = proc.communicate(input=runDict[run]['fitString'])
+    print result
+    time.sleep(2)
     runningTime = datetime.datetime.now() - startTime
     runningTimeDelta = runningTime.__str__()
     runDict[run]['runningTime'] = runningTimeDelta
@@ -300,6 +305,7 @@ def main():
       # TODO send message to googledocs (dropbox script); spreadsheet, absorption system.
       # fort18report(runNameList[-1])
       logging.info("It took " + str(run) + " runs to converge.")
+      # TODO create final fit versions named appropriately. 
       overview['finalComment'] = "It took " + str(run) + " runs to converge."
       continue
     else:
