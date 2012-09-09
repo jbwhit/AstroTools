@@ -54,6 +54,7 @@ def main():
   analysisDict['fitType'] = [] 
   analysisDict['vchunkFit'] = [] 
   analysisDict['warnings'] = []
+  analysisDict['finalIteration'] = []
   analysisDict['checks'] = {}
   topN = 10
   columnNames = ["Species", "z_val", "z_err", "b_val", "b_err", "N_val", "N_err", "da_val", "da_err"]
