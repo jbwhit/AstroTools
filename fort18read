@@ -1,14 +1,10 @@
 #!/usr/bin/env python
-# AICc.py 
-# parses the Stat line of vpfit output and analyzes the AICc statistic test
-# ! Stats: iterations, normalized x2, number of pixels, number of degrees of freedom, chance probability that the fit is OK, number of systems dropped in finding solution
-# Akaike information criterion http://en.wikipedia.org/wiki/Akaike_information_criterion
-#  -- values can be compared as long as data is the same between comparisons. i.e. it makes no sense in the absolute sense, only in the model selection, given the data.
-# k = number of parameters in the model
-# n = Npix
-# AICc = chisquare + 2k + (2k(k + 1))/(n - k - 1) 
+# fort18read.py
 # 
-# Copyright Jonathan Whitmore
+# For use with my AstroTools scripts. Parses the body part of a fort.18 file
+# and checks for various problems.
+# 
+# Copyright 2012 Jonathan Whitmore 
 # Distributed under the Boost Software License, Version 1.0.
 #
 # Permission is hereby granted, free of charge, to any person or organization
@@ -35,28 +31,36 @@
 # 
 
 import sys
-import os
 import re
-import optparse
-
-def AICc(chisquare, Nparameters, Npix):
-  """Returns the AICc statistic for given inputs"""
-  AICc = chisquare + 2 * Nparameters + (2 * Nparameters * (Nparameters + 1)) / (Npix - Nparameters - 1)
-  return AICc
+import string
+import heapq
+import numpy as np
+import cPickle as pickle
+import argparse
+import zlib
 
 def main():
-  p = optparse.OptionParser(description='Returns the statistic for a given *.26 output from VPFIT.')
-  options, arguments = p.parse_args()
-  with open(arguments[0],'r') as infile:
-    for line in infile:
-      if re.search('Stat', line):
-        chisqnu = float(line.split()[3])
-        npix = float(line.split()[4])
-        dof = float(line.split()[5])
-        chisquare = dof * chisqnu
-        Nparameters = npix - dof
-        print AICc(chisquare, Nparameters, npix)
-  return
+  """docstring for main"""
+  parser = argparse.ArgumentParser(description='Parse.')
+  parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+  parser.add_argument('fitIterationsFile', action="store", nargs='?', default='', type=str) # Positional 
+  args = parser.parse_args()
+  with open(args.analysisFile, 'rb') as fp:
+    analysisDict = pickle.loads(zlib.decompress(fp.read()))
+  if args.fitIterationsFile != '':
+    with open(args.fitIterationsFile, 'rb') as fp:
+      fitIterationDict = pickle.loads(zlib.decompress(fp.read()))
+  for x in analysisDict['checks']:
+    print x, analysisDict['checks'][x]
   
+  pass
+
+def printFinal():
+  """docstring for printFinal"""
+  for x in fitIterationDict[fitIterationDict['iterationList'][-1]]['body']:
+    print x  
+  pass
+
 if __name__ == '__main__':
   main()
+
