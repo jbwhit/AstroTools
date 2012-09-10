@@ -84,7 +84,7 @@ def main():
                       help='Type in comma separated (no spaces) list of the order of the ways "leveling up" should go. ex: L2,L4,L5')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
-  parser.add_argument('--version', action='version', version='%(prog)s 0.06')
+  parser.add_argument('--version', action='version', version='%(prog)s 0.08')
   # parser.add_argument('--noConfigs', action="store_true", default=False, help='Will not use the config files.')
   # parser.add_argument('--dataFile', action="store", default='blind', help='data file to use.') # Clearly not used.
   args = parser.parse_args()
@@ -247,7 +247,8 @@ def main():
     print "Running time:", runningTimeDelta
     shutil.copy('fort.18', runNameList[-1] + '.fort.18')
     shutil.copy('fort.26', runNameList[-1] + '.fort.26')
-    proc = subprocess.Popen(['fort18analysis', 'fort.18', runNameList[-1]])
+    # proc = subprocess.Popen(['fort18analysis', 'fort.18', runNameList[-1]])
+    proc = subprocess.call(['fort18analysis', 'fort.18', runNameList[-1]])
     # creates the fit.13 
     cat(runNameList[-1] + '.fit.13', 'head.6', runNameList[-1] + '.finalbody.7')
     fort18Check('fort.18')
