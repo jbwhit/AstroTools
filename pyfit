@@ -251,7 +251,6 @@ def main():
     proc = subprocess.call(['fort18analysis', 'fort.18', runNameList[-1]])
     # creates the fit.13 
     cat(runNameList[-1] + '.fit.13', 'head.6', runNameList[-1] + '.finalbody.7')
-    fort18Check('fort.18')
     with open(runNameList[-1] + '.analysis.p.gz', 'rb') as fp:
       analysisDict = {}
       analysisDict = pickle.loads(zlib.decompress(fp.read()))
