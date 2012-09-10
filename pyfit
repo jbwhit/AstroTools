@@ -126,19 +126,25 @@ def main():
     logging.info("Argument %s: %r", arg, value)
     overview[arg] = value
   
-  parser = SafeConfigParser()
-  found = parser.read(glob.glob(hcd['parentDirectory'] + 'config*'))
+  configParser = SafeConfigParser()
+  found = configParser.read(glob.glob(hcd['parentDirectory'] + 'config*'))
   print "Using these config files:"
   for configfile in set(found):
     print "  ", configfile
     logging.info("config loaded: " + configfile)
   overview['configs'] = [x for x in set(found)]
-  hcd['setupDir'] = parser.get('machine', 'setupdir') + '/'
-  hcd['atomDatFile'] = parser.get('update', args.atomdat)
+
+  # Test
+  bob = configParser.get('absorber','gdriveKey')
+  bob2 = configParser.get('absorber', 'sheet')
+  p1 = subprocess.call(['googledriveappend', bob, bob2]) # waits for return.
+  
+  hcd['setupDir'] = configParser.get('machine', 'setupdir') + '/'
+  hcd['atomDatFile'] = configParser.get('update', args.atomdat)
   shutil.copy(hcd['setupDir'] + hcd['atomDatFile'], hcd['fitDirectory'])
   shutil.copy(hcd['setupDir'] + 'vp_setup.dat', hcd['fitDirectory'])
   shutil.copy(hcd['setupDir'] + 'vp_splot.dat', hcd['fitDirectory'])
-  hcd['dataDirectory'] = parser.get('data', 'dataDirectory') + '/'
+  hcd['dataDirectory'] = configParser.get('data', 'dataDirectory') + '/'
   os.symlink(hcd['atomDatFile'], 'atom.dat') # create symbolic link to atom.dat in fitting directory.
   shutil.copy(hcd['parentDirectory'] + args.input13, hcd['fitDirectory'] + "input.fort.13")
   dataFiles = []
