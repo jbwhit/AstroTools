@@ -245,14 +245,13 @@ def main():
     print "Running time:", runningTimeDelta
     shutil.copy('fort.18', runNameList[-1] + '.fort.18')
     shutil.copy('fort.26', runNameList[-1] + '.fort.26')
-    # proc = subprocess.Popen(['fort18analysis', 'fort.18', runNameList[-1]])
     proc = subprocess.call(['fort18analysis', 'fort.18', runNameList[-1]])
     # creates the fit.13 
     cat(runNameList[-1] + '.fit.13', 'head.6', runNameList[-1] + '.finalbody.7')
     with open(runNameList[-1] + '.analysis.p.gz', 'rb') as fp:
       analysisDict = {}
       analysisDict = pickle.loads(zlib.decompress(fp.read()))
-    chiSquareList.append(float(analysisDict[x]['chi-squared']))
+    chiSquareList.append(float(analysisDict[analysisDict['iterationList'][-1]]['chi-squared']))
     status = ''
     warning = ''
     # is chisquare monotonic?
@@ -284,7 +283,7 @@ def main():
           # Switch to alpha fitting.
           flagDict['fitType'] = 'alphaFit'
           # convert from final fit to alpha variable.
-          p3 = subprocess.call(['convert13-13da', fitLevelDict['continueTimeStamp'][-1] + '.fit.13'])
+          p3 = subprocess.call(['convert13-13da', runNameList[-1] + '.fit.13'])
           # increase the maxRuns by run count when switch occurred. 
           fitLevelDict['maxRuns'] = fitLevelDict['maxRuns'] + run
           flagDict['rerunFlag'] = True
@@ -305,18 +304,18 @@ def main():
       print "Did not converge after: ", run
       overview['finalComment'] = "Not converged yet. Runs before stopping: " + str(run)
       continue
-  plotComparison()
-  endTimeStamp
+  plotComparison(runNameList[-1])
+  print hcd['timeStamp']
   print "Program exited gracefully."
   pass
 
 # ========================
 # = Function definitions =
 # ========================
-def plotComparison():
+def plotComparison(fileStem):
   """docstring for plotComparison"""
   if flagDict['noPlot'] == False: 
-    proc = subprocess.Popen( ['plotfit', fitLevelDict['continueTimeStamp'][-1], 'input.fort.13', fitLevelDict['continueTimeStamp'][-1] + ".fit.13"])
+    proc = subprocess.Popen( ['plotfit', fileStem, 'input.fort.13', fileStem + ".fit.13"])
   pass  
 
 def bump(inFile, outFile):
@@ -328,7 +327,7 @@ def bump(inFile, outFile):
       for line in unBumped.readlines():
         bumpFile.write(re.sub(r' 0.5000', ' 0.6250', line))
   else:
-    shutil.copyfileobj(inFile, outFile) 
+    shutil.copyfileobj(open(inFile, 'r'), open(outFile, 'w')) 
   pass
 
 def cat(outfilename, *infilenames):
