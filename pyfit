@@ -62,7 +62,6 @@ import zlib
 latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
 fitLevelDict = {}
 overview = {} # results dictionary
-runDict = {}
 runNameList = []
 
 def main():
@@ -231,24 +230,24 @@ def main():
     converged = False
     run += 1
     startTime = datetime.datetime.now()
-    runDict[run] = {}
-    runDict[run]['tag'] = tag[overview['fitType']]
+    overview[run] = {}
+    overview[run]['tag'] = tag[overview['fitType']]
     if run == 1:
       runNameList.append('input.fort')
       shutil.copy(runNameList[-1] + ".13", 'fort.13')
     else:
       print "Restart: ", run
       bump(runNameList[-1] + ".fit.13", 'fort.13')
-      runNameList.append(datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + runDict[run]['tag'])
+      runNameList.append(datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + overview[run]['tag'])
     shutil.copy('fort.13', runNameList[-1] + '.fort.13')
-    runDict[run]['levelName'] = levelList[levelIndex]
-    runDict[run]['fitString'] = fitLevelDict[runDict[run]['levelName']]
+    overview[run]['levelName'] = levelList[levelIndex]
+    overview[run]['fitString'] = fitLevelDict[overview[run]['levelName']]
     print "Running..."
     proc = subprocess.Popen([overview['vpfitExecutable']], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    result = proc.communicate(input=runDict[run]['fitString'])
+    result = proc.communicate(input=overview[run]['fitString'])
     runningTime = datetime.datetime.now() - startTime
     runningTimeDelta = runningTime.__str__()
-    runDict[run]['runningTime'] = runningTimeDelta
+    overview[run]['runningTime'] = runningTimeDelta
     print "Running time:", runningTimeDelta
     shutil.copy('fort.18', runNameList[-1] + '.fort.18')
     shutil.copy('fort.26', runNameList[-1] + '.fort.26')
@@ -256,9 +255,10 @@ def main():
     # creates the fit.13
     cat(runNameList[-1] + '.fit.13', 'head.6', runNameList[-1] + '.finalbody.7')
     with open(runNameList[-1] + '.analysis.p.gz', 'rb') as fp:
-      analysisDict = {}
-      analysisDict = pickle.loads(zlib.decompress(fp.read()))
-    chiSquareList.append(float(analysisDict[analysisDict['iterationList'][-1]]['chi-squared']))
+      # analysisDict = {}
+      # analysisDict = pickle.loads(zlib.decompress(fp.read()))
+      overview[run] = pickle.loads(zlib.decompress(fp.read()))
+    chiSquareList.append(float(overview[run][overview[run]['iterationList'][-1]]['chi-squared']))
     status = ''
     warning = ''
     # is chisquare monotonic?
@@ -273,7 +273,7 @@ def main():
       status = "stop"
       warning += "max runs; "
     else:
-      if analysisDict['iterationList'][-3:] == '125':
+      if overview[run]['iterationList'][-3:] == '125':
         overview['rerunFlag'] = True
         continue
       else:
@@ -469,74 +469,3 @@ if __name__ == '__main__':
 #       continue
 #   pass
 # 
-# def runVPFIT(startFort13='command.fort.13'):
-#   """docstring for runVPFIT"""
-#   print "Running... "
-#   if startFort13 != 'fort.13':
-#     # Move input file to be fort.13 (for currentParameterString to be correct)
-#     shutil.copy(startFort13, 'fort.13')
-#   overview['totalRunCount'] += 1
-#   logging.info("Fitting Parameters: " + repr(currentParameterString))
-#   proc = subprocess.Popen([overview['vpfitExecutable']], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-#   result = proc.communicate(input=currentParameterString)
-#   # runningTimeDelta = runningTime.__str__()
-#   # print "Running time:", runningTimeDelta
-#   # logging.info("Time to execute: " + runningTimeDelta)
-#   # currentDict['runningTime'] = runningTimeDelta
-#   # p2 = subprocess.call(['combine2613', 'fort.13', 'fort.26', 'fit.13'])
-#   shutil.copy('fort.18', fitLevelDict['continueTimeStamp'][-1] + '.fort.18')
-#   shutil.copy('fort.26', fitLevelDict['continueTimeStamp'][-1] + '.fort.26')
-#   shutil.copy('fit.13', fitLevelDict['continueTimeStamp'][-1] + '.fit.13')
-#   pass
-# 
-# def normalFit():
-#   """docstring for normalFit"""
-#   fitLevelDict['continueTimeStamp'].append(overview['timeStamp'])
-#   runVPFIT(startFort13='command.fort.13')
-#   fort18Check('fort.18')
-#   # overview[overview['totalRunCount']] = currentDict
-#   fitLevelDict['runCount'] = 1
-#   if overview['maxRuns'] < 2:
-#     print "No restarts."
-#   elif (overview['iterations125'] == True) or (overview['noLevelUp'] == False):
-#     overview['rerunFlag'] = True
-#     reRunFit()
-#   plotComparison()
-#   pass
-#   
-# def vchunkFit():
-#   """docstring for vchunkFit"""
-#   overview['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.vchunk'
-#   fitLevelDict['continueTimeStamp'].append(overview['newTimeStamp'])
-#   shutil.move('fort.13', overview['newTimeStamp'] + '.fit.13')
-#   print overview['newTimeStamp'] + '.fit.13'
-#   overview['rerunFlag'] = True
-#   reRunFit(tag='.vchunk')
-#   pass
-#   
-# def alphaFit():
-#   """docstring for alphaFit"""
-#   overview['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.alpha'
-#   fitLevelDict['continueTimeStamp'].append(overview['newTimeStamp'])
-#   shutil.move('fort.13', overview['newTimeStamp'] + '.fit.13') # move fort.13 to right-named thing.
-#   overview['rerunFlag'] = True
-#   reRunFit(tag='.alpha')
-#   plotComparison()    
-#   pass
-#   
-# def normalFitAlphaFit():
-#   """docstring for normalFitAlphaFit"""
-#   overview['fitType'] = 'normalFit'
-#   functionDict[overview['fitType']]()
-#   print "Fitting for alpha..."
-#   overview['fitType'] = 'alphaFit'
-#   p3 = subprocess.call(['convert13-13da', fitLevelDict['continueTimeStamp'][-1] + '.fit.13'])
-#   overview['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.alpha'
-#   shutil.move('alpha.13', overview['newTimeStamp'] + '.fit.13')
-#   fitLevelDict['continueTimeStamp'].append(overview['newTimeStamp'])
-#   overview['rerunFlag'] = True
-#   overview['noLevelUp'] = True
-#   currentFitLevel = fitLevelDict["alphaLevel"]
-#   reRunFit(tag='.alpha')
-#   plotComparison()    
-#   pass
