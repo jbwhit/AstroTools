@@ -60,7 +60,6 @@ import zlib
 # qa is the flag for fitting alpha.
 
 latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
-overview = {}
 fitLevelDict = {}
 overview = {} # results dictionary
 runDict = {}
@@ -102,16 +101,12 @@ def main():
     args.fitType = 'normalFit'    
   else:
     allowTransitiontoAlphaFit = False
-  
-  overview['noComment'] = args.noComment
-  overview['fitType'] = args.fitType
-  overview['bump'] = args.bump
-  overview['noPlot'] = args.noPlot
-  overview['iterations125'] = False
-
+    
   # =======================
   # = Begin pre-fit setup =
   # =======================
+
+  overview['iterations125'] = False
   
   # Create fit directory
   os.makedirs(overview['timeStamp'])
@@ -124,6 +119,8 @@ def main():
   for arg, value in sorted(vars(args).items()):
     logging.info("Argument %s: %r", arg, value)
     overview[arg] = value
+  
+  overview['maxRuns'] = int(args.maxRuns)
   
   configParser = SafeConfigParser()
   found = configParser.read(glob.glob(overview['parentDirectory'] + 'config*'))
@@ -186,7 +183,7 @@ def main():
   fitLevelDict["M6"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict["M7"] = "f\nil\ncs\n1.e-7 100.0 1.e-7\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict["M8"] = "f\nil\ncs\n1.e-6 100.0 1.e-6\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
-  fitLevelDict['maxRuns'] = int(args.maxRuns)
+
   
   levelIndex = 0
   levelList = []
@@ -256,7 +253,7 @@ def main():
     shutil.copy('fort.18', runNameList[-1] + '.fort.18')
     shutil.copy('fort.26', runNameList[-1] + '.fort.26')
     proc = subprocess.call(['fort18analysis', 'fort.18', runNameList[-1]])
-    # creates the fit.13 
+    # creates the fit.13
     cat(runNameList[-1] + '.fit.13', 'head.6', runNameList[-1] + '.finalbody.7')
     with open(runNameList[-1] + '.analysis.p.gz', 'rb') as fp:
       analysisDict = {}
@@ -272,7 +269,7 @@ def main():
       print "inter-run chiSquareCheck failed for run: ", run
       status = "converged"
       warning += 'interrun chiSquareCheck failed; '
-    if run >= fitLevelDict['maxRuns']:
+    if run >= overview['maxRuns']:
       status = "stop"
       warning += "max runs; "
     else:
@@ -300,7 +297,7 @@ def main():
           # convert from final fit to alpha variable.
           p3 = subprocess.call(['convert13-13da', runNameList[-1] + '.fit.13'])
           # increase the maxRuns by run count when switch occurred. 
-          fitLevelDict['maxRuns'] = fitLevelDict['maxRuns'] + run
+          overview['maxRuns'] = overview['maxRuns'] + run
           overview['rerunFlag'] = True
           chiSquareList = [] # reset to not falsely trigger monotonic chiSquareCheck 
           continue
@@ -451,7 +448,7 @@ if __name__ == '__main__':
 #     runVPFIT(startFort13='fort.13')
 #     fort18Check('fort.18')
 #     if overview['iterations125'] == True:
-#       if fitLevelDict['runCount'] < fitLevelDict['maxRuns']:
+#       if fitLevelDict['runCount'] < overview['maxRuns']:
 #         overview['rerunFlag'] = True
 #         continue
 #     elif (levelList.index(currentFitLevel) < len(levelList) - 1) and (overview['noLevelUp'] == False):
@@ -499,7 +496,7 @@ if __name__ == '__main__':
 #   fort18Check('fort.18')
 #   # overview[overview['totalRunCount']] = currentDict
 #   fitLevelDict['runCount'] = 1
-#   if fitLevelDict['maxRuns'] < 2:
+#   if overview['maxRuns'] < 2:
 #     print "No restarts."
 #   elif (overview['iterations125'] == True) or (overview['noLevelUp'] == False):
 #     overview['rerunFlag'] = True
