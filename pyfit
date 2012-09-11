@@ -62,7 +62,6 @@ import zlib
 latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
 fitLevelDict = {}
 overview = {} # results dictionary
-runNameList = []
 
 def main():
   overview['timeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f")
@@ -233,13 +232,13 @@ def main():
     overview[run] = {}
     overview[run]['tag'] = tag[overview['fitType']]
     if run == 1:
-      runNameList.append('input.fort')
-      shutil.copy(runNameList[-1] + ".13", 'fort.13')
+      overview[run]['stem'] = 'input.fort'
+      shutil.copy(overview[run]['stem'] + ".13", 'fort.13')
     else:
       print "Restart: ", run
-      bump(runNameList[-1] + ".fit.13", 'fort.13')
-      runNameList.append(datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + overview[run]['tag'])
-    shutil.copy('fort.13', runNameList[-1] + '.fort.13')
+      bump(overview[run]['stem'] + ".fit.13", 'fort.13')
+      overview[run]['stem'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + overview[run]['tag']
+    shutil.copy('fort.13', overview[run]['stem'] + '.fort.13')
     overview[run]['levelName'] = levelList[levelIndex]
     overview[run]['fitString'] = fitLevelDict[overview[run]['levelName']]
     print "Running..."
@@ -249,14 +248,12 @@ def main():
     runningTimeDelta = runningTime.__str__()
     overview[run]['runningTime'] = runningTimeDelta
     print "Running time:", runningTimeDelta
-    shutil.copy('fort.18', runNameList[-1] + '.fort.18')
-    shutil.copy('fort.26', runNameList[-1] + '.fort.26')
-    proc = subprocess.call(['fort18analysis', 'fort.18', runNameList[-1]])
+    shutil.copy('fort.18', overview[run]['stem'] + '.fort.18')
+    shutil.copy('fort.26', overview[run]['stem'] + '.fort.26')
+    proc = subprocess.call(['fort18analysis', 'fort.18', overview[run]['stem']])
     # creates the fit.13
-    cat(runNameList[-1] + '.fit.13', 'head.6', runNameList[-1] + '.finalbody.7')
-    with open(runNameList[-1] + '.analysis.p.gz', 'rb') as fp:
-      # analysisDict = {}
-      # analysisDict = pickle.loads(zlib.decompress(fp.read()))
+    cat(overview[run]['stem'] + '.fit.13', 'head.6', overview[run]['stem'] + '.finalbody.7')
+    with open(overview[run]['stem'] + '.analysis.p.gz', 'rb') as fp:
       overview[run] = pickle.loads(zlib.decompress(fp.read()))
     chiSquareList.append(float(overview[run][overview[run]['iterationList'][-1]]['chi-squared']))
     status = ''
@@ -295,7 +292,7 @@ def main():
           # Switch to alpha fitting.
           overview['fitType'] = 'alphaFit'
           # convert from final fit to alpha variable.
-          p3 = subprocess.call(['convert13-13da', runNameList[-1] + '.fit.13'])
+          p3 = subprocess.call(['convert13-13da', overview[run]['stem'] + '.fit.13'])
           # increase the maxRuns by run count when switch occurred. 
           overview['maxRuns'] = overview['maxRuns'] + run
           overview['rerunFlag'] = True
@@ -307,7 +304,7 @@ def main():
           print "Warnings: ", warning
           continue
       # TODO send message to googledocs (dropbox script); spreadsheet, absorption system.
-      # fort18report(runNameList[-1])
+      # fort18report(overview[run]['stem'])
       logging.info("It took " + str(run) + " runs to converge.")
       # TODO create final fit versions named appropriately. 
       overview['finalComment'] = "It took " + str(run) + " runs to converge."
@@ -319,7 +316,7 @@ def main():
       print "Did not converge after: ", run
       overview['finalComment'] = "Not converged yet. Runs before stopping: " + str(run)
       continue
-  plotComparison(runNameList[-1])
+  plotComparison(overview[run]['stem'])
   # send away finalfitDictionary now; fitType being whatever: normalFit; alphaFit; vchunkFit. 
   print overview['timeStamp']
   print "Program exited gracefully."
@@ -421,51 +418,4 @@ if __name__ == '__main__':
 # with open('command.info', 'w') as fh:
 #   print >>fh, "! ATOMDIR:" + overview['atomDatFile']
 #   print >>fh, "! runCommand: printf " + repr(currentParameterString) + " | " + overview['vpfitExecutable']
-# 
-# # TODO fix this -- put this header in each iteration fort.13 
-# with open('command.fort.13', 'w') as outFile:
-#   with open('command.info', 'r') as com, open('fort.13', 'r') as fort13:
-#     outFile.write(com.read())
-#     outFile.write(fort13.read())
-# def reRunFit(tag=''):
-#   """docstring for reRunFit"""
-#   print "Resetting runCount"
-#   fitLevelDict['runCount'] = 0
-#   while overview['rerunFlag'] == True:
-#     overview['rerunFlag'] = False
-#     fitLevelDict['runCount'] += 1
-#     print "Level: ", currentFitLevel
-#     print "Restart: ", fitLevelDict['runCount']
-#     overview['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + tag
-#     fitLevelDict['continueTimeStamp'].append(overview['newTimeStamp'])
-#     print "Beginning run: " + str(fitLevelDict['runCount']) + " at " + overview['newTimeStamp'] + " in " + fitLevelDict['continueTimeStamp'][0]
-#     if overview['bump']:
-#       "Not bumping values. Hope this is what you want."
-#       shutil.copy(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', overview['fitDirectory'] + 'bump.13')
-#     else:
-#       bump(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', 'fort.13')
-#     shutil.copy('fort.13', fitLevelDict['continueTimeStamp'][-1] + '.fort.13')
-#     runVPFIT(startFort13='fort.13')
-#     fort18Check('fort.18')
-#     if overview['iterations125'] == True:
-#       if fitLevelDict['runCount'] < overview['maxRuns']:
-#         overview['rerunFlag'] = True
-#         continue
-#     elif (levelList.index(currentFitLevel) < len(levelList) - 1) and (overview['noLevelUp'] == False):
-#       print "Level up; run count reset."
-#       currentFitLevel = levelList[levelList.index(currentFitLevel) + 1]
-#       fitLevelDict['runCount'] = 0
-#       overview['rerunFlag'] = True
-#       continue
-#     elif levelList.index(currentFitLevel) == len(levelList) - 1:
-#       print "Less than 125 iterations; currentFitLevel is maxLevel; converged!"
-#       logging.info("It took " + str(fitLevelDict['runCount']) + " runs to converge.")
-#       overview['finalComment'] = "It took " + str(fitLevelDict['runCount']) + " runs to converge."
-#       continue
-#     else:
-#       print "Did not converge after: ", fitLevelDict['runCount']
-#       logging.warning("Not converged yet. Runs before stopping: " + str(fitLevelDict['runCount']))
-#       overview['finalComment'] = "Not converged yet. Runs before stopping: " + str(fitLevelDict['runCount'])
-#       continue
-#   pass
-# 
+# # TODO put header in each iteration fort.13 
