@@ -63,8 +63,6 @@ def main():
   parser = argparse.ArgumentParser(description='Parse.')
   parser.add_argument('inFile', action="store", nargs='?', default='fort.18', type=str) # Positional 
   parser.add_argument('outFileStem', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
-  # parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
-  # parser.add_argument('fitIterationsFile', action="store", nargs='?', default='test.iterations.p', type=str) # Positional 
   args = parser.parse_args()
   with open(args.inFile, 'r') as f18:
     analysisDict['inFile'] = args.inFile
@@ -154,13 +152,13 @@ def main():
 
   # sanity checks that AICc and chi-squared are going down each iteration.
   if AICcheck == sorted(AICcheck, reverse=True):
-    analysisDict['checks']['AICc'] = 'Pass'
+    analysisDict['checks']['AICc'] = True
   else:
-    analysisDict['checks']['AICc'] = 'Fail'
+    analysisDict['checks']['AICc'] = False
   if chiSquarecheck == sorted(chiSquarecheck, reverse=True):
-    analysisDict['checks']['chiSquarecheck'] = 'Pass'
+    analysisDict['checks']['chiSquarecheck'] = True
   else:
-    analysisDict['checks']['chiSquarecheck'] = 'Fail'
+    analysisDict['checks']['chiSquarecheck'] = False
   with open(args.outFileStem + '.analysis.p.gz', 'wb') as fp:
     fp.write(zlib.compress(pickle.dumps(analysisDict, pickle.HIGHEST_PROTOCOL),9))
   with open(args.outFileStem + '.iterations.p.gz', 'wb') as fp:

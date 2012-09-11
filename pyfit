@@ -62,14 +62,13 @@ import zlib
 latestAtomdat = 'MM_VPFIT_2012-06-05.dat' # Update this. 
 flagDict = {}
 fitLevelDict = {}
-hcd = {} # Housecleaning dictionary
 overview = {} # results dictionary
 runDict = {}
 runNameList = []
 
 def main():
-  hcd['timeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f")
-  print hcd['timeStamp']
+  overview['timeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f")
+  print overview['timeStamp']
   parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
   parser.add_argument('input13', action="store", nargs='?', default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
   parser.add_argument('--noComment', action="store_true", default=False, help='Turn off comment prompt.')
@@ -88,10 +87,10 @@ def main():
   args = parser.parse_args()
   if args.vpfitVersion == ("9.5" or "95" or "vpfit9.5"):
     print "VPFIT version: ", args.vpfitVersion
-    hcd['vpfitExecutable'] = 'vpfit95'
+    overview['vpfitExecutable'] = 'vpfit95'
   elif args.vpfitVersion == ("10.0" or "10" or "vpfit10.0"):
     print "VPFIT version: ", 
-    hcd['vpfitExecutable'] = 'vpfit10'
+    overview['vpfitExecutable'] = 'vpfit10'
   else:
     print "What VPFIT version are you wanting to use?"
   tag = {}
@@ -115,38 +114,43 @@ def main():
   # =======================
   
   # Create fit directory
-  os.makedirs(hcd['timeStamp'])
-  hcd['parentDirectory'] = os.getcwd() + '/'
-  os.chdir(hcd['timeStamp'])
-  hcd['fitDirectory'] = os.getcwd() + '/'
+  os.makedirs(overview['timeStamp'])
+  overview['parentDirectory'] = os.getcwd() + '/'
+  os.chdir(overview['timeStamp'])
+  overview['fitDirectory'] = os.getcwd() + '/'
 
   # Create a fitting log.
-  logging.basicConfig(filename=hcd['timeStamp'] + '.log', level=logging.DEBUG)
+  logging.basicConfig(filename=overview['timeStamp'] + '.log', level=logging.DEBUG)
   for arg, value in sorted(vars(args).items()):
     logging.info("Argument %s: %r", arg, value)
     overview[arg] = value
   
   configParser = SafeConfigParser()
-  found = configParser.read(glob.glob(hcd['parentDirectory'] + 'config*'))
+  found = configParser.read(glob.glob(overview['parentDirectory'] + 'config*'))
   print "Using these config files:"
   for configfile in set(found):
     print "  ", configfile
     logging.info("config loaded: " + configfile)
   overview['configs'] = [x for x in set(found)]
 
-  # Test
-  bob = configParser.get('absorber','gdriveKey')
-  bob2 = configParser.get('absorber', 'sheet')
-  p1 = subprocess.call(['googledriveappend', bob, bob2]) # waits for return.
-  
-  hcd['setupDir'] = configParser.get('machine', 'setupdir') + '/'
-  hcd['atomDatFile'] = configParser.get('update', args.atomdat)
-  shutil.copy(hcd['setupDir'] + hcd['atomDatFile'], hcd['fitDirectory'])
-  shutil.copy(hcd['setupDir'] + 'vp_setup.dat', hcd['fitDirectory'])
-  shutil.copy(hcd['setupDir'] + 'vp_splot.dat', hcd['fitDirectory'])
-  hcd['dataDirectory'] = configParser.get('data', 'dataDirectory') + '/'
-  os.symlink(hcd['atomDatFile'], 'atom.dat') # create symbolic link to atom.dat in fitting directory.
-  shutil.copy(hcd['parentDirectory'] + args.input13, hcd['fitDirectory'] + "input.fort.13")
+  try:
+    overview['gdriveKey'] = configParser.get('absorber','gdriveKey')
+    overview['sheetNumber'] = configParser.get('absorber','sheetNumber')
+    overview['QSO'] = configParser.get('absorber','QSO')
+    overview['z_abs'] = configParser.get('absorber','z_abs')
+    # p1 = subprocess.call(['googledriveappend', overview['gdriveKey'], overview['sheet']]) # waits for return.
+    subprocess.call(['googledriveappend', overview['gdriveKey'], overview['sheetNumber'], overview['QSO'], overview['z_abs']]) # waits for return.
+  except:
+    print "Missing out on google drive integration... use configs!"
+    
+  overview['setupDir'] = configParser.get('machine', 'setupdir') + '/'
+  overview['atomDatFile'] = configParser.get('update', args.atomdat)
+  shutil.copy(overview['setupDir'] + overview['atomDatFile'], overview['fitDirectory'])
+  shutil.copy(overview['setupDir'] + 'vp_setup.dat', overview['fitDirectory'])
+  shutil.copy(overview['setupDir'] + 'vp_splot.dat', overview['fitDirectory'])
+  overview['dataDirectory'] = configParser.get('data', 'dataDirectory') + '/'
+  os.symlink(overview['atomDatFile'], 'atom.dat') # create symbolic link to atom.dat in fitting directory.
+  shutil.copy(overview['parentDirectory'] + args.input13, overview['fitDirectory'] + "input.fort.13")
   dataFiles = []
   with open("input.fort.13", 'r') as f13:
     beginHead, beginBody = False, False
@@ -170,7 +174,7 @@ def main():
   
   # parse the head to get data files used. 
   for datafile in set(dataFiles):
-    os.symlink(hcd['dataDirectory'] + datafile, hcd['fitDirectory'] + datafile)
+    os.symlink(overview['dataDirectory'] + datafile, overview['fitDirectory'] + datafile)
   overview['dataFiles'] = [x for x in set(dataFiles)]
 
   # Create dictionary of all level strings; use fitLevel as key.
@@ -191,10 +195,9 @@ def main():
   levelString = fitLevelDict[levelList[levelIndex]] 
     
   # Create symbolic link of vpfit executable into fitting directory (for fitcmp purposes).
-  hcd['executableLink'] = subprocess.Popen(['which', hcd['vpfitExecutable']], stdout=subprocess.PIPE)
-  os.symlink(hcd['executableLink'].communicate()[0].strip(), hcd['fitDirectory'] + 'vpfit')
-  overview['vpfit version'] = args.vpfitVersion
-  overview['vpfit executable'] = hcd['vpfitExecutable']
+  overview['executableLink'] = subprocess.Popen(['which', overview['vpfitExecutable']], stdout=subprocess.PIPE)
+  os.symlink(overview['executableLink'].communicate()[0].strip(), overview['fitDirectory'] + 'vpfit')
+  overview['vpfitVersion'] = args.vpfitVersion
   
   # Change to use current directory settings. 
   os.environ['ATOMDIR'] = 'atom.dat'
@@ -225,6 +228,7 @@ def main():
   run = 0
   chiSquareList = []
   flagDict['rerunFlag'] = True
+  fullStartTime = datetime.datetime.now()
   while flagDict['rerunFlag'] == True:
     flagDict['rerunFlag'] = False
     converged = False
@@ -243,7 +247,7 @@ def main():
     runDict[run]['levelName'] = levelList[levelIndex]
     runDict[run]['fitString'] = fitLevelDict[runDict[run]['levelName']]
     print "Running..."
-    proc = subprocess.Popen([hcd['vpfitExecutable']], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    proc = subprocess.Popen([overview['vpfitExecutable']], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result = proc.communicate(input=runDict[run]['fitString'])
     runningTime = datetime.datetime.now() - startTime
     runningTimeDelta = runningTime.__str__()
@@ -286,6 +290,11 @@ def main():
       else:
         if allowTransitiontoAlphaFit:
           allowTransitiontoAlphaFit = False
+          fullRunningTime = datetime.datetime.now() - fullStartTime 
+          fullRunningTimeDelta = runningTime.__str__()
+          # store fullRunningTimeDelta
+          fullStartTime = datetime.datetime.now()
+          # send away finalfitDictionary now; fitType being normalFit
           # Switch to alpha fitting.
           flagDict['fitType'] = 'alphaFit'
           # convert from final fit to alpha variable.
@@ -305,13 +314,17 @@ def main():
       logging.info("It took " + str(run) + " runs to converge.")
       # TODO create final fit versions named appropriately. 
       overview['finalComment'] = "It took " + str(run) + " runs to converge."
+      fullRunningTime = datetime.datetime.now() - fullStartTime 
+      fullRunningTimeDelta = runningTime.__str__()
+      # store fullRunningTimeDelta      
       continue
     else:
       print "Did not converge after: ", run
       overview['finalComment'] = "Not converged yet. Runs before stopping: " + str(run)
       continue
   plotComparison(runNameList[-1])
-  print hcd['timeStamp']
+  # send away finalfitDictionary now; fitType being whatever: normalFit; alphaFit; vchunkFit. 
+  print overview['timeStamp']
   print "Program exited gracefully."
   pass
 
@@ -398,22 +411,19 @@ if __name__ == '__main__':
 #       if re.search('err', line):
 #         logging.error(line)# with open('rerun.bash', 'w') as fh:
 #   print >>fh, "#!/bin/bash\nexport ATOMDIR=", os.environ['ATOMDIR'], "\nexport VPFSETUP=", os.environ['VPFSETUP'], \
-#     "\nexport VPFPLOTS=", os.environ['VPFPLOTS'], "\ncp ", hcd['timeStamp'] + ".fort.13 fort.13", \
-#     "\nprintf " + repr(currentParameterString) + " | " + hcd['vpfitExecutable']
+#     "\nexport VPFPLOTS=", os.environ['VPFPLOTS'], "\ncp ", overview['timeStamp'] + ".fort.13 fort.13", \
+#     "\nprintf " + repr(currentParameterString) + " | " + overview['vpfitExecutable']
 # if flagDict['bump']:
 #   "Not bumping values. Hope this is what you want."
-#   shutil.copy('input.fort.13', hcd['fitDirectory'] + 'bump.13')
+#   shutil.copy('input.fort.13', overview['fitDirectory'] + 'bump.13')
 # else:
 #   bump('input.fort.13', 'bump.13')
 #   d = difflib.Differ()
 #   diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
-#   print '\n'.join(diff)
-#   diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
-#   overview['diff'] = '\n'.join(diff)
-# TODO consolidate run, overview, hcd, etc. 
+# TODO consolidate run, overview, overview, etc. 
 # with open('command.info', 'w') as fh:
-#   print >>fh, "! ATOMDIR:" + hcd['atomDatFile']
-#   print >>fh, "! runCommand: printf " + repr(currentParameterString) + " | " + hcd['vpfitExecutable']
+#   print >>fh, "! ATOMDIR:" + overview['atomDatFile']
+#   print >>fh, "! runCommand: printf " + repr(currentParameterString) + " | " + overview['vpfitExecutable']
 # 
 # # TODO fix this -- put this header in each iteration fort.13 
 # with open('command.fort.13', 'w') as outFile:
@@ -429,12 +439,12 @@ if __name__ == '__main__':
 #     fitLevelDict['runCount'] += 1
 #     print "Level: ", currentFitLevel
 #     print "Restart: ", fitLevelDict['runCount']
-#     hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + tag
-#     fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
-#     print "Beginning run: " + str(fitLevelDict['runCount']) + " at " + hcd['newTimeStamp'] + " in " + fitLevelDict['continueTimeStamp'][0]
+#     overview['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + tag
+#     fitLevelDict['continueTimeStamp'].append(overview['newTimeStamp'])
+#     print "Beginning run: " + str(fitLevelDict['runCount']) + " at " + overview['newTimeStamp'] + " in " + fitLevelDict['continueTimeStamp'][0]
 #     if flagDict['bump']:
 #       "Not bumping values. Hope this is what you want."
-#       shutil.copy(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', hcd['fitDirectory'] + 'bump.13')
+#       shutil.copy(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', overview['fitDirectory'] + 'bump.13')
 #     else:
 #       bump(fitLevelDict['continueTimeStamp'][-2] + '.fit.13', 'fort.13')
 #     shutil.copy('fort.13', fitLevelDict['continueTimeStamp'][-1] + '.fort.13')
@@ -468,12 +478,10 @@ if __name__ == '__main__':
 #   if startFort13 != 'fort.13':
 #     # Move input file to be fort.13 (for currentParameterString to be correct)
 #     shutil.copy(startFort13, 'fort.13')
-#   startTime = datetime.datetime.now()
 #   overview['totalRunCount'] += 1
 #   logging.info("Fitting Parameters: " + repr(currentParameterString))
-#   proc = subprocess.Popen([hcd['vpfitExecutable']], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+#   proc = subprocess.Popen([overview['vpfitExecutable']], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 #   result = proc.communicate(input=currentParameterString)
-#   # runningTime = datetime.datetime.now() - startTime
 #   # runningTimeDelta = runningTime.__str__()
 #   # print "Running time:", runningTimeDelta
 #   # logging.info("Time to execute: " + runningTimeDelta)
@@ -486,7 +494,7 @@ if __name__ == '__main__':
 # 
 # def normalFit():
 #   """docstring for normalFit"""
-#   fitLevelDict['continueTimeStamp'].append(hcd['timeStamp'])
+#   fitLevelDict['continueTimeStamp'].append(overview['timeStamp'])
 #   runVPFIT(startFort13='command.fort.13')
 #   fort18Check('fort.18')
 #   # overview[overview['totalRunCount']] = currentDict
@@ -501,19 +509,19 @@ if __name__ == '__main__':
 #   
 # def vchunkFit():
 #   """docstring for vchunkFit"""
-#   hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.vchunk'
-#   fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
-#   shutil.move('fort.13', hcd['newTimeStamp'] + '.fit.13')
-#   print hcd['newTimeStamp'] + '.fit.13'
+#   overview['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.vchunk'
+#   fitLevelDict['continueTimeStamp'].append(overview['newTimeStamp'])
+#   shutil.move('fort.13', overview['newTimeStamp'] + '.fit.13')
+#   print overview['newTimeStamp'] + '.fit.13'
 #   flagDict['rerunFlag'] = True
 #   reRunFit(tag='.vchunk')
 #   pass
 #   
 # def alphaFit():
 #   """docstring for alphaFit"""
-#   hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.alpha'
-#   fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
-#   shutil.move('fort.13', hcd['newTimeStamp'] + '.fit.13') # move fort.13 to right-named thing.
+#   overview['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.alpha'
+#   fitLevelDict['continueTimeStamp'].append(overview['newTimeStamp'])
+#   shutil.move('fort.13', overview['newTimeStamp'] + '.fit.13') # move fort.13 to right-named thing.
 #   flagDict['rerunFlag'] = True
 #   reRunFit(tag='.alpha')
 #   plotComparison()    
@@ -526,9 +534,9 @@ if __name__ == '__main__':
 #   print "Fitting for alpha..."
 #   flagDict['fitType'] = 'alphaFit'
 #   p3 = subprocess.call(['convert13-13da', fitLevelDict['continueTimeStamp'][-1] + '.fit.13'])
-#   hcd['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.alpha'
-#   shutil.move('alpha.13', hcd['newTimeStamp'] + '.fit.13')
-#   fitLevelDict['continueTimeStamp'].append(hcd['newTimeStamp'])
+#   overview['newTimeStamp'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + '.alpha'
+#   shutil.move('alpha.13', overview['newTimeStamp'] + '.fit.13')
+#   fitLevelDict['continueTimeStamp'].append(overview['newTimeStamp'])
 #   flagDict['rerunFlag'] = True
 #   flagDict['noLevelUp'] = True
 #   currentFitLevel = fitLevelDict["alphaLevel"]
