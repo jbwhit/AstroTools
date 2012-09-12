@@ -63,8 +63,6 @@ def main():
   parser = argparse.ArgumentParser(description='Parse.')
   parser.add_argument('inFile', action="store", nargs='?', default='fort.18', type=str) # Positional 
   parser.add_argument('outFileStem', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
-  # parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
-  # parser.add_argument('fitIterationsFile', action="store", nargs='?', default='test.iterations.p', type=str) # Positional 
   args = parser.parse_args()
   with open(args.inFile, 'r') as f18:
     analysisDict['inFile'] = args.inFile
@@ -122,13 +120,16 @@ def main():
         analysisDict['region'][region]['DoF'] = float(line.split()[4])
         analysisDict['region'][region]['reduced-chi-square'] = float(line.split()[2])/float(line.split()[4])
   # Reading through of inFile complete.
+  analysisDict['finalIteration'] = analysisDict[finalIteration]
   fitIterationDict['iterationList'] = iterationList
   analysisDict['iterationList'] = iterationList
+  analysisDict['finalIteration']['body'] = []
+  iterationList.append('finalIteration')
   for line in fitIterationDict[finalIteration]['body']:
     p = re.compile('   0.00E\+00  ')
-    analysisDict['finalIteration'].append(p.sub('   1.00E+00  ', line))
+    analysisDict['finalIteration']['body'].append(p.sub('   1.00E+00  ', line))
   with open(args.outFileStem + '.finalbody.7', 'w') as fp:
-    for line in analysisDict['finalIteration']:
+    for line in analysisDict['finalIteration']['body']:
       print >>fp, line
   for x in iterationList:
     analysisDict[x]['Nparameters'] = analysisDict['Npix'] - analysisDict[x]['DoF']
@@ -154,13 +155,13 @@ def main():
 
   # sanity checks that AICc and chi-squared are going down each iteration.
   if AICcheck == sorted(AICcheck, reverse=True):
-    analysisDict['checks']['AICc'] = 'Pass'
+    analysisDict['checks']['AICc'] = True
   else:
-    analysisDict['checks']['AICc'] = 'Fail'
+    analysisDict['checks']['AICc'] = False
   if chiSquarecheck == sorted(chiSquarecheck, reverse=True):
-    analysisDict['checks']['chiSquarecheck'] = 'Pass'
+    analysisDict['checks']['chiSquarecheck'] = True
   else:
-    analysisDict['checks']['chiSquarecheck'] = 'Fail'
+    analysisDict['checks']['chiSquarecheck'] = False
   with open(args.outFileStem + '.analysis.p.gz', 'wb') as fp:
     fp.write(zlib.compress(pickle.dumps(analysisDict, pickle.HIGHEST_PROTOCOL),9))
   with open(args.outFileStem + '.iterations.p.gz', 'wb') as fp:
