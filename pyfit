@@ -133,6 +133,7 @@ def main():
     overview['sheetNumber'] = configParser.get('absorber','sheetNumber')
     overview['QSO'] = configParser.get('absorber','QSO')
     overview['z_abs'] = configParser.get('absorber','z_abs')
+    overview['absorberLogFile'] = overview['parentDirectory'] + overview['QSO'] + "_" + overview['z_abs'] + "_log.csv"
   except:
     print "Missing out on google drive integration... use configs!"
     
@@ -220,8 +221,6 @@ def main():
 
   run = 0
   chiSquareList = []
-  for x in sorted(overview.keys()):
-    print x
   overview['rerunFlag'] = True
   fullStartTime = datetime.datetime.now()
   while overview['rerunFlag'] == True:
@@ -258,7 +257,7 @@ def main():
     with open(overview[run]['stem'] + '.analysis.p.gz', 'rb') as fp:
       overview[run]['analysis'] = pickle.loads(zlib.decompress(fp.read()))
     chiSquareList.append(float(overview[run]['analysis'][overview[run]['analysis']['iterationList'][-1]]['chi-squared']))
-    status = ''
+    overview['status'] = ''
     warning = ''
     # is chisquare monotonic?
     if sorted(chiSquareList, reverse=True) == chiSquareList:
@@ -269,14 +268,15 @@ def main():
       status = "converged"
       warning += 'interrun chiSquareCheck failed; '
     if run >= overview['maxRuns']:
-      status = "stop"
+      overview['status'] = False
       warning += "max runs; "
     else:
-      if overview[run]['analysis']['iterationList'][-3:] == '125':
+      # TODO check this is correct
+      if overview[run]['analysis']['iterationList'][-1][-3:] == '125':
         overview['rerunFlag'] = True
         continue
       else:
-        status = "converged"
+        overview['status'] = "converged"
     if status == "converged": 
       if levelIndex < len(levelList) - 1:
         levelIndex += 1
@@ -291,7 +291,7 @@ def main():
           # store fullRunningTimeDelta
           fullStartTime = datetime.datetime.now()
           # send away finalfitDictionary now; fitType being normalFit
-
+          
           # Switch to alpha fitting.
           overview['fitType'] = 'alphaFit'
           # convert from final fit to alpha variable.
@@ -305,14 +305,11 @@ def main():
           chiSquareList = [] # reset to not falsely trigger monotonic chiSquareCheck 
           continue
         else:
-          status = "stop"
+          overview['status'] = "converged"
           print "Converged!"
           print "Warnings: ", warning
           continue
-      # TODO send message to googledocs (dropbox script); spreadsheet, absorption system.
-      # subprocess.call(['googledriveappend', overview['gdriveKey'], overview['sheetNumber'], overview['QSO'], overview['z_abs']]) # waits for return.
       logging.info("It took " + str(run) + " runs to converge.")
-      # TODO create final fit versions named appropriately. 
       overview['finalComment'] = "It took " + str(run) + " runs to converge."
       fullRunningTime = datetime.datetime.now() - fullStartTime 
       fullRunningTimeDelta = runningTime.__str__()
@@ -320,10 +317,16 @@ def main():
       continue
     else:
       print "Did not converge after: ", run
+      overview['status'] = False
       overview['finalComment'] = "Not converged yet. Runs before stopping: " + str(run)
       continue
+  outputDictFile = overview[run]['stem'] + ".p.gz"
+  logDetails(overview, run, outputDictFile=outputDictFile)
+  try: 
+    subprocess.call(['googledriveappend', '--gdriveKey', overview['gdriveKey'], '--sheetNumber', overview['sheetNumber'], '--resultsDict', outputDictFile, '--logFile', overview['absorberLogFile']])
+  except: 
+    print "google update didn't work. "
   plotComparison(overview[run]['stem'])
-  # send away finalfitDictionary now; fitType being whatever: normalFit; alphaFit; vchunkFit. 
   print overview['timeStamp']
   print "Program exited gracefully."
   pass
@@ -364,12 +367,41 @@ def countLines(inFile):
     lines += 1
   return lines
     
-def logDetails(inputDict, outputDict, runNumber):
+def logDetails(inputDict, runNumber, outputDictFile):
   """docstring for logDetails"""
   # template
+  # inputDict = overview
   # outputDict['key'] = inputDict['alternateKey']
-  # outputDict['key'] = inputDict[runNumber]['alternateKey']
-  
+  outputDict = {}
+  outputDict['AICc'] = inputDict[runNumber]['analysis']['finalIteration']['AICc']
+  outputDict['Npix'] = inputDict[runNumber]['analysis']['Npix']
+  outputDict['Nparameters'] = inputDict[runNumber]['analysis']['finalIteration']['Nparameters']
+  outputDict['Ncomponents'] = inputDict['startingComponents']
+  outputDict['DoF'] = inputDict[runNumber]['analysis']['finalIteration']['DoF']
+  outputDict['chi-square'] = inputDict[runNumber]['analysis']['finalIteration']['chi-squared']
+  outputDict['chi-square_nu'] = inputDict[runNumber]['analysis']['finalIteration']['reduced-chi-square']
+  outputDict['N_dropped'] = inputDict[runNumber]['Ndropped']
+  outputDict['Warnings'] = inputDict[runNumber]['analysis']['warnings']
+  outputDict['starting.fort.13'] = inputDict['input13']
+  outputDict['final.fit.13'] = inputDict[runNumber]['stem'] + '.fit.13'
+  outputDict['alpha'] = inputDict[runNumber]['analysis']['alpha']
+  outputDict['alpha_err'] = inputDict[runNumber]['analysis']['alpha_err']
+  # outputDict['delta-chi-square'] = XX
+  outputDict['fitLevel'] = inputDict[runNumber]['levelName']
+  outputDict['fitString'] = inputDict[runNumber]['fitString']
+  outputDict['restarts'] = run
+  outputDict['totaliterations'] = int(inputDict[runNumber]['analysis']['iterationList'][-1][-3:]) + (run * 125)
+  outputDict['runtime'] = inputDict[runNumber]['runningTime']
+  outputDict['converged'] = inputDict['status']
+  outputDict['pre-fit comment'] = inputDict['comment']
+  # outputDict['post-fit comment'] = ''
+  # outputDict['Michael comment'] = ''
+  outputDict['vpfitVersion'] = inputDict['vpfitVersion']
+  outputDict['QSO'] = inputDict['QSO']
+  outputDict['absorber'] = inputDict['z_abs']
+  outputDict['datafile'] = inputDict['dataFiles']
+  with open(outputDictFile, 'wb') as fp:
+    fp.write(zlib.compress(pickle.dumps(outputDict, pickle.HIGHEST_PROTOCOL),9))
   pass
 
 if __name__ == '__main__':
@@ -407,11 +439,6 @@ if __name__ == '__main__':
 # split 1 into 3 components (estimate Equivalent Width; 3 velocity components from the 1)
 # remove 1 component (estimate Equivalent Width; two velocity components)
 # remove component, freeze everything but 4 surrounding. 
-# fd = open('document.csv','a')
-# import csv
-# with open('eggs.csv', 'ab') as logFile:
-#   spamWriter = csv.writer(logFile)
-#   spamWriter.writerow(['Spam', 'Lovely, Spam'])
 # bob = csv.reader(open('eggs.csv','rb'))
 #       if re.search('BAD', line):
 #         logging.error(line)
