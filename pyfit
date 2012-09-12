@@ -180,7 +180,6 @@ def main():
   fitLevelDict["M6"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict["M7"] = "f\nil\ncs\n1.e-7 100.0 1.e-7\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict["M8"] = "f\nil\ncs\n1.e-6 100.0 1.e-6\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
-
   
   levelIndex = 0
   levelList = []
@@ -237,7 +236,7 @@ def main():
       shutil.copy(overview[run]['stem'] + ".13", 'fort.13')
     else:
       print "Restart: ", run
-      bump(overview[run]['stem'] + ".fit.13", 'fort.13')
+      bump(overview[run-1]['stem'] + ".fit.13", 'fort.13') # minus 1??
       overview[run]['stem'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + overview[run]['tag']
     shutil.copy('fort.13', overview[run]['stem'] + '.fort.13')
     overview[run]['levelName'] = levelList[levelIndex]
@@ -292,10 +291,14 @@ def main():
           # store fullRunningTimeDelta
           fullStartTime = datetime.datetime.now()
           # send away finalfitDictionary now; fitType being normalFit
+
           # Switch to alpha fitting.
           overview['fitType'] = 'alphaFit'
           # convert from final fit to alpha variable.
           p3 = subprocess.call(['convert13-13da', overview[run]['stem'] + '.fit.13'])
+          run += 1 # increment away from previous fit
+          overview[run]['stem'] = 'begin.alpha'
+          shutil.copy('alpha.13', overview[run]['stem'] + '.fit.13')
           # increase the maxRuns by run count when switch occurred. 
           overview['maxRuns'] = overview['maxRuns'] + run
           overview['rerunFlag'] = True
@@ -347,7 +350,9 @@ def bump(inFile, outFile):
   pass
 
 def cat(outfilename, *infilenames):
-  """reproduces cat file1 file2... > outfilename behavior."""  
+  """reproduces behavior of unix command: 
+    cat file1 file2... > outfilename
+  """  
   with open(outfilename, 'w') as outFile:
     for infilename in infilenames:
       with open(infilename) as inFile:
@@ -361,10 +366,12 @@ def countLines(inFile):
     
 def logDetails(inputDict, outputDict, runNumber):
   """docstring for logDetails"""
-  outputDict['key'] = inputDict['alternateKey']
-  outputDict['key'] = inputDict[runNumber]['alternateKey']
+  # template
+  # outputDict['key'] = inputDict['alternateKey']
+  # outputDict['key'] = inputDict[runNumber]['alternateKey']
   
   pass
+
 if __name__ == '__main__':
   main()
 
@@ -389,7 +396,6 @@ if __name__ == '__main__':
 # stochastic shifting of every fit variable and restart of fitting process.
 # -----------------------
 # data = [{"running time": runningTime}]
-# json
 # Parse datafile -- report/log if blind or unblind. 
 # overview['alphaAlreadyFit'] = False
 # with open(fitLevelDict['continueTimeStamp'][-1] + '.fit.13', 'r') as finalFit13:
@@ -397,14 +403,7 @@ if __name__ == '__main__':
 #     overview['alphaAlreadyFit'] = True # If already started out fitting for alpha
 # TODO touch finished
 # TODO check that each finished thing the chi-squared has gone down. 
-# Create a J200-200_1.6927.log.csv ln -s log.csv for each absorber -- append to it things wanted to see.
-# start.000001.13 ParentComment: species used; regions used (head.00001.6) body.0000.7
 # start.000001.test.00001.13 TweakComment: remove component 'ac'
-# start.000001.test.00002.13 TweakComment: fitString L3
-# start.000001.test.00003.13 TweakComment: fitString L4 -- probably shouldn't have a new file for different fit parameters. 
-# start.000001.head.003.body.00004.13
-# start.000001.test.00004.13 TweakComment: fitString L4 remove FeII 'ac'
-# finished.000001.test.00002.13 TweakComment: 
 # split 1 into 3 components (estimate Equivalent Width; 3 velocity components from the 1)
 # remove 1 component (estimate Equivalent Width; two velocity components)
 # remove component, freeze everything but 4 surrounding. 
