@@ -133,8 +133,6 @@ def main():
     overview['sheetNumber'] = configParser.get('absorber','sheetNumber')
     overview['QSO'] = configParser.get('absorber','QSO')
     overview['z_abs'] = configParser.get('absorber','z_abs')
-    # p1 = subprocess.call(['googledriveappend', overview['gdriveKey'], overview['sheet']]) # waits for return.
-    subprocess.call(['googledriveappend', overview['gdriveKey'], overview['sheetNumber'], overview['QSO'], overview['z_abs']]) # waits for return.
   except:
     print "Missing out on google drive integration... use configs!"
     
@@ -166,6 +164,7 @@ def main():
             beginBody = True
   # combine head and body into fort.13
   cat('fort.13', 'head.6', 'body.7')
+  overview['startingComponents'] = countLines('body.7')
   
   # parse the head to get data files used. 
   for datafile in set(dataFiles):
@@ -222,6 +221,8 @@ def main():
 
   run = 0
   chiSquareList = []
+  for x in sorted(overview.keys()):
+    print x
   overview['rerunFlag'] = True
   fullStartTime = datetime.datetime.now()
   while overview['rerunFlag'] == True:
@@ -253,9 +254,11 @@ def main():
     proc = subprocess.call(['fort18analysis', 'fort.18', overview[run]['stem']])
     # creates the fit.13
     cat(overview[run]['stem'] + '.fit.13', 'head.6', overview[run]['stem'] + '.finalbody.7')
+    overview[run]['finalComponents'] = countLines(overview[run]['stem'] + '.finalbody.7')
+    overview[run]['Ndropped'] = overview['startingComponents'] - overview[run]['finalComponents']
     with open(overview[run]['stem'] + '.analysis.p.gz', 'rb') as fp:
-      overview[run] = pickle.loads(zlib.decompress(fp.read()))
-    chiSquareList.append(float(overview[run][overview[run]['iterationList'][-1]]['chi-squared']))
+      overview[run]['analysis'] = pickle.loads(zlib.decompress(fp.read()))
+    chiSquareList.append(float(overview[run]['analysis'][overview[run]['analysis']['iterationList'][-1]]['chi-squared']))
     status = ''
     warning = ''
     # is chisquare monotonic?
@@ -270,7 +273,7 @@ def main():
       status = "stop"
       warning += "max runs; "
     else:
-      if overview[run]['iterationList'][-3:] == '125':
+      if overview[run]['analysis']['iterationList'][-3:] == '125':
         overview['rerunFlag'] = True
         continue
       else:
@@ -304,7 +307,7 @@ def main():
           print "Warnings: ", warning
           continue
       # TODO send message to googledocs (dropbox script); spreadsheet, absorption system.
-      # fort18report(overview[run]['stem'])
+      # subprocess.call(['googledriveappend', overview['gdriveKey'], overview['sheetNumber'], overview['QSO'], overview['z_abs']]) # waits for return.
       logging.info("It took " + str(run) + " runs to converge.")
       # TODO create final fit versions named appropriately. 
       overview['finalComment'] = "It took " + str(run) + " runs to converge."
@@ -350,7 +353,18 @@ def cat(outfilename, *infilenames):
       with open(infilename) as inFile:
         shutil.copyfileobj(inFile, outFile)
   
+def countLines(inFile):
+  lines = 0
+  for line in open(inFile):
+    lines += 1
+  return lines
+    
+def logDetails(inputDict, outputDict, runNumber):
+  """docstring for logDetails"""
+  outputDict['key'] = inputDict['alternateKey']
+  outputDict['key'] = inputDict[runNumber]['alternateKey']
   
+  pass
 if __name__ == '__main__':
   main()
 
@@ -416,6 +430,5 @@ if __name__ == '__main__':
 #   diff = difflib.unified_diff(open('input.fort.13', 'r').read().split('\n'), open('bump.13','r').read().split('\n'), n=0)
 # TODO consolidate run, overview, overview, etc. 
 # with open('command.info', 'w') as fh:
-#   print >>fh, "! ATOMDIR:" + overview['atomDatFile']
 #   print >>fh, "! runCommand: printf " + repr(currentParameterString) + " | " + overview['vpfitExecutable']
 # # TODO put header in each iteration fort.13 
