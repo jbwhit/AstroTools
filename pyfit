@@ -393,7 +393,7 @@ def logDetails(inputDict, runNumber, outputDictFile):
   outputDict['fitLevel'] = inputDict[runNumber]['levelName']
   outputDict['fitString'] = repr(inputDict[runNumber]['fitString'])
   outputDict['restarts'] = runNumber
-  outputDict['totaliterations'] = int(inputDict[runNumber]['analysis']['iterationList'][-2][-3:]) + (runNumber * 125)
+  outputDict['totaliterations'] = int(inputDict[runNumber]['analysis']['iterationList'][-2][-3:]) + ((runNumber - 1) * 125)
   outputDict['runtime'] = inputDict[runNumber]['runningTime']
   outputDict['converged'] = inputDict['status']
   outputDict['pre-fit comment'] = inputDict['comment']
