@@ -80,7 +80,7 @@ def main():
                       help='Type in comma separated (no spaces) list of the order of the ways "leveling up" should go. ex: L2,L4,L5')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
-  parser.add_argument('--version', action='version', version='%(prog)s 0.11''data file to use.') # Clearly not used.
+  parser.add_argument('--version', action='version', version='%(prog)s 0.13''data file to use.') # Clearly not used.
   args = parser.parse_args()
   if args.vpfitVersion == ("9.5" or "95" or "vpfit9.5"):
     print "VPFIT version: ", args.vpfitVersion
@@ -396,7 +396,7 @@ def logDetails(inputDict, runNumber, outputDictFile):
   outputDict['fitLevel'] = inputDict[runNumber]['levelName']
   outputDict['fitString'] = repr(inputDict[runNumber]['fitString'])
   outputDict['restarts'] = runNumber
-  outputDict['totaliterations'] = int(inputDict[runNumber]['analysis']['iterationList'][-2][-3:]) + (runNumber * 125)
+  outputDict['totaliterations'] = int(inputDict[runNumber]['analysis']['iterationList'][-2][-3:]) + ((runNumber - 1) * 125)
   outputDict['runtime'] = inputDict[runNumber]['runningTime']
   outputDict['converged'] = inputDict['status']
   outputDict['pre-fit comment'] = inputDict['comment']
