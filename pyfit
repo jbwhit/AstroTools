@@ -375,6 +375,7 @@ def logDetails(inputDict, runNumber, outputDictFile):
   # inputDict = overview
   # outputDict['key'] = inputDict['alternateKey']
   outputDict = {}
+  outputDict['timeStamp'] = inputDict['timeStamp']
   outputDict['AICc'] = inputDict[runNumber]['analysis']['finalIteration']['AICc']
   outputDict['Npix'] = inputDict[runNumber]['analysis']['Npix']
   outputDict['Nparameters'] = inputDict[runNumber]['analysis']['finalIteration']['Nparameters']
@@ -383,7 +384,7 @@ def logDetails(inputDict, runNumber, outputDictFile):
   outputDict['chi-square'] = inputDict[runNumber]['analysis']['finalIteration']['chi-squared']
   outputDict['chi-square_nu'] = inputDict[runNumber]['analysis']['finalIteration']['reduced-chi-square']
   outputDict['N_dropped'] = inputDict[runNumber]['Ndropped']
-  outputDict['Warnings'] = inputDict[runNumber]['analysis']['warnings']
+  outputDict['Warnings'] = ', '.join(inputDict[runNumber]['analysis']['warnings'])
   outputDict['starting.fort.13'] = inputDict['input13']
   outputDict['final.fit.13'] = inputDict[runNumber]['stem'] + '.fit.13'
   try:
@@ -404,7 +405,7 @@ def logDetails(inputDict, runNumber, outputDictFile):
   outputDict['vpfitVersion'] = inputDict['vpfitVersion']
   outputDict['QSO'] = inputDict['QSO']
   outputDict['absorber'] = inputDict['z_abs']
-  outputDict['datafile'] = inputDict['dataFiles']
+  outputDict['datafile'] = ', '.join(inputDict['dataFiles'])
   with open(outputDictFile, 'wb') as fp:
     fp.write(zlib.compress(pickle.dumps(outputDict, pickle.HIGHEST_PROTOCOL),9))
   pass
