@@ -271,7 +271,7 @@ def main():
       overview['status'] = False
       warning += "max runs; "
     else:
-      # TODO check this is correct
+      print "Check: what 3 numbers is this?", overview[run]['analysis']['iterationList'][-1][-3:]
       if overview[run]['analysis']['iterationList'][-1][-3:] == '125':
         overview['rerunFlag'] = True
         continue
@@ -280,7 +280,8 @@ def main():
     if overview['status'] == "converged": 
       if levelIndex < len(levelList) - 1:
         levelIndex += 1
-        run = 0
+        # Increase maxRuns because restarted. 
+        overview['maxRuns'] = overview['maxRuns'] + run
         overview['rerunFlag'] = True
         continue
       else:
@@ -297,6 +298,7 @@ def main():
           # convert from final fit to alpha variable.
           p3 = subprocess.call(['convert13-13da', overview[run]['stem'] + '.fit.13'])
           run += 1 # increment away from previous fit
+          overview[run] = {}
           overview[run]['stem'] = 'begin.alpha'
           shutil.copy('alpha.13', overview[run]['stem'] + '.fit.13')
           # increase the maxRuns by run count when switch occurred. 
