@@ -267,12 +267,11 @@ def main():
       print "inter-run chiSquareCheck failed for run: ", run
       overview['status'] = "converged"
       warning += 'interrun chiSquareCheck failed; '
-    if run >= overview['maxRuns']:
-      overview['status'] = False
+    if run > overview['maxRuns']:
+      overview['status'] = "hit max runs"
       warning += "max runs; "
     else:
-      print "Check: what 3 numbers is this?", overview[run]['analysis']['iterationList'][-1][-3:]
-      if overview[run]['analysis']['iterationList'][-1][-3:] == '125':
+      if overview[run]['analysis']['iterationList'][-2][-3:] == '125':
         overview['rerunFlag'] = True
         continue
       else:
