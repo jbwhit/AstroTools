@@ -339,7 +339,7 @@ def main():
 def plotComparison(fileStem):
   """docstring for plotComparison"""
   if overview['noPlot'] == False: 
-    proc = subprocess.Popen( ['plotfit', fileStem, 'input.fort.13', fileStem + ".fit.13"])
+    proc = subprocess.call( ['plotfit', fileStem, 'input.fort.13', fileStem + ".fit.13"])
   pass  
 
 def bump(inFile, outFile):
