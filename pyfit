@@ -273,7 +273,6 @@ def main():
     if run > overview['maxRuns']:
       overview['status'] = "hit max runs"
       warning += "max runs; "
-      continue
     else:
       if overview[run]['analysis']['iterationList'][-2][-3:] == '125':
         overview['rerunFlag'] = True
@@ -338,6 +337,12 @@ def main():
   except: 
     print "google update didn't work."
   plotComparison(overview[run]['stem'])
+  if overview['noPlot'] == False:
+    try:
+      shutil.copy(overview[run]['stem'] + '.r.pdf', overview['parentDirectory'] + 'plots/')
+      shutil.copy(overview[run]['stem'] + '.v.pdf', overview['parentDirectory'] + 'plots/') # region plot
+    except:
+      pass
   print overview['timeStamp']
   print "Program exited gracefully."
   pass

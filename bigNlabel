@@ -1,0 +1,19 @@
+#!/usr/bin/env python
+import sys
+import re
+import numpy as np
+
+def main(infile=sys.argv[1]):
+  """docstring for main"""
+  Nlist = []
+  labelList = []
+  with open(infile, 'r') as fp:
+    for line in fp.readlines():
+      if len(line.split()) > 9:
+        Nlist.append(float(line.split()[1][:-2]))
+        labelList.append(line.split()[2][-2:])
+  print labelList[np.argmax(Nlist)]
+  pass
+  
+if __name__ == '__main__':
+  main(sys.argv[1])
