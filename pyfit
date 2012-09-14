@@ -80,7 +80,7 @@ def main():
                       help='Type in comma separated (no spaces) list of the order of the ways "leveling up" should go. ex: L2,L4,L5')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
-  parser.add_argument('--version', action='version', version='%(prog)s 0.13''data file to use.') # Clearly not used.
+  parser.add_argument('--version', action='version', version='%(prog)s 0.14''data file to use.') # Clearly not used.
   args = parser.parse_args()
   if args.vpfitVersion == ("9.5" or "95" or "vpfit9.5"):
     print "VPFIT version: ", args.vpfitVersion
@@ -231,16 +231,17 @@ def main():
     overview[run] = {}
     overview[run]['tag'] = tag[overview['fitType']]
     if run == 1:
-      overview[run]['stem'] = 'input.fort'
-      shutil.copy(overview[run]['stem'] + ".13", 'fort.13')
+      overview[0] = {}
+      overview[0]['stem'] = 'input.fort'
+      shutil.copy('input.fort.13', overview[0]['stem'] + ".fit.13")
     else:
       print "Restart: ", run
-      bump(overview[run-1]['stem'] + ".fit.13", 'fort.13') # minus 1??
-      overview[run]['stem'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + overview[run]['tag']
+    bump(overview[run-1]['stem'] + ".fit.13", 'fort.13') # minus 1??
+    overview[run]['stem'] = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f") + overview[run]['tag']
     shutil.copy('fort.13', overview[run]['stem'] + '.fort.13')
     overview[run]['levelName'] = levelList[levelIndex]
     overview[run]['fitString'] = fitLevelDict[overview[run]['levelName']]
-    print "Running..."
+    print "Running...", overview[run]['stem']
     proc = subprocess.Popen([overview['vpfitExecutable']], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result = proc.communicate(input=overview[run]['fitString'])
     runningTime = datetime.datetime.now() - startTime
@@ -259,7 +260,7 @@ def main():
     chiSquareList.append(float(overview[run]['analysis'][overview[run]['analysis']['iterationList'][-1]]['chi-squared']))
     overview['status'] = ''
     warning = ''
-    # is chisquare monotonic?
+    # check is chisquare monotonic?
     if sorted(chiSquareList, reverse=True) == chiSquareList:
       chiSquareCheck = True
     else:
@@ -267,12 +268,11 @@ def main():
       print "inter-run chiSquareCheck failed for run: ", run
       overview['status'] = "converged"
       warning += 'interrun chiSquareCheck failed; '
-    if run >= overview['maxRuns']:
-      overview['status'] = False
+    if run > overview['maxRuns']:
+      overview['status'] = "hit max runs"
       warning += "max runs; "
     else:
-      print "Check: what 3 numbers is this?", overview[run]['analysis']['iterationList'][-1][-3:]
-      if overview[run]['analysis']['iterationList'][-1][-3:] == '125':
+      if overview[run]['analysis']['iterationList'][-2][-3:] == '125':
         overview['rerunFlag'] = True
         continue
       else:
@@ -292,7 +292,6 @@ def main():
           # store fullRunningTimeDelta
           fullStartTime = datetime.datetime.now()
           # send away finalfitDictionary now; fitType being normalFit
-          
           # Switch to alpha fitting.
           overview['fitType'] = 'alphaFit'
           # convert from final fit to alpha variable.
@@ -322,12 +321,14 @@ def main():
       overview['status'] = False
       overview['finalComment'] = "Not converged yet. Runs before stopping: " + str(run)
       continue
+  # copy finalfit to fit13s 
+  shutil.copy(overview[run]['stem'] + '.fit.13', overview['parentDirectory'] + 'fit13s/')
   outputDictFile = overview[run]['stem'] + ".p.gz"
   logDetails(overview, run, outputDictFile=outputDictFile)
   try: 
     subprocess.call(['googledriveappend', '--gdriveKey', overview['gdriveKey'], '--sheetNumber', overview['sheetNumber'], '--resultsDict', outputDictFile, '--logFile', overview['absorberLogFile']])
   except: 
-    print "google update didn't work. "
+    print "google update didn't work."
   plotComparison(overview[run]['stem'])
   print overview['timeStamp']
   print "Program exited gracefully."
