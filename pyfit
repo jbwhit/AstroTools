@@ -80,7 +80,7 @@ def main():
                       help='Type in comma separated (no spaces) list of the order of the ways "leveling up" should go. ex: L2,L4,L5')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
-  parser.add_argument('--version', action='version', version='%(prog)s 0.14''data file to use.') # Clearly not used.
+  parser.add_argument('--version', action='version', version='%(prog)s 0.14') # Clearly not used.
   args = parser.parse_args()
   if args.vpfitVersion == ("9.5" or "95" or "vpfit9.5"):
     print "VPFIT version: ", args.vpfitVersion
@@ -246,8 +246,10 @@ def main():
     result = proc.communicate(input=overview[run]['fitString'])
     runningTime = datetime.datetime.now() - startTime
     runningTimeDelta = runningTime.__str__()
-    overview[run]['runningTime'] = runningTimeDelta
     print "Running time:", runningTimeDelta
+    fullRunningTime = datetime.datetime.now() - fullStartTime
+    fullRunningTimeDelta = fullRunningTime.__str__()
+    overview[run]['runningTime'] = fullRunningTimeDelta
     shutil.copy('fort.18', overview[run]['stem'] + '.fort.18')
     shutil.copy('fort.26', overview[run]['stem'] + '.fort.26')
     proc = subprocess.call(['fort18analysis', 'fort.18', overview[run]['stem']])
@@ -271,6 +273,7 @@ def main():
     if run > overview['maxRuns']:
       overview['status'] = "hit max runs"
       warning += "max runs; "
+      continue
     else:
       if overview[run]['analysis']['iterationList'][-2][-3:] == '125':
         overview['rerunFlag'] = True
@@ -292,6 +295,12 @@ def main():
           # store fullRunningTimeDelta
           fullStartTime = datetime.datetime.now()
           # send away finalfitDictionary now; fitType being normalFit
+          shutil.copy(overview[run]['stem'] + '.fit.13', overview['parentDirectory'] + 'fit13s/')
+          logDetails(overview, run, outputDictFile=overview[run]['stem'] + ".p.gz")
+          try: 
+            subprocess.call(['googledriveappend', '--gdriveKey', overview['gdriveKey'], '--sheetNumber', overview['sheetNumber'], '--resultsDict', outputDictFile, '--logFile', overview['absorberLogFile']])
+          except: 
+            print "google update didn't work."
           # Switch to alpha fitting.
           overview['fitType'] = 'alphaFit'
           # convert from final fit to alpha variable.
@@ -323,8 +332,7 @@ def main():
       continue
   # copy finalfit to fit13s 
   shutil.copy(overview[run]['stem'] + '.fit.13', overview['parentDirectory'] + 'fit13s/')
-  outputDictFile = overview[run]['stem'] + ".p.gz"
-  logDetails(overview, run, outputDictFile=outputDictFile)
+  logDetails(overview, run, outputDictFile=overview[run]['stem'] + ".p.gz")
   try: 
     subprocess.call(['googledriveappend', '--gdriveKey', overview['gdriveKey'], '--sheetNumber', overview['sheetNumber'], '--resultsDict', outputDictFile, '--logFile', overview['absorberLogFile']])
   except: 
@@ -372,9 +380,6 @@ def countLines(inFile):
     
 def logDetails(inputDict, runNumber, outputDictFile):
   """docstring for logDetails"""
-  # template
-  # inputDict = overview
-  # outputDict['key'] = inputDict['alternateKey']
   outputDict = {}
   outputDict['timeStamp'] = inputDict['timeStamp']
   outputDict['AICc'] = inputDict[runNumber]['analysis']['finalIteration']['AICc']
@@ -417,7 +422,6 @@ if __name__ == '__main__':
 # add fitString to each fort.13
 # TODO parse the body of fort.13 and fit.13 files and report any discrepancies. 
 # TODO find some way to parse things that won't change (fit results, time, date) plus things
-# TODO Add LaTeX comment (or json dictionary)
 # TODO auto-increment start.####.13
 # TODO create a fit stop flag -- create a file touch stop after current iteration (or time). 
 # TODO fix bug: if select fitLevel that isn't in the "progression" but don't select alphaFit it
