@@ -80,7 +80,7 @@ def main():
                       help='Type in comma separated (no spaces) list of the order of the ways "leveling up" should go. ex: L2,L4,L5')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
   parser.add_argument('--atomdat', choices=('isoAtomFile', 'atomFile'), default='atomFile', help='atom.dat choices')
-  parser.add_argument('--version', action='version', version='%(prog)s 0.0016')
+  parser.add_argument('--version', action='version', version='%(prog)s 0.0017')
   args = parser.parse_args()
   if args.vpfitVersion == ("9.5" or "95" or "vpfit9.5"):
     print "VPFIT version: ", args.vpfitVersion
@@ -295,7 +295,8 @@ def main():
           fullStartTime = datetime.datetime.now()
           # send away finalfitDictionary now; fitType being normalFit
           shutil.copy(overview[run]['stem'] + '.fit.13', overview['parentDirectory'] + 'fit13s/')
-          logDetails(overview, run, outputDictFile=overview[run]['stem'] + ".p.gz")
+          outputDictFile = overview[run]['stem'] + ".p.gz"
+          logDetails(overview, run, outputDictFile=outputDictFile)
           try: 
             subprocess.call(['googledriveappend', '--gdriveKey', overview['gdriveKey'], '--sheetNumber', overview['sheetNumber'], '--resultsDict', outputDictFile, '--logFile', overview['absorberLogFile']])
           except: 
@@ -331,7 +332,8 @@ def main():
       continue
   # copy finalfit to fit13s 
   shutil.copy(overview[run]['stem'] + '.fit.13', overview['parentDirectory'] + 'fit13s/')
-  logDetails(overview, run, outputDictFile=overview[run]['stem'] + ".p.gz")
+  outputDictFile = overview[run]['stem'] + ".p.gz"
+  logDetails(overview, run, outputDictFile=outputDictFile)
   try: 
     subprocess.call(['googledriveappend', '--gdriveKey', overview['gdriveKey'], '--sheetNumber', overview['sheetNumber'], '--resultsDict', outputDictFile, '--logFile', overview['absorberLogFile']])
   except: 
