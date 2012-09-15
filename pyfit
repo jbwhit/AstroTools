@@ -295,7 +295,8 @@ def main():
           fullStartTime = datetime.datetime.now()
           # send away finalfitDictionary now; fitType being normalFit
           shutil.copy(overview[run]['stem'] + '.fit.13', overview['parentDirectory'] + 'fit13s/')
-          logDetails(overview, run, outputDictFile=overview[run]['stem'] + ".p.gz")
+          outputDictFile = overview[run]['stem'] + ".p.gz"
+          logDetails(overview, run, outputDictFile=outputDictFile)
           try: 
             subprocess.call(['googledriveappend', '--gdriveKey', overview['gdriveKey'], '--sheetNumber', overview['sheetNumber'], '--resultsDict', outputDictFile, '--logFile', overview['absorberLogFile']])
           except: 
@@ -331,7 +332,8 @@ def main():
       continue
   # copy finalfit to fit13s 
   shutil.copy(overview[run]['stem'] + '.fit.13', overview['parentDirectory'] + 'fit13s/')
-  logDetails(overview, run, outputDictFile=overview[run]['stem'] + ".p.gz")
+  outputDictFile = overview[run]['stem'] + ".p.gz"
+  logDetails(overview, run, outputDictFile=outputDictFile)
   try: 
     subprocess.call(['googledriveappend', '--gdriveKey', overview['gdriveKey'], '--sheetNumber', overview['sheetNumber'], '--resultsDict', outputDictFile, '--logFile', overview['absorberLogFile']])
   except: 
