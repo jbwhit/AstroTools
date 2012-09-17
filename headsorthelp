@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+# encoding: utf-8
+"""
+headsorthelp
+
+Example usage: 
+If you have the file: raw.list
+
+$ headsorthelp raw
+
+Created by Jonathan Whitmore on 2012-09-18.
+Copyright (c) 2012 . All rights reserved.
+"""
+
+import sys
+import os
+import subprocess
+import argparse
+
+parser = argparse.ArgumentParser(description="filename")
+parser.add_argument('infile', action='store', type=str, help='grabs commandline filename')
+
+args = parser.parse_args()
+stem = args.infile
+
+if args.infile.split('.')[-1] == 'list':
+  stem = args.infile.split('.')[0]
+
+basecommand = 'UVES_headsort ' +  stem + '.list -info ' + stem + '.info -c ' 
+
+hours = 0
+warning = 10
+maxhours = 200
+while warning > 5 and hours < maxhours:
+  hours += 1
+  linein = basecommand + str(hours) + ' ' + str(hours) + ' -d'
+  proc = subprocess.Popen(shlex.split(linein), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+  warning = len(proc.communicate()[0].split('\n'))
+  print "Warnings: ", warning, "Hours: ", hours
+
+if hours > maxhours:
+  print "Exceeded maxhours of: ", maxhours
+  sys.exit()
+
+print "Correct hours: ", hours
+print "Final command: ", basecommand + str(hours) + ' ' + str(hours)
+commandfile = open(stem + '.command','w')
+print "Making command file."
+print >>commandfile, basecommand + str(hours) + ' ' + str(hours)
+commandfile.close()
+
+# ========================
+# = Ignore the following =
+# ========================
+# p1 = call(['rdgen'], stdin=temp1, stdout=temp2) # wait for command to complete
+# Test output length
+# UVES_headsort pg0117p213.list -info pg0117p213.info -c 2 2 -d
+# proc2 = subprocess.Popen(['source', stem+'.command'])
+## cd into directory
+# proc4 = subprocess.Popen(['source','reduce_master.cpl'])
+
+if __name__ == "__main__":
+  sys.exit(main())
