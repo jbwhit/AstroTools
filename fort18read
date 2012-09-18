@@ -52,7 +52,11 @@ def main():
       fitIterationDict = pickle.loads(zlib.decompress(fp.read()))
   for x in analysisDict['checks']:
     print x, analysisDict['checks'][x]
-  
+  for errorType in ['N_err', 'b_err', 'z_err']:
+    print "Errors:", errorType
+    for x in analysisDict[errorType]:
+      print ' '.join(x)
+    print
   pass
 
 def printFinal():
