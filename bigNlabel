@@ -7,11 +7,16 @@ def main(infile=sys.argv[1]):
   """docstring for main"""
   Nlist = []
   labelList = []
-  with open(infile, 'r') as fp:
-    for line in fp.readlines():
-      if len(line.split()) > 9:
-        Nlist.append(float(line.split()[1][:-2]))
-        labelList.append(line.split()[2][-2:])
+  with open(infile, 'r') as f13:
+    beginBody = False
+    for line in f13.read().splitlines():
+      # Ignore comments and empty lines
+      if (not line.strip().startswith('!') and (not line.strip().startswith('%')) and (line.strip() != '')): 
+        if beginBody == True:
+          Nlist.append(float(line.split()[1][:-2]))
+          labelList.append(line.split()[2][-2:])
+        if line.startswith('  *'):
+          beginBody = True
   print labelList[np.argmax(Nlist)]
   pass
   
