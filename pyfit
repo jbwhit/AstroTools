@@ -181,6 +181,7 @@ def main():
   fitLevelDict["M6"] = "f\nil\ncs\n1.e-8 100.0 1.e-8\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict["M7"] = "f\nil\ncs\n1.e-7 100.0 1.e-7\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
   fitLevelDict["M8"] = "f\nil\ncs\n1.e-6 100.0 1.e-6\nn\n0.01 \nb\n0.1 \nz\n2.e-6\nx4\n5.e-6\n\n\nfort.13\nn\nn\n\n"
+  fitLevelDict["P1"] = "f\nil\ncs\n5.e-7  50.0 5.e-7\nn\n0.003\nb\n0.02\nz\n1.e-6\nx4\n5.e-7\n\n\nfort.13\nn\nn\n\n"
   
   levelIndex = 0
   levelList = []

@@ -4,11 +4,11 @@
 # $2 startingfit
 # $3 newfit
 
-printf "{fb,2}\npdf/$1\nq\n" | fitcmp vpfit -o $2 -n $3 --nonfancy
+printf "{fb,2}\n{tt,3}\npdf/$1\nq\n" | fitcmp vpfit -o $2 -n $3 --nonfancy
 
 gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=$1.r.pdf -dBATCH $1*.pdf
 
 VELLABEL=$(bigNlabel $3)
 
-printf "{fb,2}\n{vr,2}\n{tt,3}\nvn/$VELLABEL/$1.v.pdf/$1\nq\n" | fitcmp vpfit -o $2 -n $3 --nonfancy
+printf "{fb,2}\n{vr,2}\n{tt,3}\nvn/$VELLABEL/$1.v.pdf\nq\n" | fitcmp vpfit -o $2 -n $3 --nonfancy
 
