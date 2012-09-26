@@ -10,10 +10,10 @@ else
   username=$LOGNAME
 fi
 
-echo "The username that you are trying to log in with is: " $username
-echo "    if that's wrong, rerun like:"
-echo "    shrek yoursupercomputerusername"
-
+# echo "The username that you are trying to log in with is: " $username
+# echo "    if that's wrong, rerun like:"
+# echo "    shrek yoursupercomputerusername"
+# 
 shrekNumber=$(jwfreeshrek)
 
 echo "Logging into node: " $shrekNumber
