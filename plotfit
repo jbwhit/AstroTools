@@ -12,4 +12,4 @@ VELLABEL=$(bigNlabel $3)
 
 echo largest component: $VELLABEL
 
-printf "{fb,2}\n{vr,2}\n{tt,3}\nvn/$VELLABEL/$1.vn.pdf\nq\n" | fitcmp vpfit -o $2 -n $3 --nonfancy
+printf "{fb,2}\n{vr,2}\n{tt,3}\nvn/$VELLABEL/$1.v.pdf\nq\n" | fitcmp vpfit -o $2 -n $3 --nonfancy
