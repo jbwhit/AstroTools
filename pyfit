@@ -398,7 +398,7 @@ def logDetails(inputDict, runNumber, outputDictFile):
   outputDict['chi-square'] = inputDict[runNumber]['analysis']['finalIteration']['chi-squared']
   outputDict['chi-square_nu'] = inputDict[runNumber]['analysis']['finalIteration']['reduced-chi-square']
   outputDict['N_dropped'] = inputDict[runNumber]['Ndropped']
-  outputDict['Warnings'] = ', '.join(inputDict[runNumber]['analysis']['warnings'])
+  outputDict['Warnings'] = ', '.join([':'.join([str(item) for item in subwarn]) for subwarn in inputDict[runNumber]['analysis']['warnings']])
   outputDict['starting.fort.13'] = inputDict['input13']
   outputDict['final.fit.13'] = inputDict[runNumber]['stem'] + '.fit.13'
   try:
