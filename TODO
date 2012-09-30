@@ -16,6 +16,7 @@ Add
 -- len(string_of_) = set(string_of_)
 - create function that reruns using everything exactly in the fitting directory.
 - cat error.* into final report. 
+- in the header of the starting.fort.13s should have Fit level; vpfit version, etc.
 
  ===================
  = fort13flagcheck =
