@@ -145,7 +145,8 @@ def main():
         analyseArray[x].append(np.float(testArray[x][y]))
       except:
         analyseArray[x].append(testArray[x][y])
-  for column in [2, 4, 6]:
+  # ["Species", "z_val", "z_err", "b_val", "b_err", "N_val", "N_err", "da_val", "da_err"]
+  for column in [2, 3, 4, 6]: # largest b_val recorded as well
     indexes = [list(analyseArray[column]).index(x) for x in heapq.nlargest(topN, analyseArray[column])]
     analysisDict[columnNames[column]] = []
     for index in indexes:
