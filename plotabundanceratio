@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+import sys
+import re
+import string
+import numpy as np
+import itertools
+
+def main(infile=sys.argv[1]):
+  """docstring for main"""
+  body = []
+  Nlist = []
+  labelList = []
+  # with open(infile, 'r') as f13:
+  with open('2012-10-08_20.23.48.651715.fit.13', 'r') as f13:
+    beginBody = False
+    for line in f13.read().splitlines():
+      # Ignore comments and empty lines
+      if (not line.strip().startswith('!') and (not line.strip().startswith('%')) and (line.strip() != '')): 
+        if beginBody == True:
+          # Nlist.append(float(line.split()[1][:-2]))
+          # labelList.append(line.split()[2][-2:])
+          body.append(line)
+        if line.startswith('  *'):
+          beginBody = True
+  # print labelList[np.argmax(Nlist)]
+  pass
+  
+if __name__ == '__main__':
+  main(sys.argv[1])
+  
+  
+columnDensities = {}
+species = set([line.split()[0] for line in body])
+temp = []
+for line in body:
+  columnDensities[line.split()[0]][string.lower(line.split()[2][-2:])] = np.array([float(line.split()[2][:-2]), float(line.split()[1][:-2])])
+
+for spc in species:
+  temp.append(columnDensities[spc].keys())
+    
+components = set(list(itertools.chain(*temp)))
+
+# Assume linear: 
+for component in components:
+  Ntotal = 0.
+  for spc in species:
+    # every 2 combinations of species.
+    # difference between each two species
+    # 
+    try:
+      Ntotal += columnDensities[spc][component][1]
+    except:
+      pass
+  # Ntotal now is the total N absorbed by all species for that component.
+  # Just compare two. master to each tied?
+  
+
+# for spc in species:
+for component in components:
+  try: 
+    diff = columnDensities['FeII'][component][1] - columnDensities['AlII'][component][1]
+    scatter(columnDensities['FeII'][component][0], diff)
+  except:
+    pass

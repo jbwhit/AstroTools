@@ -342,8 +342,9 @@ def main():
   plotComparison(overview[run]['stem'])
   if overview['noPlot'] == False:
     try:
-      shutil.copy(overview[run]['stem'] + '.r.pdf', overview['parentDirectory'] + 'plots/')
-      shutil.copy(overview[run]['stem'] + '.v.pdf', overview['parentDirectory'] + 'plots/') # region plot
+      shutil.copy(overview[run]['stem'] + '.r.pdf', overview['parentDirectory'] + 'plots/') # region
+      shutil.copy(overview[run]['stem'] + '.d.pdf', overview['parentDirectory'] + 'plots/') # decomposed 
+      shutil.copy(overview[run]['stem'] + '.v.pdf', overview['parentDirectory'] + 'plots/') # velocity 
     except:
       pass
   print overview['timeStamp']
