@@ -1,18 +1,21 @@
-== About == 
+About
+=====
 
 I've written a bunch of scripts that I felt were useful at one time. I'm keeping them in a github repo so that I can update and change them in a sensible way (and share them if anyone finds any use for them). 
 
 
 
 
-== MegaMind == 
+MegaMind
+========
 
 This program is a meta-wrapper around several other programs. It's purpose is to make complicated and tedious Voigt profile fitting easier and more systematic. It does this by interfacing with both the supercomputer (green) and the program pyfit (which is a wrapper around the vpfit program).
 
 If this seems like an needlessly complicated onion-layers of wrapping, you're probably right. Here's what the programs do starting at the most basic level. 
 
 
-=== VPFIT === 
+VPFIT
+=====
 
 The standard way we use vpfit is to send a string of commands to vpfit via the commandline. This string of commands specifies several things: 
  - chi-square stopping criteria
@@ -23,7 +26,8 @@ The standard way we use vpfit is to send a string of commands to vpfit via the c
 
 VPFIT then outputs two files: fort.18 (log of the fitting process) and fort.26 (final results with errors).
 
-=== PYFIT ===
+PYFIT
+=====
 
 Is a python wrapper that organises the process of using VPFIT. There are many different fit parameter strings that can be used. 
 
