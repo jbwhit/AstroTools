@@ -276,6 +276,7 @@ def main():
       print "inter-run chiSquareCheck failed for run: ", run
       overview['status'] = "converged"
       warning += 'interrun chiSquareCheck failed; '
+      overview['rerunFlag'] = False
     if run > overview['maxRuns']:
       overview['status'] = "hit max runs"
       warning += "max runs; "
@@ -335,6 +336,7 @@ def main():
       print "Did not converge after: ", run
       overview['status'] = False
       overview['finalComment'] = "Not converged yet. Runs before stopping: " + str(run)
+      overview['rerunFlag'] = False
       continue
   # copy finalfit to fit13s 
   shutil.copy(overview[run]['stem'] + '.fit.13', overview['parentDirectory'] + 'fit13s/')
