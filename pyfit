@@ -242,6 +242,11 @@ def main():
     shutil.copy('fort.13', overview[run]['stem'] + '.fort.13')
     overview[run]['levelName'] = levelList[levelIndex]
     overview[run]['fitString'] = fitLevelDict[overview[run]['levelName']]
+    with open(overview[run]['stem'] + '.command', 'w') as commandFile:
+      print >>commandFile, "#!/bin/bash"
+      print >>commandFile, "export "
+      print >>commandFile, "cp ", overview[run]['stem'] + '.fort.13', 'fort.13'
+      print >>commandFile, "printf ", repr(overview[run]['fitString']), " | ./vpfit"
     print "Running...", overview[run]['stem']
     proc = subprocess.Popen([overview['vpfitExecutable']], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result = proc.communicate(input=overview[run]['fitString'])
