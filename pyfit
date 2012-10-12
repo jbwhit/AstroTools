@@ -86,8 +86,14 @@ def main():
     print "VPFIT version: ", args.vpfitVersion
     overview['vpfitExecutable'] = 'vpfit95'
   elif args.vpfitVersion == ("10.0" or "10" or "vpfit10.0"):
-    print "VPFIT version: ", 
+    print "VPFIT version: ", args.vpfitVersion
     overview['vpfitExecutable'] = 'vpfit10'
+  elif args.vpfitVersion == 'vpfitgf95':
+    print "VPFIT version: ", args.vpfitVersion
+    overview['vpfitExecutable'] = 'vpfitgf95'
+  elif args.vpfitVersion == 'vpfitgf10':
+    print "VPFIT version: ", args.vpfitVersion
+    overview['vpfitExecutable'] = 'vpfitgf10'
   else:
     print "What VPFIT version are you wanting to use?"
   tag = {}

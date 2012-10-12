@@ -153,7 +153,8 @@ def main():
       analysisDict[columnNames[column]].append([analysisDict['finalFit'][index][0], analysisDict['finalFit'][index][1][-2:], analysisDict['finalFit'][index][column]])
   if len(analysisDict['vchunkFit']) > 0:
     analysisDict['fitType'] = 'vchunkFit'
-
+  # smallest N value
+  # 
   # sanity checks that AICc and chi-squared are improving each iteration.
   if AICcheck == sorted(AICcheck, reverse=True):
     analysisDict['checks']['AICc'] = True
