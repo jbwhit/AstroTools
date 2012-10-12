@@ -6,7 +6,9 @@
 
 VELLABEL=$(bigNlabel $3)
 
-printf "{fb,2};{tt,3};{vr,2}\npdf/$1.r\nvn/$VELLABEL/$1.v.pdf\n{df,2}\npdf/$1.d\nq\n" | fitcmp vpfit -o $2 -n $3 --scriptmode
+echo $VELLABEL
+
+printf "{fb,2};{tt,3};{vr,2}\npdf/$1.r\nvn/$VELLABEL/$1.v.pdf\n{df,2}\npdf/$1.d\nq\n" | fitcmp ./vpfit -o $2 -n $3 --scriptmode
 
 gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=$1.r.pdf -dBATCH $1.r_*.pdf
 

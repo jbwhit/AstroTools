@@ -154,7 +154,8 @@ def main():
   if len(analysisDict['vchunkFit']) > 0:
     analysisDict['fitType'] = 'vchunkFit'
   # smallest N value
-  # 
+  # smallest b values
+  # z values too close together
   # sanity checks that AICc and chi-squared are improving each iteration.
   if AICcheck == sorted(AICcheck, reverse=True):
     analysisDict['checks']['AICc'] = True
