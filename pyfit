@@ -76,6 +76,7 @@ def main():
                       help='Choose pyfit behavior.')
   parser.add_argument('--maxRuns', action="store", default=1, type=int, help='Max runs before quitting. Setting to 1 means no restarts.')
   parser.add_argument('--vpfit', action="store", dest="vpfitVersion", default='9.5', type=str, help='Which version of vpfit to use.')
+  parser.add_argument('--vpsetup', action="store", dest="vpsetupFile", default='vp_setup.dat', type=str, help='Which vp_setup to use.')
   parser.add_argument('--level', action="store", default='L5', type=str, \
                       help='Type in comma separated (no spaces) list of the order of the ways "leveling up" should go. ex: L2,L4,L5')
   parser.add_argument('--fitSetupDirectory', dest="fitSetupDirectory", default='notSet', help='Location of atom.dat, vp_setup.dat, etc.')
@@ -153,10 +154,12 @@ def main():
   overview['setupDir'] = configParser.get('machine', 'setupdir') + '/'
   overview['atomDatFile'] = configParser.get('update', args.atomdat)
   shutil.copy(overview['setupDir'] + overview['atomDatFile'], overview['fitDirectory'])
-  shutil.copy(overview['setupDir'] + 'vp_setup.dat', overview['fitDirectory'])
+  shutil.copy(overview['setupDir'] + args.vpsetupFile, overview['fitDirectory']) # setup flag
   shutil.copy(overview['setupDir'] + 'vp_splot.dat', overview['fitDirectory'])
   overview['dataDirectory'] = configParser.get('data', 'dataDirectory') + '/'
   os.symlink(overview['atomDatFile'], 'atom.dat') # create symbolic link to atom.dat in fitting directory.
+  if overview['vpsetupFile'] != 'vp_setup.dat':
+    os.symlink(overview['vpsetupFile'], 'vp_setup.dat') # create symbolic link to vp_setup.dat in fitting directory.
   shutil.copy(overview['parentDirectory'] + args.input13, overview['fitDirectory'] + "input.fort.13")
   dataFiles = []
   with open("input.fort.13", 'r') as f13:
