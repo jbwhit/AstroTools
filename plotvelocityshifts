@@ -59,13 +59,12 @@ def main():
     vshiftDict = {}
     for line in startFile.read().splitlines():
       if re.search('>>', line):
-        # Check for zvals being the same
-        vshiftDict[line.split()[2]] = line.split()[-1] # dict[zvalue] = transitionName
+        vshiftDict[line.split()[2][0:7]] = line.split()[-1] # dict[zvalue] = transitionName
   with open(args.fort26File,'r') as resultFile:
     for line in resultFile.read().splitlines():
       if re.search('>>', line):
-        qvalDict[vshiftDict[line.split()[1]]]['v'] = float(line.split()[3]) * 1000.
-        qvalDict[vshiftDict[line.split()[1]]]['e'] = float(line.split()[4]) * 1000.
+        qvalDict[vshiftDict[line.split()[1][0:7]]]['v'] = float(line.split()[3]) * 1000.
+        qvalDict[vshiftDict[line.split()[1][0:7]]]['e'] = float(line.split()[4]) * 1000.
   temp = []
   for transition in vshiftDict.itervalues():
     temp.append((transition, qvalDict[transition]['x']))
