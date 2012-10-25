@@ -108,6 +108,7 @@ def main():
   tag['normalFit'] = ''
   tag['alphaFit'] = '.alpha'
   tag['vchunkFit'] = '.vchunk'
+  print args.fitType
   if args.fitType == 'normalFitAlphaFit':
     allowTransitiontoAlphaFit = True
     args.fitType = 'normalFit'    
@@ -363,7 +364,7 @@ def main():
   except: 
     print "google update didn't work."
   plotComparison(overview[run]['stem'])
-  if args.fitType == 'vchunkFit':
+  if overview['fitType'] == 'vchunkFit':
     try:
       plotVchunk(overview[run]['stem'])
     except:
@@ -382,7 +383,7 @@ def main():
 # ========================
 def plotComparison(fileStem):
   """docstring for plotComparison"""
-  if (overview['noPlot'] == False) and (args.fitType != 'vchunkFit'):
+  if (overview['noPlot'] == False) and (overview['fitType'] != 'vchunkFit'):
     proc = subprocess.call( ['plotfit', fileStem, 'input.fort.13', fileStem + ".fit.13"])
   pass
 
