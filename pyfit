@@ -391,7 +391,7 @@ def plotVchunk(fileStem):
   """docstring for plotVchunk"""
   if overview['noPlot'] == False:
     # TODO be more elegant with qval.txt call
-    proc = subprocess.call(['plotvelocityshifts', "../qval.txt", 'input.fort.13', fileStem + ".fort.26", "--title \"" + overview['QSO'] + " " + overview['z_abs'] "\"", "--plotName " + fileStem + ".pdf"])
+    proc = subprocess.call(['plotvelocityshifts', "../qval.txt", 'input.fort.13', fileStem + ".fort.26", "--title \"" + overview['QSO'] + " " + overview['z_abs'] + "\"", "--plotName " + fileStem + ".pdf"])
   pass
   
   
