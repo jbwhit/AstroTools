@@ -73,17 +73,19 @@ def main():
   transitions = []
   xpositions = []
   ypositions = []
-  
-  
+  errors = []
   fig = pl.figure()
   ax = fig.add_subplot(111)
   for transition in vshiftDict.itervalues():
     transitions.append(transition)
     xpositions.append( qvalDict[transition]['x'])
     ypositions.append( qvalDict[transition]['v'])
+    errors.append( qvalDict[transition]['e'])
     pop = ax.errorbar(qvalDict[transition]['x'], qvalDict[transition]['v'], yerr=qvalDict[transition]['e'], fmt='bo')
 
-
+  xpositions = np.array(xpositions)
+  ypositions = np.array(ypositions)
+  errors = np.array(errors)
   fitfunc = lambda p, x: p[0] + p[1] * x
   errfunc = lambda p, x, y, err: (y - fitfunc(p,x)) / err
   pinit = [0.1, 0.1]
