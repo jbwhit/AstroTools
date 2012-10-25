@@ -93,7 +93,7 @@ def main():
   pfinal = out[0]
   x1 = min(xpositions)
   x2 = max(xpositions)
-  ax.plot([x1, x2], [fitfunc(pfinal, x1), fitfunc(pfinal, x2)], color="red", label="{0:.2e}".format(pfinal[1]))
+  ax.plot([x1, x2], [fitfunc(pfinal, x1), fitfunc(pfinal, x2)], color="red", label="slope: {0:.2e}".format(pfinal[1]))
   ax.legend()
 
   ax.set_xlabel("x (-2cq/w)")
