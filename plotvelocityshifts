@@ -32,7 +32,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import sys
 import os
 from pylab import *
+import pylab as pl
 import re
+import numpy as np
 import scipy.constants as spc
 import argparse
 c = spc.c # speed of light in m/s
@@ -44,7 +46,6 @@ def main():
   parser.add_argument('fort26File', action="store", nargs='?', default='fort.26', type=str, help='vshift file in fort.26 format.') 
   parser.add_argument('--title', action="store", default="Velocity Chunks", type=str)
   parser.add_argument('--plotName', action="store", default="velshift.pdf", type=str)
-  parser.add_argument('--textName', action="store", default="legend.ascii", type=str)
   args = parser.parse_args()
   with open(args.qvalFile, 'r') as qvals:
     qvalDict = {}
@@ -55,30 +56,46 @@ def main():
       qvalDict[transition]['w'] = (1./qvalDict[transition]['l']) * 1.e8
       qvalDict[transition]['q'] = float(line.split()[2])
       qvalDict[transition]['x'] = -2 * c * qvalDict[transition]['q'] / qvalDict[transition]['w']
+      
   with open(args.fort13File, 'r') as startFile:
     vshiftDict = {}
     for line in startFile.read().splitlines():
       if re.search('>>', line):
         vshiftDict[line.split()[2][0:7]] = line.split()[-1] # dict[zvalue] = transitionName
+        
   with open(args.fort26File,'r') as resultFile:
     for line in resultFile.read().splitlines():
       if re.search('>>', line):
         qvalDict[vshiftDict[line.split()[1][0:7]]]['v'] = float(line.split()[3]) * 1000.
         qvalDict[vshiftDict[line.split()[1][0:7]]]['e'] = float(line.split()[4]) * 1000.
-  temp = []
+        
+  transitions = []
+  xpositions = []
+  ypositions = []
+  fig = pl.figure()
+  ax = fig.add_subplot(111)
   for transition in vshiftDict.itervalues():
-    temp.append((transition, qvalDict[transition]['x']))
-    errorbar(qvalDict[transition]['x'], qvalDict[transition]['v'], yerr=qvalDict[transition]['e'], fmt='bo')
-  title(args.title)
-  xlabel("x (-2cq/w)")
-  ylabel("dv (m/s)")
-  with open(args.textName, 'w') as text:
-    for line in sorted(temp, key=lambda x: x[1]):
-      print >>text, line[0], line[1]
-  savefig(args.plotName)
+    transitions.append(transition)
+    xpositions.append( qvalDict[transition]['x'])
+    ypositions.append( qvalDict[transition]['v'])
+    pop = ax.errorbar(qvalDict[transition]['x'], qvalDict[transition]['v'], yerr=qvalDict[transition]['e'], fmt='bo')
+
+  ax.set_xlabel("x (-2cq/w)")
+  ax.set_ylabel("dv (m/s)")
+  ax.set_title(args.title)
+  ax.plot([min(xpositions), max(xpositions)], np.zeros(2), 'c--', alpha=0.5)
+  ax.plot([min(ypositions), max(ypositions)], np.zeros(2), 'c--', alpha=0.5)
+  for label, x, y in zip(transitions, xpositions, ypositions):
+      ax.annotate(
+          label, 
+          xy = (x, y), xytext = (-20, 20),
+          textcoords = 'offset points', ha = 'right', va = 'bottom',
+          bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
+          arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
+
+  fig.savefig(args.plotName)
   pass
 
 
 if __name__ == '__main__':
   main()
-

@@ -363,11 +363,14 @@ def main():
   except: 
     print "google update didn't work."
   plotComparison(overview[run]['stem'])
+  if tag['vchunkFit'] == '.vchunk':
+    try:
+      plotVchunk(overview[run]['stem'])
+    except:
+      print "vchunk plot failed... "
   if overview['noPlot'] == False:
     try:
       shutil.copy(overview[run]['stem'] + '.pdf', overview['parentDirectory'] + 'plots/') # all combined (to include page one, latex)
-      # shutil.copy(overview[run]['stem'] + '.d.pdf', overview['parentDirectory'] + 'plots/') # decomposed 
-      # shutil.copy(overview[run]['stem'] + '.v.pdf', overview['parentDirectory'] + 'plots/') # velocity 
     except:
       pass
   print overview['timeStamp']
@@ -381,8 +384,16 @@ def plotComparison(fileStem):
   """docstring for plotComparison"""
   if overview['noPlot'] == False: 
     proc = subprocess.call( ['plotfit', fileStem, 'input.fort.13', fileStem + ".fit.13"])
-  pass  
+  pass
 
+def plotVchunk(fileStem):
+  """docstring for plotVchunk"""
+  if overview['noPlot'] == False:
+    # TODO be more elegant with qval.txt call
+    proc = subprocess.call(['plotvelocityshifts', "../qval.txt", 'input.fort.13', fileStem + ".fort.26", "--title " + overview['QSO'] + " " + overview['z_abs'], "--plotName " + fileStem + ".pdf"])
+  pass
+  
+  
 def bump(inFile, outFile):
   """
   Takes inFile and bumps the values of the bvalues that have hit the limit.
