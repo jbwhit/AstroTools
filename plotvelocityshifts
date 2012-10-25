@@ -36,6 +36,7 @@ import pylab as pl
 import re
 import numpy as np
 import scipy.constants as spc
+from scipy import optimize
 import argparse
 c = spc.c # speed of light in m/s
 
@@ -72,6 +73,8 @@ def main():
   transitions = []
   xpositions = []
   ypositions = []
+  
+  
   fig = pl.figure()
   ax = fig.add_subplot(111)
   for transition in vshiftDict.itervalues():
@@ -80,18 +83,29 @@ def main():
     ypositions.append( qvalDict[transition]['v'])
     pop = ax.errorbar(qvalDict[transition]['x'], qvalDict[transition]['v'], yerr=qvalDict[transition]['e'], fmt='bo')
 
+
+  fitfunc = lambda p, x: p[0] + p[1] * x
+  errfunc = lambda p, x, y, err: (y - fitfunc(p,x)) / err
+  pinit = [0.1, 0.1]
+  out = optimize.leastsq(errfunc, pinit, args=(xpositions, ypositions, errors), full_output=1)
+  pfinal = out[0]
+  x1 = min(xpositions)
+  x2 = max(xpositions)
+  ax.plot([x1, x2], [fitfunc(pfinal, x1), fitfunc(pfinal, x2)], color="red", label="{0:.2e}".format(pfinal[1]))
+  ax.legend()
+
   ax.set_xlabel("x (-2cq/w)")
   ax.set_ylabel("dv (m/s)")
   ax.set_title(args.title)
   ax.plot([min(xpositions), max(xpositions)], np.zeros(2), 'c--', alpha=0.5)
   ax.plot([min(ypositions), max(ypositions)], np.zeros(2), 'c--', alpha=0.5)
   for label, x, y in zip(transitions, xpositions, ypositions):
-      ax.annotate(
-          label, 
-          xy = (x, y), xytext = (-20, 20),
-          textcoords = 'offset points', ha = 'right', va = 'bottom',
-          bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
-          arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
+    ax.annotate(
+      label, 
+      xy = (x, y), xytext = (-20, 20),
+      textcoords = 'offset points', ha = 'right', va = 'bottom',
+      bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
+      arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
 
   fig.savefig(args.plotName)
   pass
