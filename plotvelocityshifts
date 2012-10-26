@@ -41,7 +41,7 @@ import argparse
 c = spc.c # speed of light in m/s
 
 def main():
-  parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
+  parser = argparse.ArgumentParser(description='Argument parser.')
   parser.add_argument('qvalFile', action="store", nargs='?', default='qval.txt', type=str, help='qvals listed like: FeII2600 2600.1721140 1370.') 
   parser.add_argument('fort13File', action="store", nargs='?', default='fort.13', type=str, help='vshift file in fort.13 format. Make sure the starting file has the transitions labeled like: ! FeII1608') 
   parser.add_argument('fort26File', action="store", nargs='?', default='fort.26', type=str, help='vshift file in fort.26 format.') 

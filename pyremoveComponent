@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+
+
+import sys
+import re
+import numpy as np
+import argparse
+import string
+from itertools import combinations, chain, count
+
+def subsetcombination(components, maxN):
+  """docstring for subsetcombination"""
+  from itertools import combinations
+  from itertools import chain  
+  return chain.from_iterable( combinations(components, r) for r in range(1, maxN+1))
+  pass
+
+def main():
+  """Parses a .13 format file and removes selected components"""
+  Nlist = []
+  labelList = []
+  head = []
+  body = []
+  
+  parser = argparse.ArgumentParser(description='Argument parser.')
+  parser.add_argument('input13', action="store", nargs='?', default='', type=str) # 
+  parser.add_argument('removeString', action="store", default='', type=str)
+  parser.add_argument('--maxN', action="store", default=2, type=int)
+  parser.add_argument('--outputFileStem', action="store", default='fort13s/starting.', type=str)
+  parser.add_argument('--comment', action="store", default='', type=str)
+  parser.add_argument('--noComment', action="store_true", default=False, help='Turn off comment prompt.')
+  args = parser.parse_args()
+
+  testString = 'al|aj|ak|af|ab|AH|AG|ac|ag|AF|af|al|aj|ae|ah|ag|ac|an|am|ab'
+  testString2 = 'al|aj|ak'
+  
+  with open(args.input13, 'r') as f13:
+    beginBody, beginHead = False, False
+    for line in f13.read().splitlines():
+      # Ignore comments and empty lines
+      if (not line.strip().startswith('!') and (not line.strip().startswith('%')) and (line.strip() != '')): 
+        if line.startswith('   *'):
+          beginHead = True
+        if beginHead == True:
+          head.append(line)
+        if beginBody == True:
+          Nlist.append(float(line.split()[1][:-2]))
+          body.append(line.split())
+          labelList.append(line.split()[2][-2:])
+        if line.startswith('  *'):
+          beginHead = False
+          beginBody = True
+  
+  testNumber = count(1)
+  for subset in subsetcombination(set(args.removeString.lower().split('|')), args.maxN):
+    filename = args.outputFileStem + "test." + str(testNumber.next()).zfill(3) + ".13"
+    print filename, "--comment \"! rm:", '|'.join(subset) + "\""
+    with open(filename, 'w') as outfile:
+      print >>outfile, "! rm:", '|'.join(subset)
+      if len(args.comment) > 0:
+        print >>outfile,  "! ", args.comment
+      for line in head:
+        print >>outfile,  line
+      for line in body:
+        if line[2].translate(None, string.punctuation).translate(None, string.digits).lower() not in subset:
+          print >>outfile,  ' ', '   '.join(line)
+  pass
+  
+if __name__ == '__main__':
+  main()
+
+# removes lines from both lowercase and UPPERCASE of input
+# $ removeComponent af oldfort.13 newfort.13
+# removes lines containing af and AF 
+# $1 line
+# $2 oldfort.13
+# $3 newfort.13
+# trigger2=$(echo $1 | tr '[a-z]' '[A-Z]')
+# echo "Removing: " $1 $trigger2
+# grep -v $1 $2 | grep -v $trigger2 > $3
