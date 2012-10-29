@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # fort18read.py
 # 
-# For use with my AstroTools scripts. Parses the body part of a fort.18 file
-# and checks for various problems.
+# For use with my AstroTools scripts. 
+# Parses the body part of a fort.18 analysis file
+# and reports for various problems.
 # 
 # Copyright 2012 Jonathan Whitmore 
 # Distributed under the Boost Software License, Version 1.0.
@@ -44,6 +45,7 @@ def main():
   parser = argparse.ArgumentParser(description='Parse.')
   parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
   parser.add_argument('fitIterationsFile', action="store", nargs='?', default='', type=str) # Positional 
+  parser.add_argument('--scriptMode', action="store_true", default=False, help='Only print final string.')  
   args = parser.parse_args()
   with open(args.analysisFile, 'rb') as fp:
     analysisDict = pickle.loads(zlib.decompress(fp.read()))
@@ -51,16 +53,25 @@ def main():
     with open(args.fitIterationsFile, 'rb') as fp:
       fitIterationDict = pickle.loads(zlib.decompress(fp.read()))
   for x in analysisDict['checks']:
-    print x, analysisDict['checks'][x]
-  print
-  for errorType in ['N_err', 'b_err', 'z_err', 'b_val']:
-    print "Top:", errorType
+    if args.scriptMode == False:
+      print x, analysisDict['checks'][x]
+  if args.scriptMode == False:
+    print
+  # Can also do: 'b_val'; TODO create fort13read that will care about that.
+  componentList = []
+  for errorType in ['N_err', 'b_err', 'z_err']:
+    if args.scriptMode == False:
+      print "Top errors:", errorType
     try: 
       for x in analysisDict[errorType]:
-        print ' '.join(x)
+        if args.scriptMode == False:
+          print ' '.join(x)
+        componentList.append(x[1])
     except:
       pass
-    print
+    if args.scriptMode == False:
+      print
+  print '\'' + '|'.join(set(componentList)) + '\'' 
   pass
 
 def printFinal():
