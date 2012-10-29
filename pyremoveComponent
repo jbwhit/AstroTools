@@ -1,18 +1,38 @@
 #!/usr/bin/env python
+'''
+The simple program takes a valid formatted fort.13 file and performs 
+several operations on it. 
 
+It's default behavior is derived to be run from the findabs directory.
 
+Things expected: 
+A starting filename like: fort13s/base.0032.test.001.13
+A string of | separated components to remove: 'al|aj|ak|AL'
+
+Optional: 
+Maximum number of combinations: --maxN 3
+Different file output stem: --outputFileStem fort13s/weirdstem.
+
+# =========
+# = Usage =
+# =========
+
+pyremoveComponent 2012-09-27_17.30.58.852182.alpha.fit.13 'al|aj|ak|af|ab|AH' --maxN 3
+
+'''
 import sys
 import re
 import numpy as np
 import argparse
 import string
-from itertools import combinations, chain, count
+import glob
+import itertools as it
 
 def subsetcombination(components, maxN):
   """docstring for subsetcombination"""
   from itertools import combinations
   from itertools import chain  
-  return chain.from_iterable( combinations(components, r) for r in range(1, maxN+1))
+  return chain.from_iterable(combinations(components, r) for r in range(1, maxN+1))
   pass
 
 def main():
@@ -30,9 +50,6 @@ def main():
   parser.add_argument('--comment', action="store", default='', type=str)
   parser.add_argument('--noComment', action="store_true", default=False, help='Turn off comment prompt.')
   args = parser.parse_args()
-
-  testString = 'al|aj|ak|af|ab|AH|AG|ac|ag|AF|af|al|aj|ae|ah|ag|ac|an|am|ab'
-  testString2 = 'al|aj|ak'
   
   with open(args.input13, 'r') as f13:
     beginBody, beginHead = False, False
@@ -51,9 +68,20 @@ def main():
           beginHead = False
           beginBody = True
   
-  testNumber = count(1)
+  # copy initial into not a test one (starting.0019.13 + starting.0019.test.001.13, *002.13, etc.)
+  baseStem = args.outputFileStem
+  listofFiles = glob.glob(baseStem + '*')
+  baseCount = it.count(max([int(x) for x in set([x.split(baseStem)[1].split('.')[0] for x in listofFiles]) if x.isdigit()]) + 1)
+  baseFilename = baseStem + str(baseCount.next()).zfill(3)
+  with open(baseFilename + '.13', 'w') as baseFile:
+    for line in head:
+      print >>baseFile, line
+    for line in body:
+      print >>baseFile, ' ', '   '.join(line)
+  
+  testNumber = it.count(1)
   for subset in subsetcombination(set(args.removeString.lower().split('|')), args.maxN):
-    filename = args.outputFileStem + "test." + str(testNumber.next()).zfill(3) + ".13"
+    filename = baseFilename + ".test." + str(testNumber.next()).zfill(3) + ".13"
     print filename, "--comment \"! rm:", '|'.join(subset) + "\""
     with open(filename, 'w') as outfile:
       print >>outfile, "! rm:", '|'.join(subset)
