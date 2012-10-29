@@ -69,6 +69,7 @@ def main():
   parser = argparse.ArgumentParser(description='Run vpfit with specified fitting parameters.')
   parser.add_argument('input13', action="store", nargs='?', default='fort.13', type=str) # Positional (feed in the fort.13-formatted file).
   parser.add_argument('--noComment', action="store_true", default=False, help='Turn off comment prompt.')
+  parser.add_argument('--noGoogle', action="store_true", default=False, help='Turn off updating Google spreadsheet.')
   parser.add_argument('--comment', action="store", default='', help='Give commandline comment.')
   parser.add_argument('--noPlot', action="store_true", default=False, help='Will not make pdf plots.')
   parser.add_argument('--bump', action="store_true", default=False, help='Will bump the fort.13 off the min values.')
@@ -321,10 +322,11 @@ def main():
           shutil.copy(overview[run]['stem'] + '.fit.13', overview['parentDirectory'] + 'fit13s/')
           outputDictFile = overview[run]['stem'] + ".p.gz"
           logDetails(overview, run, outputDictFile=outputDictFile)
-          try: 
-            subprocess.call(['googledriveappend', '--gdriveKey', overview['gdriveKey'], '--sheetNumber', overview['sheetNumber'], '--resultsDict', outputDictFile, '--logFile', overview['absorberLogFile']])
-          except: 
-            print "google update didn't work."
+          if overview['noGoogle'] == False:
+            try: 
+              subprocess.call(['googledriveappend', '--gdriveKey', overview['gdriveKey'], '--sheetNumber', overview['sheetNumber'], '--resultsDict', outputDictFile, '--logFile', overview['absorberLogFile']])
+            except: 
+              print "google update didn't work."
           # Switch to alpha fitting.
           overview['fitType'] = 'alphaFit'
           # convert from final fit to alpha variable.
@@ -355,14 +357,15 @@ def main():
       overview['finalComment'] = "Not converged yet. Runs before stopping: " + str(run)
       overview['rerunFlag'] = False
       continue
-  # copy finalfit to fit13s 
+  # copy finalfit to fit13s
   shutil.copy(overview[run]['stem'] + '.fit.13', overview['parentDirectory'] + 'fit13s/')
   outputDictFile = overview[run]['stem'] + ".p.gz"
   logDetails(overview, run, outputDictFile=outputDictFile)
-  try: 
-    subprocess.call(['googledriveappend', '--gdriveKey', overview['gdriveKey'], '--sheetNumber', overview['sheetNumber'], '--resultsDict', outputDictFile, '--logFile', overview['absorberLogFile']])
-  except: 
-    print "google update didn't work."
+  if overview['noGoogle'] == False:
+    try: 
+      subprocess.call(['googledriveappend', '--gdriveKey', overview['gdriveKey'], '--sheetNumber', overview['sheetNumber'], '--resultsDict', outputDictFile, '--logFile', overview['absorberLogFile']])
+    except: 
+      print "google update didn't work."
   plotComparison(overview[run]['stem'])
   if overview['fitType'] == 'vchunkFit':
     try:
@@ -393,7 +396,6 @@ def plotVchunk(fileStem):
     # TODO be more elegant with qval.txt call
     proc = subprocess.call(['plotvelocityshifts', "../qval.txt", 'input.fort.13', fileStem + ".fort.26", "--title", overview['QSO'] + " " + overview['z_abs'], "--plotName", fileStem + ".pdf"])
   pass
-  
   
 def bump(inFile, outFile):
   """
