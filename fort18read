@@ -41,45 +41,45 @@ import argparse
 import zlib
 
 def main():
-  """docstring for main"""
-  parser = argparse.ArgumentParser(description='Parse.')
-  parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
-  parser.add_argument('fitIterationsFile', action="store", nargs='?', default='', type=str) # Positional 
-  parser.add_argument('--scriptMode', action="store_true", default=False, help='Only print final string.')  
-  args = parser.parse_args()
-  with open(args.analysisFile, 'rb') as fp:
-    analysisDict = pickle.loads(zlib.decompress(fp.read()))
-  if args.fitIterationsFile != '':
-    with open(args.fitIterationsFile, 'rb') as fp:
-      fitIterationDict = pickle.loads(zlib.decompress(fp.read()))
-  for x in analysisDict['checks']:
-    if args.scriptMode == False:
-      print x, analysisDict['checks'][x]
-  if args.scriptMode == False:
-    print
-  # Can also do: 'b_val'; TODO create fort13read that will care about that.
-  componentList = []
-  for errorType in ['N_err', 'b_err', 'z_err']:
-    if args.scriptMode == False:
-      print "Top errors:", errorType
-    try: 
-      for x in analysisDict[errorType]:
+    """docstring for main"""
+    parser = argparse.ArgumentParser(description='Parse.')
+    parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+    parser.add_argument('fitIterationsFile', action="store", nargs='?', default='', type=str) # Positional 
+    parser.add_argument('--scriptMode', action="store_true", default=False, help='Only print final string.')    
+    args = parser.parse_args()
+    with open(args.analysisFile, 'rb') as file_handle:
+        analysisDict = pickle.loads(zlib.decompress(file_handle.read()))
+    if args.fitIterationsFile != '':
+        with open(args.fitIterationsFile, 'rb') as file_handle:
+            fitIterationDict = pickle.loads(zlib.decompress(file_handle.read()))
+    for x in analysisDict['checks']:
         if args.scriptMode == False:
-          print ' '.join(x)
-        componentList.append(x[1])
-    except:
-      pass
+            print x, analysisDict['checks'][x]
     if args.scriptMode == False:
-      print
-  print '\'' + '|'.join(set(componentList)) + '\'' 
-  pass
+        print
+    # Can also do: 'b_val'; TODO create fort13read that will care about that.
+    componentList = []
+    for errorType in ['N_err', 'b_err', 'z_err']:
+        if args.scriptMode == False:
+            print "Top errors:", errorType
+        try: 
+            for x in analysisDict[errorType]:
+                if args.scriptMode == False:
+                    print ' '.join(x)
+                componentList.append(x[1])
+        except:
+            pass
+        if args.scriptMode == False:
+            print
+    print '\'' + '|'.join(set(componentList)) + '\'' 
+    pass
 
 def printFinal():
-  """docstring for printFinal"""
-  for x in fitIterationDict[fitIterationDict['iterationList'][-1]]['body']:
-    print x  
-  pass
+    """Print the body of the final iteration."""
+    for x in fitIterationDict[fitIterationDict['iterationList'][-1]]['body']:
+        print x    
+    pass
 
 if __name__ == '__main__':
-  main()
+    main()
 
