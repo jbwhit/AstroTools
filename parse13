@@ -1,0 +1,95 @@
+#!/usr/bin/env python
+# parse13
+# 
+# For use with my AstroTools scripts. 
+# Parses the body part of a fort.18 analysis file
+# and reports for various problems.
+# 
+# Copyright 2012 Jonathan Whitmore 
+# Distributed under the Boost Software License, Version 1.0.
+#
+# Permission is hereby granted, free of charge, to any person or organization
+# obtaining a copy of the software and accompanying documentation covered by
+# this license (the "Software") to use, reproduce, display, distribute,
+# execute, and transmit the Software, and to prepare derivative works of the
+# Software, and to permit third-parties to whom the Software is furnished to
+# do so, all subject to the following:
+#
+# The copyright notices in the Software and this entire statement, including
+# the above license grant, this restriction and the following disclaimer,
+# must be included in all copies of the Software, in whole or in part, and
+# all derivative works of the Software, unless such copies or derivative
+# works are solely in the form of machine-executable object code generated
+# by a source language processor.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND
+# NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR ANYONE
+# DISTRIBUTING THE SOFTWARE BE LIABLE FOR ANY DAMAGES OR OTHER LIABILITY,
+# WHETHER IN CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# 
+
+import sys
+import re
+import string
+import numpy as np
+import argparse
+import itertools 
+# >>> from itertools import permutations
+# >>> from string import ascii_uppercase
+# >>> for x in permutations(ascii_uppercase, r=3):
+        # print x
+        
+        
+def main():
+    """docstring for main"""
+    parser = argparse.ArgumentParser(description='Parse.')
+    parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+    parser.add_argument('--master', action="store", nargs='?', default='FeII', type=str) # Positional 
+    # parser.add_argument('--scriptMode', action="store_true", default=False, help='Only print final string.')    
+    args = parser.parse_args()
+    print args
+    head = []
+    body = []
+    with open(args.analysisFile, 'r') as file_handle:
+        guts = file_handle.read().splitlines()
+        
+    begin_head = False
+    begin_body = False        
+    temp1 = []
+    print args.master
+    for line in guts:
+        if begin_body == True:
+            body.append(line)
+            if line.split()[0] == args.master:
+                temp1.append(line.split())
+        if line.startswith('  *'):
+            begin_body = True
+            begin_head = False
+        if begin_head == True:
+            head.append(line.split())
+        if line.startswith('   *'):
+            begin_head = True
+    print_head(head)
+    print len(temp1)
+    master_names = [''.join(index) for index in itertools.combinations_with_replacement(string.ascii_lowercase, 2)]
+    print master_names[:len(temp1)]
+    temp1.sort(key=lambda x: x[1])
+    print temp1
+    pass
+    
+def print_head(in_list):
+    """docstring for print_head"""
+    print '   *'
+    for row in in_list:
+        print ' '.join(row)
+    print '  *'    
+    pass
+
+
+
+if __name__ == '__main__':
+    main()
+
