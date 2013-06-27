@@ -89,11 +89,6 @@ def main():
         option_1.append([' '.join([str(item) for item in line])])
         
     master_ion = [args.master]
-    slave_ncol = {}
-    for element in args.slave.strip('{}').split(','):
-        slave_ncol[element.split(':')[0].strip()] = float(element.split(':')[1])
-
-    slave_ions = slave_ncol.keys()
     COUNT = 0
     print_head(head)
     for ion in master_ion:
@@ -103,13 +98,19 @@ def main():
             print ion, '{:10.5f}'.format(float(line[0])), '{:12.7f}'.format(float(line[1])) + master_names[index], 
             print '{:12.7f}'.format(float(line[2])) + master_names[index], ' '.join(line[3:]), COUNT
 
-    for ion in slave_ions:
-        for index, line in enumerate(option_1):
-            COUNT += 1
-            line = line[0].split()
-            print ion, '{:10.5f}'.format(slave_ncol[ion] + float(line[0])), 
-            print '{:12.7f}'.format(float(line[1])) + string.upper(master_names[index]), 
-            print '{:12.7f}'.format(float(line[2])) + string.upper(master_names[index]), ' '.join(line[3:]), COUNT
+    if args.slave:
+        slave_ncol = {}
+        for element in args.slave.strip('{}').split(','):
+            slave_ncol[element.split(':')[0].strip()] = float(element.split(':')[1])
+
+        slave_ions = slave_ncol.keys()
+        for ion in slave_ions:
+            for index, line in enumerate(option_1):
+                COUNT += 1
+                line = line[0].split()
+                print ion, '{:10.5f}'.format(slave_ncol[ion] + float(line[0])), 
+                print '{:12.7f}'.format(float(line[1])) + string.upper(master_names[index]), 
+                print '{:12.7f}'.format(float(line[2])) + string.upper(master_names[index]), ' '.join(line[3:]), COUNT
     pass
     
 def print_head(in_list):
