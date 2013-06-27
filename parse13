@@ -2,8 +2,8 @@
 # parse13
 # 
 # For use with my AstroTools scripts. 
-# Parses the body part of a fort.18 analysis file
-# and reports for various problems.
+# Parses the body part of a fort.13 file
+# does various operations that are tedious by hand
 # 
 # Copyright 2012 Jonathan Whitmore 
 # Distributed under the Boost Software License, Version 1.0.
@@ -37,34 +37,32 @@ import string
 import numpy as np
 import argparse
 import itertools 
-# >>> from itertools import permutations
-# >>> from string import ascii_uppercase
-# >>> for x in permutations(ascii_uppercase, r=3):
-        # print x
-        
         
 def main():
     """docstring for main"""
     parser = argparse.ArgumentParser(description='Parse.')
     parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
     parser.add_argument('--master', action="store", nargs='?', default='FeII', type=str) # Positional 
-    # parser.add_argument('--scriptMode', action="store_true", default=False, help='Only print final string.')    
+    parser.add_argument('--slave', action="store", nargs='?', default="{AlII:-0.2, MgII:0.5}", type=str) # Positional 
+    parser.add_argument('--strip', action='store_false', default=True) # Positional 
+    parser.add_argument('--turbulent', action='store_false', default=True)
+    parser.add_argument('--sort_redshift', action='store_false', default=True)
     args = parser.parse_args()
-    print args
     head = []
     body = []
+    master_body = []
     with open(args.analysisFile, 'r') as file_handle:
         guts = file_handle.read().splitlines()
         
     begin_head = False
     begin_body = False        
     temp1 = []
-    print args.master
+    # print "Master:", args.master
     for line in guts:
         if begin_body == True:
-            body.append(line)
+            body.append(line.split())
             if line.split()[0] == args.master:
-                temp1.append(line.split())
+                master_body.append(line.split())
         if line.startswith('  *'):
             begin_body = True
             begin_head = False
@@ -72,12 +70,46 @@ def main():
             head.append(line.split())
         if line.startswith('   *'):
             begin_head = True
-    print_head(head)
-    print len(temp1)
+    stripped_body = []
+    if args.turbulent:
+        line_ending = "  0.00   1.00E+00  0  ! "
+
+    if args.strip:
+        for line in master_body:
+            line = line
+            stripped_body.append([float(strip_labels(line[1])), float(strip_labels(line[2])), 
+                                float(strip_labels(line[3])), strip_labels(line[4])+'QA', line_ending])
+
+    if args.sort_redshift:
+        stripped_body.sort(key=lambda x: x[1])
+
     master_names = [''.join(index) for index in itertools.combinations_with_replacement(string.ascii_lowercase, 2)]
-    print master_names[:len(temp1)]
-    temp1.sort(key=lambda x: x[1])
-    print temp1
+    option_1 = []
+    for index, line in enumerate(stripped_body):
+        option_1.append([' '.join([str(item) for item in line])])
+        
+    master_ion = [args.master]
+    slave_ncol = {}
+    for element in args.slave.strip('{}').split(','):
+        slave_ncol[element.split(':')[0].strip()] = float(element.split(':')[1])
+
+    slave_ions = slave_ncol.keys()
+    COUNT = 0
+    print_head(head)
+    for ion in master_ion:
+        for index, line in enumerate(option_1):
+            line = line[0].split()
+            COUNT += 1
+            print ion, '{:10.5f}'.format(float(line[0])), '{:12.7f}'.format(float(line[1])) + master_names[index], 
+            print '{:12.7f}'.format(float(line[2])) + master_names[index], ' '.join(line[3:]), COUNT
+
+    for ion in slave_ions:
+        for index, line in enumerate(option_1):
+            COUNT += 1
+            line = line[0].split()
+            print ion, '{:10.5f}'.format(slave_ncol[ion] + float(line[0])), 
+            print '{:12.7f}'.format(float(line[1])) + string.upper(master_names[index]), 
+            print '{:12.7f}'.format(float(line[2])) + string.upper(master_names[index]), ' '.join(line[3:]), COUNT
     pass
     
 def print_head(in_list):
@@ -88,7 +120,21 @@ def print_head(in_list):
     print '  *'    
     pass
 
+def strip_labels(element):
+    """docstring for strip_labels"""
+    stripped_element = element
+    if element[-1] in string.ascii_letters:
+        stripped_element = element[:-1]
+        if stripped_element[-1] in string.ascii_letters:
+            stripped_element = stripped_element[:-1]
+    return stripped_element
 
+
+def sort_master(key, linelist):
+    """returns the sorted list of lines sorted by z"""
+    for line in linelist:
+        print line
+    pass
 
 if __name__ == '__main__':
     main()
