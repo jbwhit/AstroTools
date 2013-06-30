@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+import re
+import sys
+import numpy as np
+import string
+import scipy.constants as spc
+import calibration_rewrite as calicompari
+c_light = spc.c
+
+original_atomdat = 'MM_2013-04-30_H2.dat'
+
+def main():
+    """docstring for main"""
+
+    guts = []
+    with open(original_atomdat, 'r') as filehandle:
+        for line in filehandle.readlines():
+            guts.append(line)
+
+    parsed = []
+    for line in guts:
+        splitline = line[6:].split()
+        if len(splitline) > 5:
+            try:
+                float(splitline[4])
+                parsed.append([line[:6], float(splitline[0]), float(splitline[1]), float(splitline[2]), float(splitline[3]), float(splitline[4])])
+            except:
+                pass
+
+    newbody = sorted(parsed, key=lambda x: float(x[1]))
+
+    def redshift_distort(wavelength, redshift):
+        new_wavelength = wavelength * (1.0 + redshift)
+        return (new_wavelength - wavelength_shift(new_wavelength)) / (1.0 + redshift)
+
+
+    def distortion(wavelength, m=8/15., b=-2000, chip_wavelength=4500.0):
+        """initial test -- straight line."""
+        if wavelength < chip_wavelength:
+            return wavelength * m + b
+        else:
+            return wavelength * m + b - 600
+
+    def wavelength_shift(wavelength):
+        """ dv/c = dl / l
+        dl = dv / c * l"""
+        return distortion(wavelength) / c_light * wavelength
+    
+
+    def create_atomdat(thingy, redshift):
+        print "#", redshift
+        for line in thingy:
+            print line[0], redshift_distort(line[1], redshift), line[2], line[3], line[4], line[5]
+        print "end   0000.000 0.000000  0.00000   0.000 Terminator"
+
+
+    create_atomdat(newbody, float(sys.argv[1]))
+
+if __name__ == '__main__':
+    main()
+
