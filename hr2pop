@@ -1,0 +1,150 @@
+#!/usr/bin/env python
+# hr2pop by Adrian Malec
+# Converts HIRedux extracted object files to UVES_popler-friendly format.
+# Roughly based on my hiredux2popler.py script, but simpler in execution and doesn't break as much.
+
+from optparse import OptionParser
+from numpy import *
+import os, re, pyfits, datetime, warnings
+from string import rjust
+from matplotlib.pyplot import *
+
+VERSION = 0.11
+
+def ch2int(chstr):
+	chdic = {'b': 1, 'g': 2, 'r': 3}
+	return chdic[chstr.lower()]
+
+def int2ch(chint):
+	chdic = {1: 'b', 2: 'g', 3: 'r'}
+	return chdic[chint]
+
+def maybegz(fpath):
+	if os.path.isfile(fpath):
+		return fpath
+	elif os.path.isfile(fpath+'.gz'):
+		return fpath+'.gz'
+	else:
+		raise IOError
+
+def main():
+	usage = "usage: %prog [options] <hires structure FITS file>"
+	ver = "%prog " + str(VERSION)
+	parser = OptionParser(usage=usage, version=ver)
+	parser.add_option("--clobber", dest="clobber", action="store_true", default=False, 
+		help="overwrite existing output files without warning")
+	parser.add_option("-s", "--setup", dest="setup", default="all",
+		help="select setups to process, e.g. 1,2,3")
+	parser.add_option("-o", "--object", dest="object", default="all",
+		help="select objects to process")
+	parser.add_option("-c", "--chips", dest="chips", default="BGR", 
+		help="select CCD chips to process")
+	(o, a) = parser.parse_args()
+	if a == [] or len(a) > 1:
+		parser.print_help()
+		exit()
+	strct = a[0]
+	
+	NPIX = 4000
+	
+	if not os.path.isfile(strct):
+		print "ERROR: Structure file '%s' does not exist." % strct
+		exit()
+		
+	h = pyfits.open(strct)[1]
+	
+	objs = [d for d in h.data 
+		if d['TYPE'] == 'OBJ' and d['FLG_ANLY'] == 1 and d['OBJ_FIL'] != '' and d['IMG_FINAL'] != '']
+	if o.setup != 'all':
+		objs = [d for d in objs if d['SETUP'] in [int(pp) for pp in o.setup.split(',')]]
+	if o.object != 'all':
+		objs = [d for d in objs if d['OBJ_ID'] in [int(pp) for pp in o.object.split(',')]]
+	objs = [d for d in objs 
+		if int2ch(d['CHIP']) in o.chips.lower()]
+	
+	if not objs:
+		print "WARNING: Nothing to do."
+		exit()
+	
+	basepath = os.path.dirname(os.path.abspath(strct))
+	poppath = basepath + '/Popler'
+	if not os.path.exists(poppath):
+		os.makedirs(poppath)
+
+
+	for d in objs:
+		spec_fn = "%s/spec_%04i%s.fits" % (poppath, d['FRAME'], int2ch(d['CHIP']).upper())
+		print "- Processing %04i%s (setup %s, object %s) to: %s" % \
+			(d['FRAME'], int2ch(d['CHIP']).upper(), 
+				rjust(str(d['SETUP']), 2), 
+				rjust(str(d['OBJ_ID']), 2), 
+				spec_fn)
+		
+		try:
+
+			img_final = 'Final/f_hires%04i%s.fits' % (d['FRAME'], int2ch(d['CHIP']).upper())
+			raw_hdu = pyfits.open(maybegz(d['ROOTPTH']+d['IMG_ROOT']))[0]
+			obj_hdu = pyfits.open(maybegz(d['OBJ_FIL']))[1]
+			final_hdu = pyfits.open(maybegz(basepath+'/'+img_final))[0]
+	                
+			fx = row_stack([oi['FX'][:NPIX] for oi in obj_hdu.data]).astype(float64)
+			var = row_stack([oi['VAR'][:NPIX] for oi in obj_hdu.data]).astype(float32)
+			wave = row_stack([oi['WAVE'][:NPIX] for oi in obj_hdu.data]).astype(float64) # double precision
+			blaze = row_stack([oi['FLUX'][:NPIX] for oi in obj_hdu.data]).astype(float32)
+			fwhm = array([oi['SPATIAL_FWHM'] for oi in obj_hdu.data], dtype=float32)
+                        
+			#testng what hr2pop reads in
+			#figure(1)
+			#plot(wave[8,5:],var[8,5:])
+			#show()
+			
+			pri = pyfits.PrimaryHDU(data = fx, header = raw_hdu.header) # populate with the raw header cards and FX data from Obj_
+			pri.scale(bzero=1E-32) #sets the offset to almost zero... not quite a solution but a fix
+			
+			pri.header.update('BSREDUX', basepath)
+			pri.header.update('HELVEL', final_hdu.header['HELIO'])
+			pri.header.update('FIN_FIL', img_final)
+			for hk in ['ARC_FIL', 'FLAT_FIL', 'OBJ_FIL']:
+				pri.header.update(hk, d[hk])
+			pri.header.update('DATE', datetime.datetime.now().strftime("%Y-%m-%d"), 
+				'Creation UTC (CCCC-MM-DD) date of FITS header')
+		
+			img1 = pyfits.ImageHDU(var)
+			img2 = pyfits.ImageHDU(wave)
+			img3 = pyfits.ImageHDU(blaze)
+			img4 = pyfits.ImageHDU(fwhm)
+
+			
+			upop_hdu = pyfits.HDUList([pri, img1, img2, img3, img4])
+			warnings.resetwarnings()
+			warnings.filterwarnings('ignore', category=UserWarning, append=True)
+			upop_hdu.writeto(spec_fn, clobber=o.clobber)
+			warnings.resetwarnings()
+			warnings.filterwarnings('always', category=UserWarning, append=True)
+			upop_hdu.close()
+			
+			#testing outputted fits file
+			#loadedhdu = pyfits.open(spec_fn)
+			#loadedhdu.info()
+			#loadflx=loadedhdu[0].data
+			#loadvar=loadedhdu[1].data
+			#loadwav=loadedhdu[2].data
+			#loadblz=loadedhdu[3].data
+			#loadflx.shape
+			#figure(2)
+			#plot(loadwav[8,5:],loadvar[8,5:])
+			#figure(3)
+			#plot(loadwav[8,:],loadvar[8,:]-var[8,:])
+			#show()
+			#print (loadflx[8,:]-fx[8,:]), 'blaze diff'
+
+
+		except Exception, err: # catch all and continue
+			print "  ERROR: %s" % err
+			continue
+		
+	print "Done."
+		
+
+if __name__ == "__main__":
+	main()
