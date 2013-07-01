@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""A simple way to mimick a wavelength distortion in generated spectra."""
 import re
 import sys
 import numpy as np
@@ -7,7 +8,7 @@ import scipy.constants as spc
 import calibration_rewrite as calicompari
 c_light = spc.c
 
-original_atomdat = 'MM_2013-04-30_H2.dat'
+original_atomdat = 'MM_2013-07-01_H2.dat'
 
 def main():
     """docstring for main"""
