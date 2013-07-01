@@ -5,11 +5,16 @@
 
 from optparse import OptionParser
 from numpy import *
-import os, re, pyfits, datetime, warnings
+import numpy as np
+import os
+import re
+import pyfits
+import datetime
+import warnings
 from string import rjust
 from matplotlib.pyplot import *
 
-VERSION = 0.11
+VERSION = 0.12
 
 def ch2int(chstr):
 	chdic = {'b': 1, 'g': 2, 'r': 3}
@@ -87,17 +92,12 @@ def main():
 			obj_hdu = pyfits.open(maybegz(d['OBJ_FIL']))[1]
 			final_hdu = pyfits.open(maybegz(basepath+'/'+img_final))[0]
 	                
-			fx = row_stack([oi['FX'][:NPIX] for oi in obj_hdu.data]).astype(float64)
-			var = row_stack([oi['VAR'][:NPIX] for oi in obj_hdu.data]).astype(float32)
-			wave = row_stack([oi['WAVE'][:NPIX] for oi in obj_hdu.data]).astype(float64) # double precision
-			blaze = row_stack([oi['FLUX'][:NPIX] for oi in obj_hdu.data]).astype(float32)
-			fwhm = array([oi['SPATIAL_FWHM'] for oi in obj_hdu.data], dtype=float32)
+			fx = np.row_stack([oi['FX'][:NPIX] for oi in obj_hdu.data]).astype(float64)
+			var = np.row_stack([oi['VAR'][:NPIX] for oi in obj_hdu.data]).astype(float32)
+			wave = np.row_stack([oi['WAVE'][:NPIX] for oi in obj_hdu.data]).astype(float64) # double precision
+			blaze = np.row_stack([oi['FLUX'][:NPIX] for oi in obj_hdu.data]).astype(float32)
+			fwhm = np.array([oi['SPATIAL_FWHM'] for oi in obj_hdu.data], dtype=float32)
                         
-			#testng what hr2pop reads in
-			#figure(1)
-			#plot(wave[8,5:],var[8,5:])
-			#show()
-			
 			pri = pyfits.PrimaryHDU(data = fx, header = raw_hdu.header) # populate with the raw header cards and FX data from Obj_
 			pri.scale(bzero=1E-32) #sets the offset to almost zero... not quite a solution but a fix
 			
@@ -123,21 +123,6 @@ def main():
 			warnings.filterwarnings('always', category=UserWarning, append=True)
 			upop_hdu.close()
 			
-			#testing outputted fits file
-			#loadedhdu = pyfits.open(spec_fn)
-			#loadedhdu.info()
-			#loadflx=loadedhdu[0].data
-			#loadvar=loadedhdu[1].data
-			#loadwav=loadedhdu[2].data
-			#loadblz=loadedhdu[3].data
-			#loadflx.shape
-			#figure(2)
-			#plot(loadwav[8,5:],loadvar[8,5:])
-			#figure(3)
-			#plot(loadwav[8,:],loadvar[8,:]-var[8,:])
-			#show()
-			#print (loadflx[8,:]-fx[8,:]), 'blaze diff'
-
 
 		except Exception, err: # catch all and continue
 			print "  ERROR: %s" % err
@@ -145,6 +130,5 @@ def main():
 		
 	print "Done."
 		
-
 if __name__ == "__main__":
 	main()
