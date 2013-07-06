@@ -5,7 +5,7 @@ import sys
 import numpy as np
 import string
 import scipy.constants as spc
-import calibration_rewrite as calicompari
+
 c_light = spc.c
 
 original_atomdat = 'MM_2013-07-01_H2.dat'
@@ -35,12 +35,16 @@ def main():
         return (new_wavelength - wavelength_shift(new_wavelength)) / (1.0 + redshift)
 
 
-    def distortion(wavelength, m=8/15., b=-2000, chip_wavelength=4500.0):
+    def distortion(wavelength, m=0.5, b=-2000, chip_wavelength=4500.0):
         """initial test -- straight line."""
         if wavelength < chip_wavelength:
             return wavelength * m + b
         else:
-            return wavelength * m + b - 600
+            return wavelength * m + b - 700
+
+    # def distortion(wavelength, m=-8/15., b=2000, chip_wavelength=4500.0):
+    #     """initial test -- straight line."""
+    #     return wavelength * m + b
 
     def wavelength_shift(wavelength):
         """ dv/c = dl / l
@@ -59,4 +63,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# Choose slope
+# disregard create fort.13 if line outside wavelength region. 
 
