@@ -1,0 +1,146 @@
+#!/usr/bin/env python
+# parse13
+# 
+# For use with my AstroTools scripts. 
+# Parses the body part of a fort.13 file
+# does various operations that are tedious by hand
+# 
+# Copyright 2012 Jonathan Whitmore 
+# Distributed under the Boost Software License, Version 1.0.
+#
+# Permission is hereby granted, free of charge, to any person or organization
+# obtaining a copy of the software and accompanying documentation covered by
+# this license (the "Software") to use, reproduce, display, distribute,
+# execute, and transmit the Software, and to prepare derivative works of the
+# Software, and to permit third-parties to whom the Software is furnished to
+# do so, all subject to the following:
+#
+# The copyright notices in the Software and this entire statement, including
+# the above license grant, this restriction and the following disclaimer,
+# must be included in all copies of the Software, in whole or in part, and
+# all derivative works of the Software, unless such copies or derivative
+# works are solely in the form of machine-executable object code generated
+# by a source language processor.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND
+# NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR ANYONE
+# DISTRIBUTING THE SOFTWARE BE LIABLE FOR ANY DAMAGES OR OTHER LIABILITY,
+# WHETHER IN CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# 
+
+import sys
+import re
+import string
+import numpy as np
+import argparse
+import itertools 
+        
+def main():
+    """docstring for main"""
+    parser = argparse.ArgumentParser(description='Parse.')
+    parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+    parser.add_argument('--master', action="store", nargs='?', default='FeII', type=str) # Positional 
+    parser.add_argument('--slave', action="store", nargs='?', default="{AlII:-0.2, MgII:0.5}", type=str) # Positional 
+    parser.add_argument('--strip', action='store_false', default=True) # Positional 
+    parser.add_argument('--turbulent', action='store_false', default=True)
+    parser.add_argument('--sort_redshift', action='store_false', default=True)
+    args = parser.parse_args()
+    head = []
+    body = []
+    master_body = []
+    with open(args.analysisFile, 'r') as file_handle:
+        guts = file_handle.read().splitlines()
+        
+    begin_head = False
+    begin_body = False        
+    temp1 = []
+    # print "Master:", args.master
+    for line in guts:
+        if begin_body == True:
+            body.append(line.split())
+            if line.split()[0] == args.master:
+                master_body.append(line.split())
+        if line.startswith('  *'):
+            begin_body = True
+            begin_head = False
+        if begin_head == True:
+            head.append(line.split())
+        if line.startswith('   *'):
+            begin_head = True
+    stripped_body = []
+    if args.turbulent:
+        line_ending = "  0.00   1.00E+00  0  ! "
+    
+    maxN = 0.0
+    maxindex = 0
+    if args.strip:
+        for index, line in enumerate(body):
+            line = line
+            if float(line[1]) > maxN:
+                maxindex, maxN = index, float(line[1])
+            stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QA', line_ending])
+
+    
+    stripped_body[maxindex][4] = strip_labels(stripped_body[maxindex][4])+'qa'
+    
+    # for index, line in enumerate(stripped_body):
+    #     option_1.append([' '.join([str(item) for item in line])])
+    #     p
+    master_ion = [args.master]
+    COUNT = 0
+    print_head(head)
+    for line in stripped_body:
+        print ' '.join([str(item) for item in line])
+        
+    # for ion in master_ion:
+    #     for index, line in enumerate(option_1):
+    #         line = line[0].split()
+    #         COUNT += 1
+    #         print ion, '{:10.5f}'.format(float(line[0])), '{:12.7f}'.format(float(line[1])) + master_names[index], 
+    #         print '{:12.7f}'.format(float(line[2])) + master_names[index], ' '.join(line[3:]), COUNT
+    # 
+    # if args.slave:
+    #     slave_ncol = {}
+    #     for element in args.slave.strip('{}').split(','):
+    #         slave_ncol[element.split(':')[0].strip()] = float(element.split(':')[1])
+    # 
+    #     slave_ions = slave_ncol.keys()
+    #     for ion in slave_ions:
+    #         for index, line in enumerate(option_1):
+    #             COUNT += 1
+    #             line = line[0].split()
+    #             print ion, '{:10.5f}'.format(slave_ncol[ion] + float(line[0])), 
+    #             print '{:12.7f}'.format(float(line[1])) + string.upper(master_names[index]), 
+    #             print '{:12.7f}'.format(float(line[2])) + string.upper(master_names[index]), ' '.join(line[3:]), COUNT
+    pass
+    
+def print_head(in_list):
+    """docstring for print_head"""
+    print '   *'
+    for row in in_list:
+        print ' '.join(row)
+    print '  *'    
+    pass
+
+def strip_labels(element):
+    """docstring for strip_labels"""
+    stripped_element = element
+    if element[-1] in string.ascii_letters:
+        stripped_element = element[:-1]
+        if stripped_element[-1] in string.ascii_letters:
+            stripped_element = stripped_element[:-1]
+    return stripped_element
+
+
+def sort_master(key, linelist):
+    """returns the sorted list of lines sorted by z"""
+    for line in linelist:
+        print line
+    pass
+
+if __name__ == '__main__':
+    main()
+
