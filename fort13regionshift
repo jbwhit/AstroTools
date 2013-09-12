@@ -42,7 +42,11 @@ def main():
     """docstring for main"""
     parser = argparse.ArgumentParser(description='Parse.')
     parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+    parser.add_argument('input_slope', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+    parser.add_argument('input_offset', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
     args = parser.parse_args()
+    input_offset = float(args.input_offset)
+    input_slope = float(args.input_slope)
     head = []
     body = []
     master_body = []
@@ -61,20 +65,15 @@ def main():
             head.append(line.split())
         if line.startswith('   *'):
             begin_head = True
-    #    
-    # 4182.  / 3.440478 = 1215.52877245545531754599 
-    # 4182. / (1 + z ) = 1215.6
-    # 4182. = (1 + z) * 1215.6701 
-    # 4182. / 1215.67 = 1 + z
-    # z = 4182. / 1215.67 - 1
-    # 
-    # fixed_velocityshift = -0.43
+    print "! Added velocity shifts to fit regions via fort13regionshift"
+    print "! Starting fort13: ", args.analysisFile
+    print "! slope: ", input_slope, "offset: ", input_offset
+    print "! vshift = slope * wavelength + offset"
     print_head(head)
     for line in head:
         wavelength_midpoint = np.average([float(line[2]), float(line[3])])
         redshift = wavelength_midpoint / 1215.6701 - 1.0
-        print ">>       1.00000SN ", str(round(redshift, 6)) + "SZ", str(round(constant_slope2(wavelength_midpoint), 6)) + "SZ   0.00E+00QA      0.00   1.00E+00  0 !"
-        # >>        1.00000SN   4.2546172SZ    0.1275     0.00E+00QA      0.00   1.00E+00  0 !   86
+        print "  >>   1.00000SN ", str(round(redshift, 6)) + "SZ", str(round(constant_slope(wavelength_midpoint, slope=input_slope, offset=input_offset), 6)) + "SZ   0.00E+00QA      0.00   1.00E+00  0 !"
     for line in body:
         print line
     
@@ -82,10 +81,6 @@ def main():
     
     
 def constant_slope(wavelength, slope=.3497, offset=-1218.0):
-    """Function in form of m/s/Angstrom -- returns km/s """
-    return (wavelength * slope + offset) / 1000.0
-        
-def constant_slope2(wavelength, slope=.1749, offset=-566.0):
     """Function in form of m/s/Angstrom -- returns km/s """
     return (wavelength * slope + offset) / 1000.0
         

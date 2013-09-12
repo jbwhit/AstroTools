@@ -1,0 +1,16 @@
+#!/usr/bin/bash
+
+# Configuration stuff
+
+INFILE=$1
+NUMFILES=$2
+PREFIX=$3
+
+# Work out lines per file.
+
+total_lines=$(cat ${INFILE} | wc -l)
+((lines_per_file = (total_lines + NUMFILES - 1) / NUMFILES))
+
+# Split the actual file, maintaining lines.
+
+split --lines=${lines_per_file} ${INFILE} $PREFIX

@@ -83,12 +83,13 @@ def main():
     
 def constant_slope(wavelength, slope=.3497, offset=-1218.0):
     """Function in form of m/s/Angstrom -- returns km/s """
-    return (wavelength * slope + offset) / 1000.0
+    return -(wavelength * slope + offset) / 1000.0
         
 def constant_slope2(wavelength, slope=.1749, offset=-566.0):
     """Function in form of m/s/Angstrom -- returns km/s """
-    return (wavelength * slope + offset) / 1000.0
-        
+    return -(wavelength * slope + offset) / 1000.0
+
+
 def print_head(in_list):
     """docstring for print_head"""
     print '   *'

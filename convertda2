@@ -42,6 +42,11 @@ def main():
     """docstring for main"""
     parser = argparse.ArgumentParser(description='Parse.')
     parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+    parser.add_argument('--master', action="store", nargs='?', default='FeII', type=str) # Positional 
+    parser.add_argument('--slave', action="store", nargs='?', default="{AlII:-0.2, MgII:0.5}", type=str) # Positional 
+    parser.add_argument('--strip', action='store_false', default=True) # Positional 
+    parser.add_argument('--turbulent', action='store_false', default=True)
+    parser.add_argument('--sort_redshift', action='store_false', default=True)
     args = parser.parse_args()
     head = []
     body = []
@@ -51,9 +56,12 @@ def main():
         
     begin_head = False
     begin_body = False        
+    temp1 = []
     for line in guts:
         if begin_body == True:
-            body.append(line)
+            body.append(line.split())
+            if line.split()[0] == args.master:
+                master_body.append(line.split())
         if line.startswith('  *'):
             begin_body = True
             begin_head = False
@@ -61,34 +69,55 @@ def main():
             head.append(line.split())
         if line.startswith('   *'):
             begin_head = True
-    #    
-    # 4182.  / 3.440478 = 1215.52877245545531754599 
-    # 4182. / (1 + z ) = 1215.6
-    # 4182. = (1 + z) * 1215.6701 
-    # 4182. / 1215.67 = 1 + z
-    # z = 4182. / 1215.67 - 1
-    # 
-    # fixed_velocityshift = -0.43
-    print_head(head)
-    for line in head:
-        wavelength_midpoint = np.average([float(line[2]), float(line[3])])
-        redshift = wavelength_midpoint / 1215.6701 - 1.0
-        print ">>       1.00000SN ", str(round(redshift, 6)) + "SZ", str(round(constant_slope2(wavelength_midpoint), 6)) + "SZ   0.00E+00QA      0.00   1.00E+00  0 !"
-        # >>        1.00000SN   4.2546172SZ    0.1275     0.00E+00QA      0.00   1.00E+00  0 !   86
-    for line in body:
-        print line
+    stripped_body = []
+    if args.turbulent:
+        line_ending = "  0.00   1.00E+00  0  ! "
     
+    maxN = 0.0
+    maxindex = 0
+    if args.strip:
+        for index, line in enumerate(body):
+            line = line
+            if line[1] == "1.000000SN":
+                pass
+            elif float(line[1]) > maxN:
+                maxindex, maxN = index, float(line[1])
+            stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QA', line_ending])
+
+    
+    stripped_body[maxindex][4] = strip_labels(stripped_body[maxindex][4])+'qa'
+    
+    # for index, line in enumerate(stripped_body):
+    #     option_1.append([' '.join([str(item) for item in line])])
+    #     p
+    master_ion = [args.master]
+    COUNT = 0
+    print_head(head)
+    for line in stripped_body:
+        print ' '.join([str(item) for item in line])
+        
+    # for ion in master_ion:
+    #     for index, line in enumerate(option_1):
+    #         line = line[0].split()
+    #         COUNT += 1
+    #         print ion, '{:10.5f}'.format(float(line[0])), '{:12.7f}'.format(float(line[1])) + master_names[index], 
+    #         print '{:12.7f}'.format(float(line[2])) + master_names[index], ' '.join(line[3:]), COUNT
+    # 
+    # if args.slave:
+    #     slave_ncol = {}
+    #     for element in args.slave.strip('{}').split(','):
+    #         slave_ncol[element.split(':')[0].strip()] = float(element.split(':')[1])
+    # 
+    #     slave_ions = slave_ncol.keys()
+    #     for ion in slave_ions:
+    #         for index, line in enumerate(option_1):
+    #             COUNT += 1
+    #             line = line[0].split()
+    #             print ion, '{:10.5f}'.format(slave_ncol[ion] + float(line[0])), 
+    #             print '{:12.7f}'.format(float(line[1])) + string.upper(master_names[index]), 
+    #             print '{:12.7f}'.format(float(line[2])) + string.upper(master_names[index]), ' '.join(line[3:]), COUNT
     pass
     
-    
-def constant_slope(wavelength, slope=.3497, offset=-1218.0):
-    """Function in form of m/s/Angstrom -- returns km/s """
-    return (wavelength * slope + offset) / 1000.0
-        
-def constant_slope2(wavelength, slope=.1749, offset=-566.0):
-    """Function in form of m/s/Angstrom -- returns km/s """
-    return (wavelength * slope + offset) / 1000.0
-        
 def print_head(in_list):
     """docstring for print_head"""
     print '   *'
