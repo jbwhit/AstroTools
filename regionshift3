@@ -1,0 +1,147 @@
+#!/usr/bin/env python
+# regionshift3 -- linear lambda test
+# 
+# For use with my AstroTools scripts. 
+# Parses the body part of a fort.13 file
+# does various operations that are tedious by hand
+# 
+# Copyright 2012 Jonathan Whitmore 
+# Distributed under the Boost Software License, Version 1.0.
+#
+# Permission is hereby granted, free of charge, to any person or organization
+# obtaining a copy of the software and accompanying documentation covered by
+# this license (the "Software") to use, reproduce, display, distribute,
+# execute, and transmit the Software, and to prepare derivative works of the
+# Software, and to permit third-parties to whom the Software is furnished to
+# do so, all subject to the following:
+#
+# The copyright notices in the Software and this entire statement, including
+# the above license grant, this restriction and the following disclaimer,
+# must be included in all copies of the Software, in whole or in part, and
+# all derivative works of the Software, unless such copies or derivative
+# works are solely in the form of machine-executable object code generated
+# by a source language processor.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND
+# NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR ANYONE
+# DISTRIBUTING THE SOFTWARE BE LIABLE FOR ANY DAMAGES OR OTHER LIABILITY,
+# WHETHER IN CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# 
+
+import sys
+import re
+import string
+import numpy as np
+import argparse
+import itertools 
+        
+def main():
+    """docstring for main"""
+    parser = argparse.ArgumentParser(description='Parse.')
+    parser.add_argument('analysisFile', action="store", nargs='?', default='1fort.13', type=str) # Positional 
+    # parser.add_argument('input_quad', action="store", nargs='?', default='0.23', type=str) # Positional 
+    parser.add_argument('input_slope', action="store", nargs='?', default='0.23', type=str) # Positional 
+    parser.add_argument('input_offset', action="store", nargs='?', default='12.0', type=str) # Positional 
+    args = parser.parse_args()
+    input_offset = float(args.input_offset)
+    input_slope = float(args.input_slope)
+    # input_quad = float(args.input_quad)
+    head = []
+    body = []
+    master_body = []
+    with open(args.analysisFile, 'r') as file_handle:
+        guts = file_handle.read().splitlines()
+        
+    begin_head = False
+    begin_body = False        
+    for line in guts:
+        if begin_body == True:
+            body.append(line)
+        if line.startswith('  *'):
+            begin_body = True
+            begin_head = False
+        if begin_head == True:
+            head.append(line.split())
+        if line.startswith('   *'):
+            begin_head = True
+    print "! Added velocity shifts to fit regions via fort13regionshift"
+    print "! Starting fort13: ", args.analysisFile
+    print "! slope: ", input_slope, "offset: ", input_offset
+    print "! vshift = slope * wavelength + offset"
+    print_head(head)
+    for line in body:
+        line = line.split()
+        if line[0] == ">>":
+            print '  '.join(line)
+        else:
+            # print line[0], line[1], ''.join(i for i in line[2] if not i.isalpha()) + "A  ", ''.join(i for i in line[3] if not i.isalpha()) + "A  ", '  '.join(line[4:])
+            print line[0], line[1], ''.join(i for i in line[2] if not i.isalpha()) + "A  ", '  '.join(line[3:])
+        # print line
+    for index, line in enumerate(head):
+        wavelength_midpoint = np.average([float(line[2]), float(line[3])])
+        redshift = wavelength_midpoint / 1215.6701 - 1.0
+        # Commenting out because already distorted... right?
+        # print "  >>   1.00000SN ", str(round(redshift, 6)) + "SZ", str(round(linear(wavelength_midpoint, slope=input_slope, offset=input_offset), 6)) + "SZ   0.00E+00QA      0.00   1.00E+00  0 !"
+        if index == 0:
+            # print "  >>   1.00000SN ", str(round(redshift, 6)) + "SX", str(round(linear(wavelength_midpoint, slope=input_slope, offset=input_offset), 6)) + "C   0.00E+00QA      0.00   1.00E+00  0 !"
+            pass
+        else:
+            if index % 2:
+                print "  >>   1.00000SN ", str(round(redshift, 6)) + "SX   0.1   0.00E+00QA      0.00   1.00E+00  0 !"
+            else:
+                print "  >>   1.00000SN ", str(round(redshift, 6)) + "SX  -0.1   0.00E+00QA      0.00   1.00E+00  0 !"
+        # line = line.split()
+        # if line[0] == ">>":
+        #     print '  '. join(line)
+        #     # print line[0], line[1], ''.join(i for i in line[2] if not i.isalpha()) + "A  ", ''.join(i for i in line[3] if not i.isalpha()) + "A  ", '  '.join(line[4:])
+        # else:
+        #     print line[0], line[1], ''.join(i for i in line[2] if not i.isalpha()) + "A  ", '  '.join(line[3:])
+        # line = line.split()
+        # if line[0] == ">>":
+        #     print '  '. join(line)
+        #     # print line[0], line[1], ''.join(i for i in line[2] if not i.isalpha()) + "A  ", ''.join(i for i in line[3] if not i.isalpha()) + "A  ", '  '.join(line[4:])
+        # else:
+        # print line[0], line[1], ''.join(i for i in line[2] if not i.isalpha()) + "A  ", '  '.join(line[3:])
+    pass
+    
+def linear(wavelength, slope=.3497, offset=-1218.0):
+    """Function in form of m/s/Angstrom -- returns km/s """
+    return (wavelength * slope + offset) / 1000.0
+        
+def quadratic(wavelength, quad=-0.0001476, slope=1.1782, offset=-2022.0):
+    """Function in form of m/s/Angstrom -- returns km/s """
+    f1 = quad
+    f2 = slope
+    f3 = offset
+    return (f1 * wavelength ** 2 + f2 * wavelength + f3) / 1000.0
+        
+def print_head(in_list):
+    """docstring for print_head"""
+    print '   *'
+    for row in in_list:
+        print ' '.join(row)
+    print '  *'    
+    pass
+
+def strip_labels(element):
+    """docstring for strip_labels"""
+    stripped_element = element
+    if element[-1] in string.ascii_letters:
+        stripped_element = element[:-1]
+        if stripped_element[-1] in string.ascii_letters:
+            stripped_element = stripped_element[:-1]
+    return stripped_element
+
+
+def sort_master(key, linelist):
+    """returns the sorted list of lines sorted by z"""
+    for line in linelist:
+        print line
+    pass
+
+if __name__ == '__main__':
+    main()
+
