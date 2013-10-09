@@ -48,10 +48,10 @@ def main():
     redshift, vshift, vshift_error = np.loadtxt(args.analysisFile, unpack=True)
     wavelength = (1 + redshift) * 1215.6701 # wavelengths in Angstroms
     
-    with open(args.output_file_stem + ".ascii", 'w') as file_handle:
+    with open(args.output_file_stem + ".raw.ascii", 'w') as file_handle:
         np.savetxt(file_handle, np.c_[wavelength, vshift, vshift_error])
         
-    with open(args.output_file_stem + "_zero_shifted.ascii", 'w') as file_handle:
+    with open(args.output_file_stem + ".zero_shifted.ascii", 'w') as file_handle:
         np.savetxt(file_handle, np.c_[wavelength, vshift - np.average(vshift), vshift_error])
     
     pass
