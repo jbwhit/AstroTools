@@ -56,7 +56,6 @@ def main():
         
     begin_head = False
     begin_body = False        
-    temp1 = []
     # print "Master:", args.master
     for line in guts:
         if begin_body == True:

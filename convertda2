@@ -57,7 +57,6 @@ def main():
         
     begin_head = False
     begin_body = False        
-    temp1 = []
     for line in guts:
         if begin_body == True:
             # Here is where to deal with H I and C IV -- combine into line[0].
