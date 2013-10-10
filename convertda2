@@ -74,11 +74,7 @@ def main():
         if line.startswith('   *'):
             begin_head = True
     stripped_body = []
-    if args.turbulent:
-        line_ending = "  0.00   1.00E+00  0  ! "
-    elif args.thermal:
-        line_ending = "  0.00   0.00E+00  0  ! "
-    
+
     maxN = 0.0
     maxindex = 0
     if args.strip:
@@ -89,18 +85,12 @@ def main():
             elif float(line[1]) > maxN:
                 maxindex, maxN = index, float(line[1])
             if line[3][-1] in string.ascii_letters:            
-                stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QA', line_ending])
+                stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QA'] + line[5:])
             else:
-                stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QS', line_ending])
-
+                stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QS'] + line[5:])
     
     stripped_body[maxindex][4] = strip_labels(stripped_body[maxindex][4])+'qa'
     
-    # for index, line in enumerate(stripped_body):
-    #     option_1.append([' '.join([str(item) for item in line])])
-    #     p
-    master_ion = [args.master]
-    COUNT = 0
     print_head(head)
     for line in stripped_body:
         print ' '.join([str(item) for item in line])
