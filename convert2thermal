@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# convert2turbulent
+# convert2thermal
 # 
 # For use with my AstroTools scripts. 
 # combines the head of a .13 file with the body of a .26 file into a 13 format. 
@@ -73,7 +73,7 @@ def main():
         if line.startswith('   *'):
             begin_head = True
 
-    line_ending = "  0.00   1.00E+00  0  ! "
+    line_ending = "  0.00   0.00E+00  0  ! "
 
     print_head(head)
     for line in body:
