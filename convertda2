@@ -46,6 +46,7 @@ def main():
     parser.add_argument('--slave', action="store", nargs='?', default="{AlII:-0.2, MgII:0.5}", type=str) # Positional 
     parser.add_argument('--strip', action='store_false', default=True) # Positional 
     parser.add_argument('--turbulent', action='store_false', default=True)
+    parser.add_argument('--thermal', action='store_false', default=True)
     parser.add_argument('--sort_redshift', action='store_false', default=True)
     args = parser.parse_args()
     head = []
@@ -59,7 +60,11 @@ def main():
     temp1 = []
     for line in guts:
         if begin_body == True:
-            body.append(line.split())
+            # Here is where to deal with H I and C IV -- combine into line[0].
+            readline = line.split()
+            if (readline[0] == "H") or (readline[0] == "C"):
+                readline[:2] = [' '.join(readline[:2])]
+            body.append(readline)
             if line.split()[0] == args.master:
                 master_body.append(line.split())
         if line.startswith('  *'):
@@ -72,6 +77,8 @@ def main():
     stripped_body = []
     if args.turbulent:
         line_ending = "  0.00   1.00E+00  0  ! "
+    elif args.thermal:
+        line_ending = "  0.00   0.00E+00  0  ! "
     
     maxN = 0.0
     maxindex = 0
@@ -82,7 +89,10 @@ def main():
                 pass
             elif float(line[1]) > maxN:
                 maxindex, maxN = index, float(line[1])
-            stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QA', line_ending])
+            if line[3][-1] in string.ascii_letters:            
+                stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QA', line_ending])
+            else:
+                stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QS', line_ending])
 
     
     stripped_body[maxindex][4] = strip_labels(stripped_body[maxindex][4])+'qa'
@@ -96,26 +106,6 @@ def main():
     for line in stripped_body:
         print ' '.join([str(item) for item in line])
         
-    # for ion in master_ion:
-    #     for index, line in enumerate(option_1):
-    #         line = line[0].split()
-    #         COUNT += 1
-    #         print ion, '{:10.5f}'.format(float(line[0])), '{:12.7f}'.format(float(line[1])) + master_names[index], 
-    #         print '{:12.7f}'.format(float(line[2])) + master_names[index], ' '.join(line[3:]), COUNT
-    # 
-    # if args.slave:
-    #     slave_ncol = {}
-    #     for element in args.slave.strip('{}').split(','):
-    #         slave_ncol[element.split(':')[0].strip()] = float(element.split(':')[1])
-    # 
-    #     slave_ions = slave_ncol.keys()
-    #     for ion in slave_ions:
-    #         for index, line in enumerate(option_1):
-    #             COUNT += 1
-    #             line = line[0].split()
-    #             print ion, '{:10.5f}'.format(slave_ncol[ion] + float(line[0])), 
-    #             print '{:12.7f}'.format(float(line[1])) + string.upper(master_names[index]), 
-    #             print '{:12.7f}'.format(float(line[2])) + string.upper(master_names[index]), ' '.join(line[3:]), COUNT
     pass
     
 def print_head(in_list):
