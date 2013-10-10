@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+# convert2turbulent
+# 
+# For use with my AstroTools scripts. 
+# combines the head of a .13 file with the body of a .26 file into a 13 format. 
+# 
+# Copyright 2012 Jonathan Whitmore 
+# Distributed under the Boost Software License, Version 1.0.
+#
+# Permission is hereby granted, free of charge, to any person or organization
+# obtaining a copy of the software and accompanying documentation covered by
+# this license (the "Software") to use, reproduce, display, distribute,
+# execute, and transmit the Software, and to prepare derivative works of the
+# Software, and to permit third-parties to whom the Software is furnished to
+# do so, all subject to the following:
+#
+# The copyright notices in the Software and this entire statement, including
+# the above license grant, this restriction and the following disclaimer,
+# must be included in all copies of the Software, in whole or in part, and
+# all derivative works of the Software, unless such copies or derivative
+# works are solely in the form of machine-executable object code generated
+# by a source language processor.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND
+# NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR ANYONE
+# DISTRIBUTING THE SOFTWARE BE LIABLE FOR ANY DAMAGES OR OTHER LIABILITY,
+# WHETHER IN CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# 
+
+import sys
+import re
+import string
+import numpy as np
+import argparse
+import itertools 
+        
+def main():
+    """docstring for main"""
+    parser = argparse.ArgumentParser(description='Parse.')
+    parser.add_argument('thirteenFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+    parser.add_argument('--master', action="store", nargs='?', default='FeII', type=str) # Positional 
+    parser.add_argument('--slave', action="store", nargs='?', default="{AlII:-0.2, MgII:0.5}", type=str) # Positional 
+    parser.add_argument('--strip', action='store_false', default=True) # Positional 
+    parser.add_argument('--turbulent', action='store_false', default=True)
+    parser.add_argument('--thermal', action='store_false', default=True)
+    parser.add_argument('--sort_redshift', action='store_false', default=True)
+    args = parser.parse_args()
+    head = []
+    body = []
+    master_body = []
+    with open(args.thirteenFile, 'r') as file_handle:
+        guts = file_handle.read().splitlines()
+        
+    begin_head = False
+    begin_body = False        
+    for line in guts:
+        if begin_body == True:
+            # Here is where to deal with H I and C IV -- combine into line[0].
+            readline = line.split()
+            if (readline[0] == "H") or (readline[0] == "C"):
+                readline[:2] = [' '.join(readline[:2])]
+            body.append(readline)
+            if line.split()[0] == args.master:
+                master_body.append(line.split())
+        if line.startswith('  *'):
+            begin_body = True
+            begin_head = False
+        if begin_head == True:
+            head.append(line.split())
+        if line.startswith('   *'):
+            begin_head = True
+
+    if args.turbulent:
+        line_ending = "  0.00   1.00E+00  0  ! "
+    elif args.thermal:
+        line_ending = "  0.00   0.00E+00  0  ! "
+
+    print_head(head)
+    for line in body:
+        print line[0], line[1], line[2], line[3], line_ending        
+    pass
+    
+def print_head(in_list):
+    """docstring for print_head"""
+    print '   *'
+    for row in in_list:
+        print ' '.join(row)
+    print '  *'    
+    pass
+
+def strip_labels(element):
+    """docstring for strip_labels"""
+    stripped_element = element
+    if element[-1] in string.ascii_letters:
+        stripped_element = element[:-1]
+        if stripped_element[-1] in string.ascii_letters:
+            stripped_element = stripped_element[:-1]
+    return stripped_element
+
+
+def sort_master(key, linelist):
+    """returns the sorted list of lines sorted by z"""
+    for line in linelist:
+        print line
+    pass
+
+if __name__ == '__main__':
+    main()
+
