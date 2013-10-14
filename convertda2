@@ -73,27 +73,22 @@ def main():
             head.append(line.split())
         if line.startswith('   *'):
             begin_head = True
-    stripped_body = []
+    
+    first_lower_index = 0.0
+    for index, line in enumerate(body): 
+        if line[3][-1] in string.ascii_lowercase:
+            first_lower_index = index
+            break
 
-    maxN = 0.0
-    maxindex = 0
-    if args.strip:
-        for index, line in enumerate(body):
-            if line[1] == "1.000000SN":
-                pass
-            elif float(line[1]) > maxN:
-                maxindex, maxN = index, float(line[1])
-            if line[3][-1] in string.ascii_letters:            
-                stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QA'] + line[5:])
-            else:
-                stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QS'] + line[5:])
-    
-    stripped_body[maxindex][4] = strip_labels(stripped_body[maxindex][4])+'qa'
-    
+    for index, line in enumerate(body): 
+        if line[3][-1] in string.ascii_letters:
+            if index == first_lower_index:
+                line[4] = strip_labels(line[4]) + 'qa'
+
     print_head(head)
-    for line in stripped_body:
-        print ' '.join([str(item) for item in line])
-        
+    for line in body:
+        print "{:^9}".format(line[0]), "{:^12}".format(line[1]), "{:^12}".format(line[2]), "{:^12}".format(line[3]), 
+        print "{:^8}".format(line[4]), '  '.join(line[5:])
     pass
     
 def print_head(in_list):
