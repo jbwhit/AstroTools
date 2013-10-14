@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-# parse13
+# convertoldkeck
 # 
 # For use with my AstroTools scripts. 
-# Parses the body part of a fort.13 file
-# does various operations that are tedious by hand
+# combines the head of a .13 file with the body of a .26 file into a 13 format. 
 # 
 # Copyright 2012 Jonathan Whitmore 
 # Distributed under the Boost Software License, Version 1.0.
@@ -37,11 +36,12 @@ import string
 import numpy as np
 import argparse
 import itertools 
-        
+
 def main():
     """docstring for main"""
     parser = argparse.ArgumentParser(description='Parse.')
-    parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+    parser.add_argument('thirteenFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+    parser.add_argument('starting_alpha', action="store", nargs='?', default='0.0', type=str) # Positional 
     parser.add_argument('--master', action="store", nargs='?', default='FeII', type=str) # Positional 
     parser.add_argument('--slave', action="store", nargs='?', default="{AlII:-0.2, MgII:0.5}", type=str) # Positional 
     parser.add_argument('--strip', action='store_false', default=True) # Positional 
@@ -49,10 +49,12 @@ def main():
     parser.add_argument('--thermal', action='store_false', default=True)
     parser.add_argument('--sort_redshift', action='store_false', default=True)
     args = parser.parse_args()
+    starting_alpha = float(args.starting_alpha)
+
     head = []
     body = []
     master_body = []
-    with open(args.analysisFile, 'r') as file_handle:
+    with open(args.thirteenFile, 'r') as file_handle:
         guts = file_handle.read().splitlines()
         
     begin_head = False
@@ -73,28 +75,39 @@ def main():
             head.append(line.split())
         if line.startswith('   *'):
             begin_head = True
-    stripped_body = []
 
-    maxN = 0.0
-    maxindex = 0
-    if args.strip:
-        for index, line in enumerate(body):
-            if line[1] == "1.000000SN":
-                pass
-            elif float(line[1]) > maxN:
-                maxindex, maxN = index, float(line[1])
-            if line[3][-1] in string.ascii_letters:            
-                stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QA'] + line[5:])
+    # search for first instance of redshift value with lowercase redshift label 
+    # # TODO ensure this is in the main 
+    first_lower_index = 0.0
+    for index, line in enumerate(body): 
+        if line[3][-1] in string.ascii_lowercase:
+            first_lower_index = index
+            break
+            
+    if type(first_lower_index) is float:
+        print "Error! "
+
+    # start analysis parsing 
+    for index, line in enumerate(body): 
+        if line[3][-1] in string.ascii_letters:
+            if index == first_lower_index:
+                line[4] = str(round(starting_alpha, 4)) + 'qa'
             else:
-                stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QS'] + line[5:])
-    
-    stripped_body[maxindex][4] = strip_labels(stripped_body[maxindex][4])+'qa'
-    
+                line[4] = str(round(starting_alpha, 4)) + 'QA'
+        else:
+            line[4] = strip_labels(line[4])+'QS'
+
+    print_warning(starting_alpha)
     print_head(head)
-    for line in stripped_body:
-        print ' '.join([str(item) for item in line])
-        
+    for line in body:
+        print "{:^9}".format(line[0]), "{:^12}".format(line[1]), "{:^12}".format(line[2]), "{:^12}".format(line[3]), 
+        print "{:^8}".format(line[4]), '  '.join(line[5:])
     pass
+    
+def print_warning(starting_alpha=0.0):
+    print "! starting with da/a (ppm) set to:", str(round(starting_alpha, 4))
+    pass
+    
     
 def print_head(in_list):
     """docstring for print_head"""
@@ -103,6 +116,8 @@ def print_head(in_list):
         print ' '.join(row)
     print '  *'    
     pass
+
+
 
 def strip_labels(element):
     """docstring for strip_labels"""

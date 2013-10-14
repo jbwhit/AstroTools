@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-# parse13
+# convertoldkeck
 # 
 # For use with my AstroTools scripts. 
-# Parses the body part of a fort.13 file
-# does various operations that are tedious by hand
+# combines the head of a .13 file with the body of a .26 file into a 13 format. 
 # 
 # Copyright 2012 Jonathan Whitmore 
 # Distributed under the Boost Software License, Version 1.0.
@@ -37,11 +36,11 @@ import string
 import numpy as np
 import argparse
 import itertools 
-        
+
 def main():
     """docstring for main"""
     parser = argparse.ArgumentParser(description='Parse.')
-    parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+    parser.add_argument('thirteenFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
     parser.add_argument('--master', action="store", nargs='?', default='FeII', type=str) # Positional 
     parser.add_argument('--slave', action="store", nargs='?', default="{AlII:-0.2, MgII:0.5}", type=str) # Positional 
     parser.add_argument('--strip', action='store_false', default=True) # Positional 
@@ -52,7 +51,7 @@ def main():
     head = []
     body = []
     master_body = []
-    with open(args.analysisFile, 'r') as file_handle:
+    with open(args.thirteenFile, 'r') as file_handle:
         guts = file_handle.read().splitlines()
         
     begin_head = False
@@ -73,27 +72,12 @@ def main():
             head.append(line.split())
         if line.startswith('   *'):
             begin_head = True
-    stripped_body = []
 
-    maxN = 0.0
-    maxindex = 0
-    if args.strip:
-        for index, line in enumerate(body):
-            if line[1] == "1.000000SN":
-                pass
-            elif float(line[1]) > maxN:
-                maxindex, maxN = index, float(line[1])
-            if line[3][-1] in string.ascii_letters:            
-                stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QA'] + line[5:])
-            else:
-                stripped_body.append([line[0], line[1], line[2], line[3], strip_labels(line[4])+'QS'] + line[5:])
-    
-    stripped_body[maxindex][4] = strip_labels(stripped_body[maxindex][4])+'qa'
-    
+    line_ending = "  0.00   0.00E+00  0  ! "
+
     print_head(head)
-    for line in stripped_body:
-        print ' '.join([str(item) for item in line])
-        
+    for line in body:
+        print line[0], line[1], line[2], line[3], line_ending        
     pass
     
 def print_head(in_list):
