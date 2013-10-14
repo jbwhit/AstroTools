@@ -51,13 +51,21 @@ def main():
     args = parser.parse_args()
     head = []
     body = []
-    master_body = []
+    oldbody = []
     with open(args.thirteenFile, 'r') as file_handle:
         guts = file_handle.read().splitlines()
     
+    
+    # TODO old body for the line ending
     begin_head = False
     begin_body = False        
     for line in guts:
+        if begin_body == True:
+            # Here is where to deal with H I and C IV -- combine into line[0].
+            readline = line.split()
+            if (readline[0] == "H") or (readline[0] == "C"):
+                readline[:2] = [' '.join(readline[:2])]
+            oldbody.append(readline)
         if line.startswith('  *'):
             begin_body = True
             begin_head = False
@@ -78,21 +86,13 @@ def main():
             if (readline[0] == "H") or (readline[0] == "C"):
                 readline[:2] = [' '.join(readline[:2])]
             body.append(readline)
-            if line.split()[0] == args.master:
-                master_body.append(line.split())
         if line.startswith('! Stats:'):
             begin_body = True
             begin_head = False
 
-    stripped_body = []
-    if args.turbulent:
-        line_ending = "  0.00   1.00E+00  0  ! "
-    elif args.thermal:
-        line_ending = "  0.00   0.00E+00  0  ! "
-    
     print_head(head)
-    for line in body:
-        print line[0], line[5], line[1], line[3], line[7], line_ending        
+    for index, line in enumerate(body):
+        print line[0], line[5], line[1], line[3], line[7], '  '.join(oldbody[index][5:]) 
     pass
     
 def print_head(in_list):

@@ -77,7 +77,7 @@ def main():
             begin_head = True
 
     # search for first instance of redshift value with lowercase redshift label 
-    # # TODO ensure this is in the main 
+    # TODO ensure this is in the main 
     first_lower_index = 0.0
     for index, line in enumerate(body): 
         if line[3][-1] in string.ascii_lowercase:
