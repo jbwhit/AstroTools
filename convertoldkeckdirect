@@ -90,10 +90,10 @@ def main():
     # start analysis parsing 
     for index, line in enumerate(body): 
         if line[3][-1] in string.ascii_letters:
-            if index == first_lower_index:
-                line[4] = str(round(starting_alpha, 4)) + 'qa'
-            else:
-                line[4] = str(round(starting_alpha, 4)) + 'QA'
+            # if index == first_lower_index:
+            #     line[4] = str(round(starting_alpha, 4)) + 'qa'
+            # else:
+            line[4] = str(round(starting_alpha, 4)) + 'QA'
         else:
             line[4] = strip_labels(line[4])+'QS'
 
