@@ -1,0 +1,124 @@
+#!/usr/bin/env python
+# fort13redshiftsort
+# 
+# For use with my AstroTools scripts. 
+# takes an input fort.13 file; sorts by redshift within each unique ion.
+# Prints to standard out.
+# 
+# Copyright 2013 Jonathan Whitmore 
+# Distributed under the Boost Software License, Version 1.0.
+#
+# Permission is hereby granted, free of charge, to any person or organization
+# obtaining a copy of the software and accompanying documentation covered by
+# this license (the "Software") to use, reproduce, display, distribute,
+# execute, and transmit the Software, and to prepare derivative works of the
+# Software, and to permit third-parties to whom the Software is furnished to
+# do so, all subject to the following:
+#
+# The copyright notices in the Software and this entire statement, including
+# the above license grant, this restriction and the following disclaimer,
+# must be included in all copies of the Software, in whole or in part, and
+# all derivative works of the Software, unless such copies or derivative
+# works are solely in the form of machine-executable object code generated
+# by a source language processor.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND
+# NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR ANYONE
+# DISTRIBUTING THE SOFTWARE BE LIABLE FOR ANY DAMAGES OR OTHER LIABILITY,
+# WHETHER IN CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# 
+
+# TODO USAGE  fort13redshiftsort fort0MgIandFeII_c.13 > sorted.13
+# TODO requirements
+
+import sys
+import os
+import re
+import string
+import numpy as np
+import argparse 
+import itertools 
+
+
+def main():
+    """docstring for main"""
+    parser = argparse.ArgumentParser(description='Parse.')
+    parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+    args = parser.parse_args()
+    
+    head = []
+    body = []
+    
+    master_body = []
+    with open(args.analysisFile, 'r') as file_handle:
+        guts = file_handle.read().splitlines()
+        
+    begin_head = False
+    begin_body = False        
+    for line in guts:
+        if begin_body == True:
+            splitline = line.split()
+            if len(splitline) > 0:
+                if len(splitline[0]) == 1:
+                    splitline[:2] = [' '.join(splitline[:2])]
+                body.append(splitline)
+
+        if line.startswith('  *'):
+            begin_body = True
+            begin_head = False
+        if begin_head == True:
+            head.append(line)
+        if line.startswith('   *'):
+            begin_head = True
+    
+    
+    unique_ordered_ions = return_unique_unsorted([line[0] for line in body])
+    bodydict = {}
+    for ion in unique_ordered_ions:
+        bodydict[ion] = []
+        
+    for line in body:
+        bodydict[line[0]].append(line)
+        
+    print_head(head)
+    for ion in unique_ordered_ions:
+        for line in sorted(bodydict[ion], key=lambda line: strip_labels(line[2])):
+            print "{:^9}".format(line[0]), "{:^12}".format(line[1]), "{:^12}".format(line[2]), "{:^12}".format(line[3]), 
+            print "{:^8}".format(line[4]), '  '.join(line[5:])
+            # print ' '.join(line)
+    pass
+
+def strip_labels(element):
+    """docstring for strip_labels"""
+    stripped_element = element
+    if element[-1] in string.ascii_letters:
+        stripped_element = element[:-1]
+        if stripped_element[-1] in string.ascii_letters:
+            stripped_element = stripped_element[:-1]
+    return stripped_element
+
+def return_unique_unsorted(seq):
+    seen = set()
+    seen_add = seen.add
+    return [ x for x in seq if x not in seen and not seen_add(x)]
+
+def print_head(header_list):
+    """docstring for print_head"""
+    print '   *'
+    for row in header_list:
+        print row
+    print '  *'    
+    pass
+
+def sort_master(key, linelist):
+    """returns the sorted list of lines sorted by z"""
+    for line in linelist:
+        print line
+    pass
+
+if __name__ == '__main__':
+    main()
+
