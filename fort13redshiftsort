@@ -63,8 +63,8 @@ def main():
             splitline = line.split()
             if len(splitline) > 0:
                 if len(splitline[0]) == 1:
-                    splitline[:2] = [' '.join(splitline[:2])]
-                body.append(splitline)
+                    splitline[:2] = [' '.join(splitline[:2])] 
+                body.append(splitline) 
 
         if line.startswith('  *'):
             begin_body = True
@@ -88,7 +88,6 @@ def main():
         for line in sorted(bodydict[ion], key=lambda line: strip_labels(line[2])):
             print "{:^9}".format(line[0]), "{:^12}".format(line[1]), "{:^12}".format(line[2]), "{:^12}".format(line[3]), 
             print "{:^8}".format(line[4]), '  '.join(line[5:])
-            # print ' '.join(line)
     pass
 
 def strip_labels(element):
@@ -111,12 +110,6 @@ def print_head(header_list):
     for row in header_list:
         print row
     print '  *'    
-    pass
-
-def sort_master(key, linelist):
-    """returns the sorted list of lines sorted by z"""
-    for line in linelist:
-        print line
     pass
 
 if __name__ == '__main__':
