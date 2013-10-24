@@ -1,0 +1,33 @@
+#!/bin/bash
+# Usage: 
+# create-sim-vpfit vlt-transitions.txt ion-abundance.txt vlt-da.txt simulation-base.config UVES
+# create-sim-vpfit keck-transitions.txt ion-abundance.txt keck-da.txt simulation-base.config HIRES
+
+TRANSITIONS=$1 # keck-transitions.txt
+IONABUNDANCE=$2 # ion-abundance.txt
+ALPHALIST=$3 # keck-da.txt
+SIMCONFIG=$4 # simulation-base.config
+SPECTROGRAPH=$5 # HIRES
+
+export ATOMDIR=/Users/jwhitmore/Dropbox/Research/Fitting/Dipole/MM_2013-07-01_H2.dat
+export VPFSETUP=/Users/jwhitmore/Dropbox/Research/Fitting/Dipole/jw_vp_setup.dat
+
+if [ ! -f $ATOMDIR ]; then
+    echo "atom.dat not found!"
+    exit 0
+fi
+if [ ! -f $VPFSETUP ]; then
+    echo "vpsetup not found!"
+    exit 0
+fi
+
+STARTINGDIR=$(pwd)
+echo Starting directory: $STARTINGDIR
+
+rm $SPECTROGRAPH/*/*/temp*.ascii
+for fileline in $SPECTROGRAPH/*/*/*ascii;
+do
+    awk '{print $1, $2, $3}' $fileline > temp && mv temp $fileline
+done
+
+generate-vpfit $TRANSITIONS $IONABUNDANCE $ALPHALIST $SIMCONFIG $SPECTROGRAPH

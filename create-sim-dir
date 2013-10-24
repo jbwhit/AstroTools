@@ -1,0 +1,29 @@
+#!/bin/bash
+# Usage: 
+# create-sim-dir vlt-transitions.txt ion-abundance.txt vlt-da.txt simulation-base.config UVES
+# create-sim-dir keck-transitions.txt ion-abundance.txt keck-da.txt simulation-base.config HIRES
+
+TRANSITIONS=$1 # keck-transitions.txt
+IONABUNDANCE=$2 # ion-abundance.txt
+ALPHALIST=$3 # keck-da.txt
+SIMCONFIG=$4 # simulation-base.config
+SPECTROGRAPH=$5 # HIRES
+
+STARTINGDIR=$(pwd)
+
+echo Starting directory: $STARTINGDIR
+
+generate-wavelength
+
+if [ -f $SPECTROGRAPH.directories.list ]
+    then
+    rm $SPECTROGRAPH.directories.list
+fi
+for fileline in $(awk '{print "'$SPECTROGRAPH'/" $1 "/" $2}' $ALPHALIST);
+do
+    echo  $fileline
+    mkdir -p $fileline
+    echo $(pwd)/$fileline >> $SPECTROGRAPH.directories.list
+done
+
+generate-data $TRANSITIONS $IONABUNDANCE $ALPHALIST $SIMCONFIG $SPECTROGRAPH
