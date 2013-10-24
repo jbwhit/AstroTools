@@ -1,0 +1,19 @@
+#!/usr/bin/env python
+
+import barak
+from barak import absorb
+import numpy as np
+import argparse
+
+parser = argparse.ArgumentParser(description='parse commandline arguments.')
+parser.add_argument('output_file', action="store", nargs='?', default='wavelength-1.3kms.ascii', type=str, help="output")
+parser.add_argument('beginning_wavelength', action="store", nargs='?', default='3200.0', type=str, help="beginning wavelength in Angstroms")
+parser.add_argument('ending_wavelength', action="store", nargs='?', default='10000.0', type=str, help="ending wavelength in Angstroms")
+parser.add_argument('velocity_per_pixel', action="store", nargs='?', default='1.3', type=str, help="km/s per pixel")
+args = parser.parse_args()
+
+wave = absorb.make_constant_dv_wa_scale(float(args.beginning_wavelength), float(args.ending_wavelength), float(args.velocity_per_pixel))
+
+np.savetxt(args.output_file, np.transpose([wave, np.ones_like(wave), np.ones_like(wave), ]))
+
+
