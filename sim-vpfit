@@ -1,0 +1,89 @@
+#!/bin/bash
+# Usage: 
+# sim-vpfit vlt-transitions.txt ion-abundance.txt vlt-da.txt simulation-base.config UVES
+# sim-vpfit keck-transitions.txt ion-abundance.txt keck-da.txt simulation-base.config HIRES
+
+TRANSITIONS=$1 # keck-transitions.txt
+IONABUNDANCE=$2 # ion-abundance.txt
+ALPHALIST=$3 # keck-da.txt
+SIMCONFIG=$4 # simulation-base.config
+SPECTROGRAPH=$5 # HIRES
+
+export ATOMDIR=/Users/jwhitmore/Dropbox/Research/Fitting/Dipole/MM_2013-07-01_H2.dat
+export VPFSETUP=/Users/jwhitmore/Dropbox/Research/Fitting/Dipole/jw_vp_setup.dat
+
+if [ ! -f $ATOMDIR ]; then
+    echo "atom.dat not found!"
+    exit 0
+fi
+if [ ! -f $VPFSETUP ]; then
+    echo "vpsetup not found!"
+    exit 0
+fi
+
+STARTINGDIR=$(pwd)
+echo Starting directory: $STARTINGDIR
+
+for directory in $(cat $SPECTROGRAPH.directories.list);
+do
+    cd $directory
+    printf "f\nil\nn\n0.005\nb\n0.10\nz\n1.e-6\nx4\n1.e-6\n\n\nsim_fort.13\nn\n\n" > sim.vpfitcommand
+    vpfit10 < sim.vpfitcommand && cp fort.18 sim_fort.18 && cp fort.26 sim_fort.26
+    # 
+    # 
+    # sed -n '/   \*/,/  \*/p' sim_fort.13 > temp
+    # awk '{if (!/^%/ && !/^!/) {printf("  %s    %s    %s    %s    %s    0.00    1.00 0.00\n"), $1, $6, $2, $4, $8}}' sim_fort.26 >> temp
+    # convertda temp > alpha.13
+    # mv temp sim_fit.13
+    # mv alpha.13 sim_alpha.13    
+    # printf "f\nil\nn\n0.005\nb\n0.10\nz\n1.e-6\nx4\n1.e-6\n\n\nsim_alpha.13\nn\n\n" | vpfit10 && cp fort.18 sim_alpha.18 && cp fort.26 sim_alpha.26
+done
+
+# cd $STARTINGDIR
+# for directory in $(cat $SPECTROGRAPH.directories.list);
+# do
+#     regionshift $directory/sim_fit.13 $2 $3 > $directory/distort_fort.13
+# done
+# cd $STARTINGDIR
+# 
+# for directory in $(cat $SPECTROGRAPH.directories.list);
+# do
+#     cd $directory
+#     pwd 
+#     printf "f\nil\nn\n0.005\nb\n0.10\nz\n1.e-6\nx4\n1.e-6\n\n\ndistort_fort.13\nn\n\n" | vpfit10 && cp fort.18 distort_fort.18 && cp fort.26 distort_fort.26
+#     sed -n '/   \*/,/  \*/p' distort_fort.13 > temp
+#     awk '{if (!/^%/ && !/^!/) {printf("  %s    %s    %s    %s    %s    0.00    1.00 0.00\n"), $1, $6, $2, $4, $8}}' distort_fort.26 >> temp
+#     convertda2 temp > alpha.13
+#     mv temp distort_fit.13
+#     mv alpha.13 distort_alpha.13    
+#     printf "f\nil\nn\n0.005\nb\n0.10\nz\n1.e-6\nx4\n1.e-6\n\n\ndistort_alpha.13\nn\n\n" | vpfit10 && cp fort.18 distort_alpha.18 && cp fort.26 distort_alpha.26
+# done
+# 
+# cd $STARTINGDIR
+# for directory in $(cat $SPECTROGRAPH.directories.list);
+# do
+#     regionshift3 $directory/distort_fit.13 $2 $3 > $directory/lambda_fort.13
+# done
+# 
+# for directory in $(cat $SPECTROGRAPH.directories.list);
+# do
+#     cd $directory
+#     pwd 
+#     printf "f\nil\nn\n0.005\nb\n0.10\nz\n1.e-6\nx4\n1.e-6\n\n\nlambda_fort.13\nn\n\n" | vpfit10 && cp fort.18 lambda_fort.18 && cp fort.26 lambda_fort.26
+#     # sed -n '/   \*/,/  \*/p' distort_fort.13 > temp
+#     # awk '{if (!/^%/ && !/^!/) {printf("  %s    %s    %s    %s    %s    0.00    1.00 0.00\n"), $1, $6, $2, $4, $8}}' distort_fort.26 >> temp
+# done
+# cd $STARTINGDIR
+# 
+# for directory in $(cat $SPECTROGRAPH.directories.list);
+# do
+#     cd $directory
+#     pwd 
+#     awk '/>>/{ print}' lambda_fort.26 | grep -v SZ | awk '{print $2, $4, $5}' > lambda_parse.txt
+#     stripalphas lambda_parse.txt > $stem.raw_output.txt
+#     lambdafiles $stem.raw_output.txt $stem
+# done
+# cd $STARTINGDIR
+# 
+# cat HIRES/B*/*/$stem.raw.ascii > $stem.raw.ascii
+# cat HIRES/B*/*/$stem.zero_shifted.ascii > $stem.zero_shifted.ascii
