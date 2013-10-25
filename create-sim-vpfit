@@ -25,6 +25,7 @@ STARTINGDIR=$(pwd)
 echo Starting directory: $STARTINGDIR
 
 rm $SPECTROGRAPH/*/*/temp*.ascii
+
 for fileline in $SPECTROGRAPH/*/*/*ascii;
 do
     awk '{print $1, $2, $3}' $fileline > temp && mv temp $fileline

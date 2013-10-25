@@ -7,7 +7,7 @@ import re
 
 wavelengthbuffer = 1.0
 fitbuffer = 0.5
-pixelsize = 1.3
+# pixelsize = 1.3
 
 parser = argparse.ArgumentParser(description='Parse.')
 parser.add_argument('instrument_transition_file', action="store", nargs='?', default='', type=str)
@@ -16,12 +16,12 @@ parser.add_argument('instrument_qso_file', action="store", nargs='?', default=''
 parser.add_argument('simulation_config', action="store", nargs='?', default='', type=str)
 parser.add_argument('instrument_name', action="store", nargs='?', default='', type=str)
 args = parser.parse_args()
-instrument_transition_file = args.instrument_transition_file # keck-transitions.txt
-ion_abundance_file         = args.ion_abundance_file # ion-abundance.txt
-instrument_qso_file        = args.instrument_qso_file       # keck-da.txt
-simulation_config        = args.simulation_config       # simulation-base.config
-instrument_name            = args.instrument_name # HIRES UVES 
 
+instrument_transition_file = args.instrument_transition_file # keck-transitions.txt
+ion_abundance_file = args.ion_abundance_file # ion-abundance.txt
+instrument_qso_file = args.instrument_qso_file # keck-da.txt
+simulation_config = args.simulation_config # simulation-base.config
+instrument_name = args.instrument_name # HIRES UVES 
 
 with open(instrument_transition_file, 'r') as fh:
     guts = fh.read()
@@ -45,7 +45,6 @@ for sline in guts.splitlines():
     absorbers[name] = line[4:]
     redshifts[name] = float(line[1])
 
-# print absorbers
 base = {}
 with open(simulation_config, 'r') as fh:
     guts = fh.read()
@@ -62,15 +61,13 @@ for sline in guts.splitlines():
     line = sline.split()
     ion_abundance[line[0]] = float(line[1])
 
-#     temp_string = ' '.join([ion, str(base['ncol'] + ion_abundance[ion]), str(base['bval']), str(redshifts[name])])
-
 for name in absorbers:
     print name        
     with open(name + "/sim_fort.13", 'w') as fh:
         specificion = []
         print >>fh, "   *"
         for index, trans in enumerate(absorbers[name]): 
-            specificion.append(ions[trans])        
+            specificion.append(ions[trans])
             centroid = transitions[trans] * (1.0 + redshifts[name])
             print >>fh,  '.'.join(name.split('/')[1:]) + "." + str(index) + ".ascii" + "   1   ", str(centroid - fitbuffer), " ", \
                     str(centroid + fitbuffer), " vfwhm=" + str(base['fwhm'])
@@ -81,11 +78,5 @@ for name in absorbers:
             else:
                 # print >>fh, ion, " 13.0 ", ''.join([str(redshifts[name]), "A"]),   "  1.5A " , "  0.00E+00QA     0.00   1.00E+00  0  ! "    
                 print >>fh, ' '.join([ion, str(base['ncol'] + ion_abundance[ion]), " "]), ''.join([str(redshifts[name]), "A "]),   ''.join([str(base['bval']), "A "]), "  0.00E+00QA     0.00   1.00E+00  0  ! " 
-    
-            # if index == 0:
-            #     print >>fh, ion, " 13.0 ", ''.join([str(redshifts[name]), "a"]),   "  1.5a " , "  0.00E+00QA     0.00   1.00E+00  0  ! " 
-            # else:
-            #     print >>fh, ion, " 13.0 ", ''.join([str(redshifts[name]), "A"]),   "  1.5A " , "  0.00E+00QA     0.00   1.00E+00  0  ! "    
-            #     
-    
-    
+
+
