@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# parse13
+# convertda2
 # 
 # For use with my AstroTools scripts. 
 # Parses the body part of a fort.13 file
@@ -51,7 +51,6 @@ def main():
     args = parser.parse_args()
     head = []
     body = []
-    master_body = []
     with open(args.analysisFile, 'r') as file_handle:
         guts = file_handle.read().splitlines()
         
@@ -60,12 +59,11 @@ def main():
     for line in guts:
         if begin_body == True:
             # Here is where to deal with H I and C IV -- combine into line[0].
-            readline = line.split()
-            if (readline[0] == "H") or (readline[0] == "C"):
-                readline[:2] = [' '.join(readline[:2])]
-            body.append(readline)
-            if line.split()[0] == args.master:
-                master_body.append(line.split())
+            splitline = line.split()
+            if len(splitline) > 0:
+                if len(splitline[0]) == 1:
+                    splitline[:2] = [' '.join(splitline[:2])] 
+                body.append(splitline) 
         if line.startswith('  *'):
             begin_body = True
             begin_head = False
