@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+# bash keck.lamdba-linear-date.bash 1995-08-06 0.4102135 -2177.90059527
+# bash keck.lamdba-linear-date.bash 1999-11-13 -0.268785  993.691064961
+import sys
+import random 
+
+m1 = int(sys.argv[1])
+m2 = int(sys.argv[2])
+
+first = ["0.4102135 -2177.90059527",]
+second = ["-0.268785  993.691064961",]
+
+linear_slope = m1 * first + m2 * second
+
+print random.choice(linear_slope)

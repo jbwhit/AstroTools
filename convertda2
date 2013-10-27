@@ -107,12 +107,6 @@ def strip_labels(element):
     return stripped_element
 
 
-def sort_master(key, linelist):
-    """returns the sorted list of lines sorted by z"""
-    for line in linelist:
-        print line
-    pass
-
 if __name__ == '__main__':
     main()
 
