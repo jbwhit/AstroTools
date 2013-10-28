@@ -43,7 +43,8 @@ def main():
     parser = argparse.ArgumentParser(description='Parse.')
     parser.add_argument('analysisFile', action="store", nargs='?', default='1fort.13', type=str) # Positional 
     parser.add_argument('input_slope', action="store", nargs='?', default='0.23', type=str) # Positional 
-    parser.add_argument('input_offset', action="store", nargs='?', default='12.0', type=str) # Positional 
+    parser.add_argument('input_offset', action="store", nargs='?', default='12.0', type=str) # Positional
+    parser.add_argument('--linear', action="store_true", default=False) # Positional
     args = parser.parse_args()
     input_offset = float(args.input_offset)
     input_slope = float(args.input_slope)
@@ -70,15 +71,25 @@ def main():
     print "! slope: ", input_slope, "offset: ", input_offset
     print "! vshift = slope * wavelength + offset"
     print_head(head)
-    for line in head:
-        wavelength_midpoint = np.average([float(line[2]), float(line[3])])
-        redshift = wavelength_midpoint / 1215.6701 - 1.0
-        print "  >>   1.00000SN ", str(round(redshift, 6)) + "SZ", str(round(linear(wavelength_midpoint, slope=input_slope, offset=input_offset), 6)) + "SZ   0.00E+00QA      0.00   1.00E+00  0 !"
-    for line in body:
-        print line
-    
+    if args.linear:
+        print_linear(head, input_slope=input_slope, input_offset=input_offset)
+    # elif quadratic:
+    #     print "quadratic"
+    # elif splitlinear:
+    #     # VLT style
+    #     print "splitlinear"
+    else:
+        pass
+    print_body(body)
     pass
     
+def print_linear(in_list, input_slope, input_offset):
+    """docstring for print_linear"""
+    for line in in_list:
+        wavelength_midpoint = np.average([float(line[2]), float(line[3])])
+        redshift = wavelength_midpoint / 1215.6701 - 1.0
+        print "  >>   1.00000SN ", str(round(redshift, 6)) + "SZ", str(round(linear(wavelength_midpoint, slope=input_slope, offset=input_offset), 6)) + "SZ   0.00E+00QS      0.00   1.00E+00  0 !"
+    pass
     
 def linear(wavelength, slope=.3497, offset=-1218.0):
     """Function in form of m/s/Angstrom -- returns km/s """
@@ -99,6 +110,12 @@ def print_head(in_list):
     print '  *'    
     pass
 
+def print_body(in_list):
+    """docstring for print_body"""
+    for line in in_list:
+        print line
+    pass
+
 def strip_labels(element):
     """docstring for strip_labels"""
     stripped_element = element
@@ -107,13 +124,6 @@ def strip_labels(element):
         if stripped_element[-1] in string.ascii_letters:
             stripped_element = stripped_element[:-1]
     return stripped_element
-
-
-def sort_master(key, linelist):
-    """returns the sorted list of lines sorted by z"""
-    for line in linelist:
-        print line
-    pass
 
 if __name__ == '__main__':
     main()

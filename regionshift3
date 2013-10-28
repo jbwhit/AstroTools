@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# regionshift3 -- linear lambda test
+# regionshift3 -- linear lambda test -- random movement
 # 
 # For use with my AstroTools scripts. 
 # Parses the body part of a fort.13 file
