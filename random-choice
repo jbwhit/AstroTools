@@ -6,10 +6,12 @@ import random
 
 m1 = int(sys.argv[1])
 m2 = int(sys.argv[2])
+m3 = int(sys.argv[3])
 
 first = ["0.4102135 -2177.90059527",]
 second = ["-0.268785  993.691064961",]
+zero = ["0.000  0.000",]
 
-linear_slope = m1 * first + m2 * second
+linear_slope = m1 * first + m2 * second + m3 * zero
 
 print random.choice(linear_slope)
