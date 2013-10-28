@@ -25,10 +25,14 @@ STARTINGDIR=$(pwd)
 echo Starting directory: $STARTINGDIR
 
 rm $SPECTROGRAPH/*/*/temp*.ascii
-
-for fileline in $SPECTROGRAPH/*/*/*ascii;
+for directory in $(cat $SPECTROGRAPH.directories.list);
 do
-    awk '{print $1, $2, $3}' $fileline > temp && mv temp $fileline
+    cd $directory
+    for fileline in *ascii;
+    do
+        awk '{print $1, $2, $3}' $fileline > temp && mv temp $fileline
+    done
 done
+cd $STARTINGDIR
 
 generate-vpfit $TRANSITIONS $IONABUNDANCE $ALPHALIST $SIMCONFIG $SPECTROGRAPH
