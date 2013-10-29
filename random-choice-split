@@ -32,5 +32,9 @@ linear_list = ["0.4102135 -2177.90059527",
 "0.1468421 -719.512102381",
 "-0.268785  993.691064961",]
 
-# print random.choice(linear_slope)
-print random.choice(linear_list)
+first = ["4200.0", "0.3497", "-1218.0", "0.1749", "-566.0"]
+
+split_linear_list = [first]
+
+print ' '.join(random.choice(split_linear_list))
+

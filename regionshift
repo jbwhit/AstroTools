@@ -5,7 +5,7 @@
 # Parses the body part of a fort.13 file
 # does various operations that are tedious by hand
 # 
-# Copyright 2012 Jonathan Whitmore 
+# Copyright 2013 Jonathan Whitmore 
 # Distributed under the Boost Software License, Version 1.0.
 #
 # Permission is hereby granted, free of charge, to any person or organization

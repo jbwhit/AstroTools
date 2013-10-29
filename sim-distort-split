@@ -34,8 +34,8 @@ DISTORTNAME=distort.$RUNNUMBER
 cd $STARTINGDIR
 for directory in $(cat $SPECTROGRAPH.directories.list);
 do
-    WHAT=$(random-choice)
-    regionshift $directory/sim_fit.13 --linear $WHAT > $directory/$DISTORTNAME.fort.13
+    WHAT=$(random-choice-split)
+    regionshift $directory/sim_fit.13 --split_linear $WHAT > $directory/$DISTORTNAME.fort.13
 done
 cd $STARTINGDIR
 
