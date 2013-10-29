@@ -42,46 +42,64 @@ def main():
     """docstring for main"""
     parser = argparse.ArgumentParser(description='Parse.')
     parser.add_argument('analysisFile', action="store", nargs='?', default='1fort.13', type=str) # Positional 
-    parser.add_argument('input_quad', action="store", nargs='?', default='0.23', type=str) # Positional 
-    parser.add_argument('input_slope', action="store", nargs='?', default='0.23', type=str) # Positional 
-    parser.add_argument('input_offset', action="store", nargs='?', default='12.0', type=str) # Positional 
+    parser.add_argument('--linear', action="store", nargs=2, ) # Positional
+    parser.add_argument('--quadratic', action="store", nargs=3, ) # Positional
+    parser.add_argument('--split_linear', action="store", nargs=5, ) # Positional
     args = parser.parse_args()
-    input_offset = float(args.input_offset)
-    input_slope = float(args.input_slope)
-    input_quad = float(args.input_quad)
-    head = []
-    body = []
-    master_body = []
-    with open(args.analysisFile, 'r') as file_handle:
-        guts = file_handle.read().splitlines()
-        
-    begin_head = False
-    begin_body = False        
-    for line in guts:
-        if begin_body == True:
-            body.append(line)
-        if line.startswith('  *'):
-            begin_body = True
-            begin_head = False
-        if begin_head == True:
-            head.append(line.split())
-        if line.startswith('   *'):
-            begin_head = True
-    print "! Added velocity shifts to fit regions via fort13regionshift"
-    print "! Starting fort13: ", args.analysisFile
-    print "! quad: ", input_quad, "slope: ", input_slope, "offset: ", input_offset
-    print "! vshift = quad * wavelength ** 2 + slope * wavelength + offset"
-    print_head(head)
-    for line in head:
-        wavelength_midpoint = np.average([float(line[2]), float(line[3])])
-        redshift = wavelength_midpoint / 1215.6701 - 1.0
-        # print "  >>   1.00000SN ", str(round(redshift, 6)) + "SZ", str(round(linear(wavelength_midpoint, slope=input_slope, offset=input_offset), 6)) + "SZ   0.00E+00QA      0.00   1.00E+00  0 !"
-        print "  >>   1.00000SN ", str(round(redshift, 6)) + "SZ", str(round(quadratic(wavelength_midpoint, quad=input_quad, slope=input_slope, offset=input_offset), 6)) + "SZ   0.00E+00QA      0.00   1.00E+00  0 !"
-        # print "  >>   1.00000SN ", str(round(redshift, 6)) + "SZ", str(round(piecemeal(wavelength_midpoint), 6)) + "SZ   0.00E+00QA      0.00   1.00E+00  0 !"
-    for line in body:
-        print line
     
-    pass
+    if args.split_linear:
+        print "split!"
+        print args
+    if args.linear:
+        print "linear!"
+        print args
+        print args.linear[0]
+    # 
+    # parser.add_argument('input_slope', action="store", nargs='?', default='0.23', type=str) # Positional 
+    # parser.add_argument('input_offset', action="store", nargs='?', default='12.0', type=str) # Positional
+    # args = parser.parse_args()
+    # 
+    # 
+    # parser.add_argument('-resize', nargs=2, help='resize image', metavar=('WIDTH', 'HEIGHT'))
+    # parser.add_argument('-rotate', nargs=1, help='rotate image', metavar='ANGLE')
+    # parser.add_argument('-crop', nargs=4, help='crop image', metavar=('START_X','START_Y','WIDTH','HEIGHT'))
+    # 
+    # input_offset = float(args.input_offset)
+    # input_slope = float(args.input_slope)
+    # input_quad = float(args.input_quad)
+    # head = []
+    # body = []
+    # master_body = []
+    # with open(args.analysisFile, 'r') as file_handle:
+    #     guts = file_handle.read().splitlines()
+    #     
+    # begin_head = False
+    # begin_body = False        
+    # for line in guts:
+    #     if begin_body == True:
+    #         body.append(line)
+    #     if line.startswith('  *'):
+    #         begin_body = True
+    #         begin_head = False
+    #     if begin_head == True:
+    #         head.append(line.split())
+    #     if line.startswith('   *'):
+    #         begin_head = True
+    # print "! Added velocity shifts to fit regions via fort13regionshift"
+    # print "! Starting fort13: ", args.analysisFile
+    # print "! quad: ", input_quad, "slope: ", input_slope, "offset: ", input_offset
+    # print "! vshift = quad * wavelength ** 2 + slope * wavelength + offset"
+    # print_head(head)
+    # for line in head:
+    #     wavelength_midpoint = np.average([float(line[2]), float(line[3])])
+    #     redshift = wavelength_midpoint / 1215.6701 - 1.0
+    #     # print "  >>   1.00000SN ", str(round(redshift, 6)) + "SZ", str(round(linear(wavelength_midpoint, slope=input_slope, offset=input_offset), 6)) + "SZ   0.00E+00QA      0.00   1.00E+00  0 !"
+    #     print "  >>   1.00000SN ", str(round(redshift, 6)) + "SZ", str(round(quadratic(wavelength_midpoint, quad=input_quad, slope=input_slope, offset=input_offset), 6)) + "SZ   0.00E+00QA      0.00   1.00E+00  0 !"
+    #     # print "  >>   1.00000SN ", str(round(redshift, 6)) + "SZ", str(round(piecemeal(wavelength_midpoint), 6)) + "SZ   0.00E+00QA      0.00   1.00E+00  0 !"
+    # for line in body:
+    #     print line
+    # 
+    # pass
     
     
 def linear(wavelength, slope=.3497, offset=-1218.0):
