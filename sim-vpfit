@@ -34,16 +34,15 @@ do
     printf "{fb,2};{tt,3};{vr,2};vn/a/$rootname.sim.pdf\nq\n" > sim.fitcmpcommand
     vpfit10 < sim.vpfitcommand && cp fort.18 sim_fort.18 && cp fort.26 sim_fort.26
     pycombine2613 sim_fort.13 sim_fort.26 > sim_fit.13
-    fitcmp $VPFITPATH -n sim_fit.13 --scriptmode < sim.fitcmpcommand
     
     convertda2 sim_fit.13 > sim_alpha.13
     printf "f\nil\nn\n0.005\nb\n0.10\nz\n1.e-6\nx4\n1.e-6\n\n\nsim_alpha.13\nn\n\n" > sim_alpha.vpfitcommand
     printf "{fb,2};{tt,3};{vr,2};vn/a/$rootname.sim.alpha.pdf\nq\n" > sim.alpha.fitcmpcommand
     vpfit10 < sim_alpha.vpfitcommand && cp fort.18 sim_alpha.18 && cp fort.26 sim_alpha.26
     pycombine2613 sim_alpha.13 sim_alpha.26 > sim_alpha.fit.13
-    fitcmp $VPFITPATH -n sim_alpha.fit.13 --scriptmode < sim.alpha.fitcmpcommand
 done
 
+cd $STARTINGDIR
 awk '/qa/{print $2, $8, $9}' $SPECTROGRAPH/*/*/sim_alpha.26 | sed -e 's/a//g' -e 's/q//g' > $SPECTROGRAPH.sim.alpha
 
 # jwhitmore2-mac $ diff <(awk '/Stat/{if (NF > 9) print FILENAME, $0}' HIRES/*/*/*.26) <(awk '/errs/{print FILENAME, $0}' HIRES/*/*/*.26)
