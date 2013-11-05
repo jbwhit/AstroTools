@@ -54,3 +54,5 @@ cd $STARTINGDIR
 
 # awk '/qa/{print $2, $8, $9}' $SPECTROGRAPH/*/*/sim_alpha.26 | sed -e 's/a//g' -e 's/q//g' > $SPECTROGRAPH.sim.alpha
 awk '/qa/{print $2, $8, $9}' $SPECTROGRAPH/*/*/$DISTORTNAME.alpha.26 | sed -e 's/a//g' -e 's/q//g' > MC$SPECTROGRAPH/$SPECTROGRAPH.$DISTORTNAME.alpha
+
+# TODO figure out whether correct distort is used. 

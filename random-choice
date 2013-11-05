@@ -34,3 +34,6 @@ linear_list = ["0.4102135 -2177.90059527",
 
 # print random.choice(linear_slope)
 print random.choice(linear_list)
+
+
+# slopes = np.array([0.4102135,-0.132509,0.2093209,0.1003714,-0.032560,0.1468421, -0.268785,])
