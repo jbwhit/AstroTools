@@ -1,0 +1,62 @@
+#!/bin/bash
+# Usage: 
+# sim-vpfit vlt-transitions.txt ion-abundance.txt vlt-da.txt simulation-base.config UVES
+# sim-vpfit keck-transitions.txt ion-abundance.txt keck-da.txt simulation-base.config HIRES
+
+TRANSITIONS=$1 # keck-transitions.txt
+IONABUNDANCE=$2 # ion-abundance.txt
+ALPHALIST=$3 # keck-da.txt
+SIMCONFIG=$4 # simulation-base.config
+SPECTROGRAPH=$5 # HIRES
+RUNNUMBER=$6 # 
+# "breakpoint, slope, offset, slope2, offset2") # Positional
+BREAKPOINT=$7
+SLOPE=$8
+OFFSET=$9 
+SLOPE2=${10}
+OFFSET2=${11}
+
+echo $SLOPE2 $OFFSET2
+
+export ATOMDIR=/Users/jwhitmore/Dropbox/Research/Fitting/Dipole/MM_2013-07-01_H2.dat
+export VPFSETUP=/Users/jwhitmore/Dropbox/Research/Fitting/Dipole/jw_vp_setup.dat
+
+if [ ! -f $ATOMDIR ]; then
+    echo "atom.dat not found!"
+    exit 0
+fi
+if [ ! -f $VPFSETUP ]; then
+    echo "vpsetup not found!"
+    exit 0
+fi
+
+if [ ! -d MC$SPECTROGRAPH ]; then
+    mkdir MC$SPECTROGRAPH
+fi
+
+STARTINGDIR=$(pwd)
+echo Starting directory: $STARTINGDIR
+
+DISTORTNAME=average.$RUNNUMBER
+
+cd $STARTINGDIR
+for directory in $(cat $SPECTROGRAPH.directories.list);
+do
+    regionshift $directory/sim_fit.13 --split_linear $BREAKPOINT $SLOPE $OFFSET $SLOPE2 $OFFSET2 > $directory/$DISTORTNAME.fort.13
+done
+cd $STARTINGDIR
+
+for directory in $(cat $SPECTROGRAPH.directories.list);
+do
+    cd $directory
+    printf "f\nil\nn\n0.005\nb\n0.10\nz\n1.e-6\nx4\n1.e-6\n\n\n$DISTORTNAME.fort.13\nn\n\n" > $DISTORTNAME.vpfitcommand
+    vpfit10 < $DISTORTNAME.vpfitcommand && cp fort.18 $DISTORTNAME.fort.18 && cp fort.26 $DISTORTNAME.fort.26
+    pycombine2613 $DISTORTNAME.fort.13 $DISTORTNAME.fort.26 > $DISTORTNAME.fit.13    
+    convertda2 $DISTORTNAME.fit.13 > $DISTORTNAME.alpha.13
+    printf "f\nil\nn\n0.005\nb\n0.10\nz\n1.e-6\nx4\n1.e-6\n\n\n$DISTORTNAME.alpha.13\nn\n\n" > $DISTORTNAME.alpha.vpfitcommand
+    vpfit10 < $DISTORTNAME.alpha.vpfitcommand  && cp fort.18 $DISTORTNAME.alpha.18 && cp fort.26 $DISTORTNAME.alpha.26
+    pycombine2613 $DISTORTNAME.alpha.13 $DISTORTNAME.alpha.26 > $DISTORTNAME.alpha.fit.13
+done
+cd $STARTINGDIR
+
+awk '/qa/{print $2, $8, $9}' $SPECTROGRAPH/*/*/$DISTORTNAME.alpha.26 | sed -e 's/a//g' -e 's/q//g' > MC$SPECTROGRAPH/$SPECTROGRAPH.$DISTORTNAME.alpha
