@@ -31,6 +31,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # 
 
+# TODO check whether header values are commented out.
+# TODO: # regions - 1 for real data -- to allow dv instead of da/a. Put immediately after the head part of fort.13
+# TODO: instead of offset -- say x-axis crossing in Angstroms
+
 import sys
 import re
 import string
@@ -45,7 +49,6 @@ def main():
     parser.add_argument('--linear', action="store", nargs=2, help="slope, offset") # Positional
     parser.add_argument('--quadratic', action="store", nargs=3, help="quad, slope, offset") # Positional
     parser.add_argument('--split_linear', action="store", nargs=5, help="breakpoint, slope, offset, slope2, offset2") # Positional
-    # TODO: # regions - 1 for real data -- to allow dv instead of da/a. Put immediately after the head part of fort.13
     args = parser.parse_args()
     
     head = []
