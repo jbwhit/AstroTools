@@ -1,0 +1,8 @@
+#!/bin/bash 
+# rename the stupid auto format to replace ":" with "."
+
+for infile in "$@";
+do
+	newname=$(echo $infile | sed -e 's/:/./g')
+	cp $infile $newname
+done

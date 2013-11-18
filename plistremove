@@ -1,0 +1,18 @@
+#!/bin/bash
+
+echo "remove swinburne update stopper"
+
+
+INFILES='~/Library/Preferences/com.apple.SoftwareUpdate.plist
+~/Library/Preferences/edu.swin.SoftwareUpdate.plist
+/Library/Preferences/com.apple.SoftwareUpdate.plist
+/Library/Preferences/edu.swin.SoftwareUpdate.plist'
+
+for filename in $INFILES;
+do 
+	if [ -f /tmp/foo.txt ]; then
+	    sudo rm $filename
+	fi
+done
+
+echo "done"
