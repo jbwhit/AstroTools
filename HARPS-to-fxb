@@ -50,26 +50,37 @@ import numpy as np
 
 HARPS_BASELINE_ERROR = 5.0
 
-def edlen_n(wave):
-    sigma = 1.0e4 / wave
-    rightside = 8342.13 + 2406030.0 / (130.0 - sigma**2) + 15997.0 / (38.9 - sigma**2)
-    return rightside / 1.0e8 + 1.0
+# def edlen_n(wave):
+#     sigma = 1.0e4 / wave
+#     rightside = 8342.13 + 2406030.0 / (130.0 - sigma**2) + 15997.0 / (38.9 - sigma**2)
+#     return rightside / 1.0e8 + 1.0
 
-def edlen_vac2air(vacuum_wavelength):
-    return vacuum_wavelength / edlen_n(vacuum_wavelength) 
+# def edlen_vac2air(vacuum_wavelength):
+#     return vacuum_wavelength / edlen_n(vacuum_wavelength) 
 
-def edlen_air2vac(air_wave):
-    return air_wave * edlen_n(air_wave)
+# def edlen_air2vac(air_wave):
+#     return air_wave * edlen_n(air_wave)
     
-def inverse_edlen_air2vac(air_wave):
-    """One-step iterative process"""
-    diff1 = edlen_vac2air(edlen_air2vac(air_wave)) - air_wave
-    return edlen_air2vac(air_wave - diff1)    
+# def inverse_edlen_air2vac(air_wave, tolerance=1.0e-14, maxiter=20):
+#     """One-step process"""
+#     diff1 = edlen_vac2air(edlen_air2vac(air_wave)) - air_wave
+#     return edlen_air2vac(air_wave - diff1)    
     
+def inverse_edlen_air2vac(air_wave, tolerance=1.0e-14, maxiter=20):
+    """One-step process"""
+    iteration = 0
+    previous_refraction = 0.0
+    refraction_index = 1.0
+    while (np.any(np.abs(refraction_index - previous_refraction) > tolerance)) and (iteration < maxiter):
+        previous_refraction = refraction_index
+        sigma = 1.04e4 / (air_wave * previous_refraction)
+        rightside = 8342.13 + 2406030.0 / (130.0 - sigma**2) + 15997.0 / (38.9 - sigma**2)
+        refraction_index = rightside / 1.0e8 + 1.0
+        iteration += 1
+    return air_wave * refraction_index
     
 def main():
     """docstring for main"""
-    
     parser = argparse.ArgumentParser(description='Parse.')
     parser.add_argument('analysisFile', action="store", nargs='?', default='', type=str) # Positional 
     parser.add_argument('--clobber', action="store", type=bool, default=False)
@@ -81,11 +92,19 @@ def main():
 
     wave = {}
     flux = {}
+    error = {}
     # $$ \lambda(x, order) = \sum_{i = 0}^d A(i + order(d + 1)) * x ^ i$$
     # d = ESO DRS CAL TH DEG LL
     # A = ESO DRS CAL TH COEFF LL
     # order (internal numbering of the order (raw number in the e2ds frame)). 
-    
+
+    # compute error per pixel by summing under quadrature
+    # readout_noise squared + shot noise (flux * ADU_to_e_conversion)
+    readout_noise = float(hdu[0].header['ESO DRS CCD SIGDET'])
+    ADU_to_e_conversion = float(hdu[0].header['ESO DRS CCD CONAD'])
+
+    # the shot noise, after the conversion  from  ADU to  e- (conv. factor 1.34) 
+    # RON which can  be found in the fits header with the keyword  DRS.CCD.SIGDET.
     for order in xrange(len(hdu[0].data)):
         splat = [4 * order, 4 * (order) + 1, 4 * (order) + 2, 4 * (order) + 3]
         A0, A1, A2, A3 = hdu[0].header['ESO DRS CAL TH COEFF LL' + str(splat[0])], \
@@ -93,26 +112,20 @@ def main():
                                         hdu[0].header['ESO DRS CAL TH COEFF LL' + str(splat[2])], \
                                         hdu[0].header['ESO DRS CAL TH COEFF LL' + str(splat[3])]
         flux[order] = hdu[0].data[order]
-        # pixels = np.array(range(len(flux[order])))
-        pixels = np.arange(len(flux[order]))
+        # pixels = np.arange(len(flux[order])) # assumes 0 indexing for HARPS.
+        pixels = np.arange(1, len(flux[order]) + 1) # assumes 1 indexing for HARPS.
         temp = A0 + pixels * A1 + A2 * pixels ** 2 + A3 * pixels ** 3
         wave[order] = inverse_edlen_air2vac(temp)
-    
-    
-    #     print "Output file already exists."
-    #     if args.clobber:
-    #         print "Clobbering..."
-    #         try:
+        # Convert back to ADU units
+        error[order] = np.sqrt(readout_noise**2 + flux[order] * ADU_to_e_conversion) / ADU_to_e_conversion
+
     if os.path.exists(outputfile):
         os.remove(outputfile)
     # TODO add header information
     hdulist = pf.HDUList()
     for order in xrange(len(hdu[0].data)):
-        pf.append(outputfile, data=np.array([wave[order], flux[order], np.sqrt(np.abs(flux[order])) + HARPS_BASELINE_ERROR, np.ones_like(wave[order])]))
-        # except:
-        #     pass
-    
-
+        # pf.append(outputfile, data=np.array([wave[order], flux[order], np.sqrt(np.abs(flux[order])) + HARPS_BASELINE_ERROR, np.ones_like(wave[order])]))
+        pf.append(outputfile, data=np.array([wave[order], flux[order], error[order], np.ones_like(wave[order])]))
 
 if __name__ == '__main__':
     main()
