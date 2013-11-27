@@ -102,7 +102,7 @@ def main():
     # readout_noise squared + shot noise (flux * ADU_to_e_conversion)
     readout_noise = float(hdu[0].header['ESO DRS CCD SIGDET'])
     ADU_to_e_conversion = float(hdu[0].header['ESO DRS CCD CONAD'])
-
+    number_of_pixels = float(hdu[0].header['ESO DET WIN1 NX'])
     # the shot noise, after the conversion  from  ADU to  e- (conv. factor 1.34) 
     # RON which can  be found in the fits header with the keyword  DRS.CCD.SIGDET.
     for order in xrange(len(hdu[0].data)):
@@ -117,7 +117,7 @@ def main():
         temp = A0 + pixels * A1 + A2 * pixels ** 2 + A3 * pixels ** 3
         wave[order] = inverse_edlen_air2vac(temp)
         # Convert back to ADU units
-        error[order] = np.sqrt(readout_noise**2 + flux[order] * ADU_to_e_conversion) / ADU_to_e_conversion
+        error[order] = np.sqrt(number_of_pixels * readout_noise**2 + flux[order] * ADU_to_e_conversion) / ADU_to_e_conversion
 
     if os.path.exists(outputfile):
         os.remove(outputfile)
