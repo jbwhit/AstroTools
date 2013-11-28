@@ -67,13 +67,13 @@ HARPS_BASELINE_ERROR = 5.0
 #     return edlen_air2vac(air_wave - diff1)    
     
 def inverse_edlen_air2vac(air_wave, tolerance=1.0e-14, maxiter=20):
-    """One-step process"""
+    """Iteratively invert the edlen formula."""
     iteration = 0
     previous_refraction = 0.0
     refraction_index = 1.0
     while (np.any(np.abs(refraction_index - previous_refraction) > tolerance)) and (iteration < maxiter):
         previous_refraction = refraction_index
-        sigma = 1.04e4 / (air_wave * previous_refraction)
+        sigma = 1.0e4 / (air_wave * previous_refraction)
         rightside = 8342.13 + 2406030.0 / (130.0 - sigma**2) + 15997.0 / (38.9 - sigma**2)
         refraction_index = rightside / 1.0e8 + 1.0
         iteration += 1
