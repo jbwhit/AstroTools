@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+
+eperdn=('1.9', '2.2', '2.2')
+ronoise=('2.8', '3.1', '3.1')
+
+object_name = "Hiltner600"
+
+flat = ['raw/hires0147.fits']
+
+arc1 = ['raw/hires0192.fits']
+science1 = ['raw/hires0188.fits', 'raw/hires0189.fits', 'raw/hires0190.fits', 'raw/hires0191.fits']
+
+arc2 = ['raw/hires0205.fits', 'raw/hires0206.fits']
+science2 = ['raw/hires0199.fits', 'raw/hires0200.fits', 'raw/hires0201.fits', 'raw/hires0202.fits', 'raw/hires0203.fits', 'raw/hires0204.fits']
+
+number = 0
+for arc in arc1:
+    for science in science1:
+        number += 1
+        for index, ccd in enumerate(range(1, 4)):
+            rootname = object_name + "-" + str(number) + "-"
+            print "makee", science, science, flat[0], arc, "-novac -nohc mode=1", "".join(["log=", rootname, str(ccd),".log"]), 
+            print "eperdn=" + eperdn[index], "ronoise=" + ronoise[index], "comm=-" + rootname, "pf=makee/makee.param ccd=" + str(ccd)
+
+for arc in arc2:
+    for science in science2:
+        number += 1
+        for index, ccd in enumerate(range(1, 4)):
+            rootname = object_name + "-" + str(number) + "-"
+            print "makee", science, science, flat[0], arc, "-novac -nohc mode=1", "".join(["log=", rootname, str(ccd),".log"]), 
+            print "eperdn=" + eperdn[index], "ronoise=" + ronoise[index], "comm=-" + rootname, "pf=makee/makee.param ccd=" + str(ccd)
+
