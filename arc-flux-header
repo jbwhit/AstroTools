@@ -14,12 +14,16 @@ popler_file = sys.argv[1]
 
 globarc = glob("Arc*" + "*".join(re.split('_|-', popler_file)[4:8]) + "*.fits")
 globflux = glob("Flux*" + "*".join(re.split('_|-', popler_file)[4:8]) + "*.fits")
-
-if len(globflux) > 1 or len(globflux) == 0:
-    raise Exception("Too many (or few) flux files found.")
+globflux = [x for x in globflux if not re.search("_up_", x)] # removes the _up_ files.
 
 if len(globarc) > 1 or len(globarc) == 0:
+    print globarc
     raise Exception("Too many (or few) arc files found.")
+
+if len(globflux) > 1 or len(globflux) == 0:
+    print globflux
+    raise Exception("Too many (or few) flux files found.")
+
 
 arc_file, flux_file = globarc[0], globflux[0] 
 
