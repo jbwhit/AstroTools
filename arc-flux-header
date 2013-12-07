@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+import pyfits as pf
+import cPickle as pickle
+import gzip
+import sys
+import re
+from glob import glob
+
+# Usage: feed in popler'ed _up_ file (done for MAKEE)
+# arc-flux-header 2009-11-03-Flux-199_1-Hiltner600-11-_up_009.fits 
+# print re.split('_|-', start)
+
+popler_file = sys.argv[1]
+
+globarc = glob("Arc*" + "*".join(re.split('_|-', popler_file)[4:8]) + "*.fits")
+globflux = glob("Flux*" + "*".join(re.split('_|-', popler_file)[4:8]) + "*.fits")
+
+if len(globflux) > 1 or len(globflux) == 0:
+	raise Exception("Too many (or few) flux files found.")
+
+if len(globarc) > 1 or len(globarc) == 0::
+	raise Exception("Too many (or few) arc files found.")
+
+arc_file, flux_file = globarc[0], globflux[0] 
+
+print "Arc:", arc_file
+print "Flux:", flux_file
+
+outfile = '.'.join(popler_file.split('.')[:-1])
+outfile = outfile + ".header"
+print outfile
+
+arc_hdu = pf.open(arc_file)
+arc_header = {}
+for key, value in arc_hdu[0].header.iteritems():
+    arc_header[key] = value
+
+flux_hdu = pf.open(flux_file)
+flux_header = {}
+for key, value in flux_hdu[0].header.iteritems():
+    flux_header[key] = value
+
+list_of_dictionaries = [arc_header, flux_header]
+
+with gzip.open(outfile, 'wb') as file_handle:
+    pickle.dump(list_of_dictionaries, file_handle, pickle.HIGHEST_PROTOCOL)
