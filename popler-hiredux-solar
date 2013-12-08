@@ -7,10 +7,10 @@
 
 if [ -z "$POPLER_TELLURIC" ]
 then
-	echo "Please set up sky lines environment variable."
-	echo "POPLER_TELLURIC=\"path_to_telluric.dat\""
-	echo "export POPLER_TELLURIC" 
-	exit
+    echo "Please set up sky lines environment variable."
+    echo "POPLER_TELLURIC=\"path_to_telluric.dat\""
+    echo "export POPLER_TELLURIC" 
+    exit
 else
-	UVES_popler $1 -raw -save 2 -filetype 4 -atmomask $POPLER_TELLURIC 
+    UVES_popler $1 -raw -save 2 -filetype 4 -atmomask $POPLER_TELLURIC 
 fi
