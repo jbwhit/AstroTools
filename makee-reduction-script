@@ -55,7 +55,7 @@ def main():
             number += 1
             for index, ccd in enumerate(range(1, 4)):
                 rootname = object_name + "-" + str(number)
-                print "makee", science, science, flat[0], arc, "-novac -nohc mode=1", "".join(["log=", rootname, "-", str(ccd),".log"]), 
+                print "makee", science, science, flats[0], arc, "-novac -nohc mode=1", "".join(["log=", rootname, "-", str(ccd),".log"]), 
                 print "eperdn=" + eperdn[index], "ronoise=" + ronoise[index], "comm=-" + rootname, "pf=makee/makee.param ccd=" + str(ccd)
 
 if __name__ == '__main__':
