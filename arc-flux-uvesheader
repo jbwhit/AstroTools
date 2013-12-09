@@ -16,11 +16,11 @@ globarc = glob("thar_wav*" + "*".join(re.split('_|-', popler_file)[5:7]) + "*.fi
 globflux = glob("*".join(re.split('_|-', popler_file)[4:8]) + "*.fits")
 
 if len(globarc) > 1 or len(globarc) == 0:
-    print globarc
+    print globarc, "thar_wav*" + "*".join(re.split('_|-', popler_file)[5:7]) + "*.fits"
     raise Exception("Too many (or few) arc files found.")
 
 if len(globflux) > 1 or len(globflux) == 0:
-    print globflux
+    print globflux, "*".join(re.split('_|-', popler_file)[4:8]) + "*.fits"
     raise Exception("Too many (or few) flux files found.")
 
 
