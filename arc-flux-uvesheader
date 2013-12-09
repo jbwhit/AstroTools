@@ -12,17 +12,16 @@ from glob import glob
 
 popler_file = sys.argv[1]
 
-globarc = glob("thar_wav*" + "*".join(re.split('_|-', popler_file)[5:7]) + "*.fits")
+globarc = glob("thar_wav*" + "*".join(re.split('_|-', popler_file)[6:8]) + "*.fits")
 globflux = glob("*".join(re.split('_|-', popler_file)[4:8]) + "*.fits")
 
 if len(globarc) > 1 or len(globarc) == 0:
-    print globarc, "thar_wav*" + "*".join(re.split('_|-', popler_file)[5:7]) + "*.fits"
+    print globarc, "thar_wav*" + "*".join(re.split('_|-', popler_file)[6:8]) + "*.fits"
     raise Exception("Too many (or few) arc files found.")
 
 if len(globflux) > 1 or len(globflux) == 0:
     print globflux, "*".join(re.split('_|-', popler_file)[4:8]) + "*.fits"
     raise Exception("Too many (or few) flux files found.")
-
 
 arc_file, flux_file = globarc[0], globflux[0] 
 
