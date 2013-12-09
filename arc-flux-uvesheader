@@ -12,8 +12,8 @@ from glob import glob
 
 popler_file = sys.argv[1]
 
-globarc = glob("thar_wav*" + "*".join(re.split('_|-', popler_file)[3:5]) + "*.fits")
-globflux = glob("*".join(re.split('_|-', popler_file)[1:5]) + "*.fits")
+globarc = glob("thar_wav*" + "*".join(re.split('_|-', popler_file)[5:7]) + "*.fits")
+globflux = glob("*".join(re.split('_|-', popler_file)[4:8]) + "*.fits")
 
 if len(globarc) > 1 or len(globarc) == 0:
     print globarc
