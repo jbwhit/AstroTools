@@ -3,42 +3,54 @@
 import calicompari as calicompari
 import sys
 
-print sys.argv[1]
-asteroid_list = [sys.argv[1],]
+import argparse 
+def main():
+    """docstring for main"""
+    parser = argparse.ArgumentParser(description='Parse.')
+    parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+    parser.add_argument('calibration_file', action="store", nargs='?', default='test.analysis.p', type=str) # Positional 
+    args = parser.parse_args()
+    
+    asteroid_list = [args.analysisFile,]
+    calibration_file = args.calibration_file
+    print calibration_file
+    for telescope_file in asteroid_list:
+        header_file = '.'.join(telescope_file.split('.')[:-1]) + ".header"
+        print telescope_file, header_file
+        headerflag = True
+        try:
+            with open(header_file):
+                print 
+        except IOError:
+           print 'No header_file found.'
+           headerflag = False
+        try:
+            binSize=500
+            outname = ''.join(["cali_", str(binSize), '_', '.'.join(telescope_file.split('.')[:-1]), ".gz"])
+            print outname
+            if headerflag:
+                test_exposure = calicompari.Exposure(exposure_file=telescope_file, calibration_file='vlt.2013-12-07.txt.gz', calibration_type='iodine', header_file=header_file)
+            else:
+                test_exposure = calicompari.Exposure(exposure_file=telescope_file, calibration_file='vlt.2013-12-07.txt.gz', calibration_type='iodine')
+            test_exposure.load_reference_spectra()
+            test_exposure.cleanup()
+            test_exposure.continuum_fit()
+            test_exposure.oversample()
 
-for telescope_file in asteroid_list:
-    header_file = '.'.join(telescope_file.split('.')[:-1]) + ".header"
-    print telescope_file, header_file
-    headerflag = True
-    try:
-        with open(header_file):
-            print "yep."
-    except IOError:
-       print 'No header_file found.'
-       headerflag = False
-    try:
-        binSize=500
-        outname = ''.join(["cali_", str(binSize), '_', '.'.join(telescope_file.split('.')[:-1]), ".gz"])
-        print outname
-        if headerflag:
-            test_exposure = calicompari.Exposure(exposure_file=telescope_file, calibration_file='vlt.2013-12-07.txt.gz', calibration_type='iodine', header_file=header_file)
-        else:
-            test_exposure = calicompari.Exposure(exposure_file=telescope_file, calibration_file='vlt.2013-12-07.txt.gz', calibration_type='iodine')
-        test_exposure.load_reference_spectra()
-        test_exposure.cleanup()
-        test_exposure.continuum_fit()
-        test_exposure.oversample()
+            for order in test_exposure.safe_orders:
+                test_exposure.full_order_shift_scale(order=order)
+                test_exposure.create_bin_arrays(order=order, binSize=binSize)
+                test_exposure.full_order_bin_shift_and_scale(order=order, binSize=binSize)
 
-        for order in test_exposure.safe_orders:
-            test_exposure.full_order_shift_scale(order=order)
-            test_exposure.create_bin_arrays(order=order, binSize=binSize)
-            test_exposure.full_order_bin_shift_and_scale(order=order, binSize=binSize)
+            test_exposure.make_pretty_results()
 
-        test_exposure.make_pretty_results()
+            calicompari.save_exposure(test_exposure, filename=outname)
+            smallname = "small_" + outname
+            calicompari.save_small_exposure(test_exposure, filename=smallname)
+        except:
+            with open(telescope_file + ".log", 'w') as fh:
+                print >>fh, telescope_file, "FAILED."
 
-        calicompari.save_exposure(test_exposure, filename=outname)
-        smallname = "small_" + outname
-        calicompari.save_small_exposure(test_exposure, filename=smallname)
-    except:
-        with open(telescope_file + ".log", 'w') as fh:
-            print >>fh, telescope_file, "FAILED."
+if __name__ == '__main__':
+    main()
+
