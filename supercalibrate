@@ -29,9 +29,9 @@ def main():
             outname = ''.join(["cali_", str(binSize), '_', '.'.join(telescope_file.split('.')[:-1]), ".gz"])
             print outname
             if headerflag:
-                test_exposure = calicompari.Exposure(exposure_file=telescope_file, calibration_file='vlt.2013-12-07.txt.gz', calibration_type='iodine', header_file=header_file)
+                test_exposure = calicompari.Exposure(exposure_file=telescope_file, calibration_file=calibration_file, calibration_type='iodine', header_file=header_file)
             else:
-                test_exposure = calicompari.Exposure(exposure_file=telescope_file, calibration_file='vlt.2013-12-07.txt.gz', calibration_type='iodine')
+                test_exposure = calicompari.Exposure(exposure_file=telescope_file, calibration_file=calibration_file, calibration_type='iodine')
             test_exposure.load_reference_spectra()
             test_exposure.cleanup()
             test_exposure.continuum_fit()
