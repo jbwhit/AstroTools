@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for infile in Flux*_up_*.fits; 
+do 
+    newname=$(echo $(dfits $infile | fitsort -d OBSDATE) | awk '{print $2"-"$1}')
+    echo cp $infile $newname
+    cp $infile $newname
+done
