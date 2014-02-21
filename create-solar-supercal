@@ -1,0 +1,7 @@
+#!/bin/bash
+
+echo \# solar
+
+for infile in [1,2]*_up_*.fits;  do  
+echo supercalibrate $infile /home/jwhitmor/github/CaliCompari/FTS/KPNO2010.contin.ascii ; 
+done
