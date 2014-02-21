@@ -12,7 +12,7 @@ parsed_name = re.split('_|-', parse_file )
 if len(sys.argv) < 3:
     print "-".join(parsed_name[4:7]) + ".fits"
 else:
-    begin = sys.argv[2]
-    end = sys.argv[3]
+    begin = int(sys.argv[2])
+    end = int(sys.argv[3])
     print "-".join(parsed_name[begin:end]) + ".fits"
 
