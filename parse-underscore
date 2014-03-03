@@ -14,5 +14,5 @@ if len(sys.argv) < 3:
 else:
     begin = int(sys.argv[2])
     end = int(sys.argv[3])
-    print "-".join(parsed_name[begin:end]) + ".fits"
+    print "*".join(parsed_name[begin:end]) + ".fits"
 

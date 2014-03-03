@@ -1,10 +1,10 @@
 #!/bin/bash
 
 
-if [ ! -z $3 ]
+if [ ! -z $2 ]
 then
-    BEGINCUT=$2
-    ENDCUT=$3
+    BEGINCUT=$1
+    ENDCUT=$2
 else
     BEGINCUT=4
     ENDCUT=7
