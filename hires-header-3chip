@@ -1,0 +1,18 @@
+#!/bin/bash
+
+
+if [ ! -z $2 ]
+then
+    BEGINCUT=$1
+    ENDCUT=$2
+else
+    BEGINCUT=4
+    ENDCUT=7
+fi
+
+for infile in [1,2]*Flux*_up_*.fits; 
+do 
+    newname=$(parse-underscore-3chip $infile)
+    echo arc-flux-hireduxheader $infile Arc-$newname Flux-$newname
+    arc-flux-hireduxheader $infile Arc-$newname Flux-$newname
+done
