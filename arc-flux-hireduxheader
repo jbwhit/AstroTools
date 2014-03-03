@@ -20,13 +20,20 @@ print outfile
 
 arc_hdu = pf.open(arc_file)
 arc_header = {}
-for key, value in arc_hdu[0].header.iteritems():
-    arc_header[key] = value
+
+for key in arc_hdu[0].header.iterkeys():
+    try:
+    	arc_header[key] = arc_hdu[0].header[key]
+    except:
+    	pass
 
 flux_hdu = pf.open(flux_file)
 flux_header = {}
-for key, value in flux_hdu[0].header.iteritems():
-    flux_header[key] = value
+for key in flux_hdu[0].header.iterkeys():
+    try:
+    	flux_header[key] = flux_hdu[0].header[key]
+    except:
+    	pass
 
 list_of_dictionaries = [arc_header, flux_header]
 
