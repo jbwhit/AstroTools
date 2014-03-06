@@ -1,0 +1,8 @@
+#!/bin/bash
+# Run via: 
+# $ LP-webpoplersave J003023-181956
+# outputs J003023-181956.upl; J003023-181956.fits 
+
+prefix=$1
+
+UVES_popler $prefix.upl -prefix $prefix -save 2
