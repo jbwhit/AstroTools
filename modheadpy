@@ -1,0 +1,17 @@
+#!/bin/env python
+# modheadpy UVES.2012-03-28T04:11:05.692_sci.fits "HIERARCH ESO INS SLIT1 WID" "0.00"
+
+import pyfits as pf
+import sys
+
+infile = sys.argv[1]
+key = sys.argv[2]
+new_value = sys.argv[3]
+
+print infile
+print "Key", key
+print "update", new_value
+
+hdu = pf.open(infile)
+hdu[0].header[key] = new_value
+hdu.writeto(infile, clobber=True)
