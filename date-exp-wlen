@@ -1,0 +1,34 @@
+#!/bin/env python
+# date-exp-wlen OBJECT.upl
+# Takes the upl file; parses it for files used
+# Returns the date/exposuretime/setting for each file used.
+# For use with UVES files.
+
+import sys
+import pyfits as pf
+
+infile = sys.argv[1]
+
+filenames = []
+with open(infile, 'r') as fh:
+    for row in fh.readlines():
+        line = row.split()
+        try:
+        #if len(line) > 2 and len(line[0].split("_")) > 2:
+            if line[0].split("_")[1] == "PATH":
+                temp = line[2]
+        except:
+            pass
+        try:
+            if line[0].split("_")[1] == "FLUX":
+                filenames.append(temp + line[2])
+        except:
+            pass
+
+for filename in filenames:
+    hdu = pf.open(filename)
+    try:
+        wlen = hdu[0].header["HIERARCH ESO INS GRAT1 WLEN"]
+    except:
+        wlen = hdu[0].header["HIERARCH ESO INS GRAT2 WLEN"]
+    print hdu[0].header["HIERARCH ESO TPL START"], int(hdu[0].header["HIERARCH ESO DET WIN1 DIT1"]), int(wlen)
