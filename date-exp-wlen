@@ -27,8 +27,18 @@ with open(infile, 'r') as fh:
 
 for filename in filenames:
     hdu = pf.open(filename)
+    basename = filename.split("/")[-1]
+    newbasename = "_".join([basename.split("_")[1] + "/" + basename.split("_")[1],
+                            "sci", 
+                            basename.split("_")[3], 
+                            basename.split("_")[4] + ".fits"])
+    otherhdu = pf.open(newbasename)
+    reductionname = "_".join([basename.split("_")[1] + "/reduce", 
+                            basename.split("_")[3], 
+                            basename.split("_")[4] + ".cpl"])
     try:
         wlen = hdu[0].header["HIERARCH ESO INS GRAT1 WLEN"]
     except:
         wlen = hdu[0].header["HIERARCH ESO INS GRAT2 WLEN"]
-    print hdu[0].header["HIERARCH ESO TPL START"], int(hdu[0].header["HIERARCH ESO DET WIN1 DIT1"]), int(wlen)
+    print otherhdu[0].header["ARCFILE"], int(hdu[0].header["HIERARCH ESO DET WIN1 DIT1"]), int(wlen), reductionname
+
