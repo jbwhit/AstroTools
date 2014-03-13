@@ -31,6 +31,7 @@ for filename in glob("fxb_*"):
     listoffiles.append([filename, timeexp])
 
 # The following is a sloppy way to combine exposures within a TIMEBUFFER
+# But it works.
 newlist = []
 for guts in listoffiles:
     infile, timestamp = guts
@@ -49,14 +50,14 @@ for element in newlist:
         brandnewlist.append(element)
         
 PATH = os.getcwd()
-for index, row in enumerate(brandnewlist):
+for index, row in enumerate(sorted(brandnewlist, key=lambda x: x[0][1])):
     if len(row) > 3:
         print "# Problem!"
     for secondindex, guts in enumerate(sorted(row, key=lambda x: x[0])):
         filename, timestamp = guts
         basenamesplit = filename.split("_")
         if secondindex == 0:
-            print "/".join([PATH, filename]), " > ", "_".join([basenamesplit[1], "expo", str(index), "red.list"])
+            print "echo", "/".join([PATH, filename]), " > ", "_".join([basenamesplit[1], "expo", str(index), "red.list"])
         else:
-            print "/".join([PATH, filename]), ">> ", "_".join([basenamesplit[1], "expo", str(index), "red.list"])
+            print "echo", "/".join([PATH, filename]), ">> ", "_".join([basenamesplit[1], "expo", str(index), "red.list"])
     print 
