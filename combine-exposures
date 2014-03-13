@@ -50,7 +50,7 @@ for index, row in enumerate(brandnewlist):
             print "Problem!"
         filename, timestamp = guts
         if secondindex == 0:
-            print filename " > ", index
+            print filename, " > ", index
         else:
-            print filename " > ", index
+            print filename, " > ", index
     print 
