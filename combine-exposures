@@ -19,6 +19,8 @@ TIMEBUFFER = 45.0 # seconds within each other
 
 listoffiles = []
 for filename in glob("fxb_*"):
+    if "_up_" in filename:
+        continue
     hdu = pf.open(filename)
     basename = filename
     basenamesplit = basename.split("_")
@@ -48,9 +50,9 @@ for element in newlist:
         
 PATH = os.getcwd()
 for index, row in enumerate(brandnewlist):
+    if len(row) > 3:
+        print "# Problem!"
     for secondindex, guts in enumerate(sorted(row, key=lambda x: x[0])):
-        if len(guts) > 3:
-            print "Problem!"
         filename, timestamp = guts
         basenamesplit = filename.split("_")
         if secondindex == 0:
