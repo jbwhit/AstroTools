@@ -53,7 +53,7 @@ for index, row in enumerate(brandnewlist):
         filename, timestamp = guts
         basenamesplit = filename.split("_")
         if secondindex == 0:
-            print PATH, filename, " > ", basenamesplit[1], index, "_red.list"
+            print "/".join([PATH, filename]), " > ", "/".join([basenamesplit[1], "expo", index, "red.list"])
         else:
-            print PATH, filename, " > ", basenamesplit[1], index, "_red.list"
+            print "/".join([PATH, filename]), ">> ", "/".join([basenamesplit[1], "expo", index, "red.list"])
     print 
