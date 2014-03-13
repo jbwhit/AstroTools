@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # combine-exposures 
-# runs in the current directory and files into _red.lists by exposure
-# Returns the date/exposuretime/setting for each file used.
+# runs in the current directory and looks for fxb_ files that
+# were taken as part of the same exposure. 
+# Prints to standard out a script that can create separate _red.lists.
 # For use with UVES files.
 
 import sys
@@ -53,7 +54,7 @@ for index, row in enumerate(brandnewlist):
         filename, timestamp = guts
         basenamesplit = filename.split("_")
         if secondindex == 0:
-            print "/".join([PATH, filename]), " > ", "/".join([basenamesplit[1], "expo", str(index), "red.list"])
+            print "/".join([PATH, filename]), " > ", "_".join([basenamesplit[1], "expo", str(index), "red.list"])
         else:
-            print "/".join([PATH, filename]), ">> ", "/".join([basenamesplit[1], "expo", str(index), "red.list"])
+            print "/".join([PATH, filename]), ">> ", "_".join([basenamesplit[1], "expo", str(index), "red.list"])
     print 
