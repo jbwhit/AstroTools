@@ -5,6 +5,7 @@
 # For use with UVES files.
 
 import sys
+import os
 import numpy as np
 import pyfits as pf
 import dateutil
@@ -44,13 +45,15 @@ for element in newlist:
     if element not in brandnewlist:
         brandnewlist.append(element)
         
+PATH = os.getcwd()
 for index, row in enumerate(brandnewlist):
     for secondindex, guts in enumerate(sorted(row, key=lambda x: x[0])):
         if len(guts) > 3:
             print "Problem!"
         filename, timestamp = guts
+        basenamesplit = filename.split("_")
         if secondindex == 0:
-            print filename, " > ", index
+            print PATH, filename, " > ", basenamesplit[1], index, "_red.list"
         else:
-            print filename, " > ", index
+            print PATH, filename, " > ", basenamesplit[1], index, "_red.list"
     print 
