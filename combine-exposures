@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+# combine-exposures 
+# runs in the current directory and files into _red.lists by exposure
+# Returns the date/exposuretime/setting for each file used.
+# For use with UVES files.
+
+import sys
+import numpy as np
+import pyfits as pf
+import dateutil
+import dateutil.parser 
+from glob import glob
+from itertools import groupby
+from operator import itemgetter
+
+TIMEBUFFER = 45.0 # seconds within each other 
+
+listoffiles = []
+for filename in glob("fxb_*"):
+    hdu = pf.open(filename)
+    basename = filename
+    basenamesplit = basename.split("_")
+    newbasename = "_".join([basenamesplit[1], "sci", basenamesplit[3], basenamesplit[4] + ".fits"])
+    otherhdu = pf.open(newbasename)
+    timeexp = otherhdu[0].header["ARCFILE"]
+    timeexp = dateutil.parser.parse(".".join(timeexp.split(".")[1:-1]))
+    listoffiles.append([filename, timeexp])
+
+# The following is a sloppy way to combine exposures within a TIMEBUFFER
+newlist = []
+for guts in listoffiles:
+    infile, timestamp = guts
+    temp = []
+    for index, guts2 in enumerate(listoffiles):
+        infile2, secondtimestamp = guts2
+        timedelt = np.abs(timestamp - secondtimestamp)
+        if timedelt.total_seconds() < TIMEBUFFER:
+            temp.append(guts2)
+    newlist.append(temp)
+
+# This culls the repeats.
+brandnewlist = []
+for element in newlist:
+    if element not in brandnewlist:
+        brandnewlist.append(element)
+        
+for index, row in enumerate(brandnewlist):
+    for secondindex, guts in enumerate(sorted(row, key=lambda x: x[0])):
+        if len(guts) > 3:
+            print "Problem!"
+        filename, timestamp = guts
+        if secondindex == 0:
+            print filename " > ", index
+        else:
+            print filename " > ", index
+    print 
