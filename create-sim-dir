@@ -1,5 +1,7 @@
 #!/bin/bash
 # Usage: 
+# create-sim-dir transitions.tsv ion-abundance.tsv keck-imrot-1.tsv simulation-base.config HIRES1
+# Old Usage: 
 # create-sim-dir vlt-transitions.txt ion-abundance.txt vlt-da.txt simulation-base.config UVES
 # create-sim-dir keck-transitions.txt ion-abundance.txt keck-da.txt simulation-base.config HIRES
 
@@ -19,11 +21,11 @@ if [ -f $SPECTROGRAPH.directories.list ]
     then
     rm $SPECTROGRAPH.directories.list
 fi
-for fileline in $(awk '{print "'$SPECTROGRAPH'/" $1 "/" $2}' $ALPHALIST);
+for fileline in $(awk '{print "'$SPECTROGRAPH'/" $1 "/" $3}' $ALPHALIST);
 do
     echo  $fileline
     mkdir -p $fileline
     echo $(pwd)/$fileline >> $SPECTROGRAPH.directories.list
 done
 
-generate-data $TRANSITIONS $IONABUNDANCE $ALPHALIST $SIMCONFIG $SPECTROGRAPH
+new-generate-data $TRANSITIONS $IONABUNDANCE $ALPHALIST $SIMCONFIG $SPECTROGRAPH
