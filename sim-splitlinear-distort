@@ -6,8 +6,11 @@ ALPHALIST=$3 # keck-da.txt
 SIMCONFIG=$4 # simulation-base.config
 SPECTROGRAPH=$5 # HIRES
 RUNNUMBER=$6 # 
-SLOPE=$7 
-OFFSET=$8
+BREAKPOINT=$7
+SLOPE=$8
+OFFSET=$9 
+SLOPE2=${10}
+OFFSET2=${11}
 
 export ATOMDIR=/Users/jwhitmore/Dropbox/Research/Fitting/Dipole/MM_2013-07-01_H2.dat
 export VPFSETUP=/Users/jwhitmore/Dropbox/Research/Fitting/Dipole/jw_vp_setup.dat
@@ -21,19 +24,15 @@ if [ ! -f $VPFSETUP ]; then
     exit 0
 fi
 
-if [ ! -d MC$SPECTROGRAPH ]; then
-    mkdir MC$SPECTROGRAPH
-fi
-
 STARTINGDIR=$(pwd)
 echo Starting directory: $STARTINGDIR
 
-DISTORTNAME=average.$RUNNUMBER
+DISTORTNAME=splitlinear.$RUNNUMBER
 
 cd $STARTINGDIR
 for directory in $(cat $SPECTROGRAPH.directories.list);
 do
-    regionshift $directory/sim_fit.13 --linear $SLOPE $OFFSET > $directory/$DISTORTNAME.fort.13
+    regionshift $directory/sim_fit.13 --split_linear $BREAKPOINT $SLOPE $OFFSET $SLOPE2 $OFFSET2 > $directory/$DISTORTNAME.fort.13
 done
 cd $STARTINGDIR
 
@@ -50,4 +49,12 @@ do
 done
 cd $STARTINGDIR
 
-awk '/qa/{print $2, $8, $9}' $SPECTROGRAPH/*/*/$DISTORTNAME.alpha.26 | sed -e 's/a//g' -e 's/q//g' > MC$SPECTROGRAPH/$SPECTROGRAPH.$DISTORTNAME.alpha
+echo "#J2000 redshift daa daa_error" > $SPECTROGRAPH.$DISTORTNAME.alpha
+echo "#--split_linear $BREAKPOINT $SLOPE $OFFSET $SLOPE2 $OFFSET2" >> $SPECTROGRAPH.$DISTORTNAME.alpha
+for infile in $SPECTROGRAPH/*/*/$DISTORTNAME.alpha.26
+do 
+    newname=$(echo $infile | awk 'BEGIN{FS="/"}{print $1, $2, $3, $4}')
+    echo $newname | awk '{printf("%s\t%s\t"), $2, $3}' >> $SPECTROGRAPH.$DISTORTNAME.alpha
+    awk 'BEGIN{OFS="\t"}/qa/{print $8, $9}' $infile | sed -e 's/a//g' -e 's/q//g' >> $SPECTROGRAPH.$DISTORTNAME.alpha
+done
+cd $STARTINGDIR

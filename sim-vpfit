@@ -43,6 +43,11 @@ do
 done
 
 cd $STARTINGDIR
-awk '/qa/{print $2, $8, $9}' $SPECTROGRAPH/*/*/sim_alpha.26 | sed -e 's/a//g' -e 's/q//g' > $SPECTROGRAPH.sim.alpha
+echo "#J2000 redshift daa daa_error" > $SPECTROGRAPH.sim.alpha
 
-# jwhitmore2-mac $ diff <(awk '/Stat/{if (NF > 9) print FILENAME, $0}' HIRES/*/*/*.26) <(awk '/errs/{print FILENAME, $0}' HIRES/*/*/*.26)
+for infile in $SPECTROGRAPH/*/*/sim_alpha.26; 
+do 
+    newname=$(echo $infile | awk 'BEGIN{FS="/"}{print $1, $2, $3, $4}')
+    echo $newname | awk '{printf("%s\t%s\t"), $2, $3}' >> $SPECTROGRAPH.sim.alpha
+    awk 'BEGIN{OFS="\t"}/qa/{print $8, $9}' $infile | sed -e 's/a//g' -e 's/q//g' >> $SPECTROGRAPH.sim.alpha
+done

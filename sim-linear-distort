@@ -21,14 +21,10 @@ if [ ! -f $VPFSETUP ]; then
     exit 0
 fi
 
-if [ ! -d MC$SPECTROGRAPH ]; then
-    mkdir MC$SPECTROGRAPH
-fi
-
 STARTINGDIR=$(pwd)
 echo Starting directory: $STARTINGDIR
 
-DISTORTNAME=average.$RUNNUMBER
+DISTORTNAME=linear.$RUNNUMBER
 
 cd $STARTINGDIR
 for directory in $(cat $SPECTROGRAPH.directories.list);
@@ -50,4 +46,12 @@ do
 done
 cd $STARTINGDIR
 
-awk '/qa/{print $2, $8, $9}' $SPECTROGRAPH/*/*/$DISTORTNAME.alpha.26 | sed -e 's/a//g' -e 's/q//g' > MC$SPECTROGRAPH/$SPECTROGRAPH.$DISTORTNAME.alpha
+echo "#J2000 redshift daa daa_error" > $SPECTROGRAPH.$DISTORTNAME.alpha
+echo "#--linear $SLOPE $OFFSET" >> $SPECTROGRAPH.$DISTORTNAME.alpha
+for infile in $SPECTROGRAPH/*/*/$DISTORTNAME.alpha.26
+do 
+    newname=$(echo $infile | awk 'BEGIN{FS="/"}{print $1, $2, $3, $4}')
+    echo $newname | awk '{printf("%s\t%s\t"), $2, $3}' >> $SPECTROGRAPH.$DISTORTNAME.alpha
+    awk 'BEGIN{OFS="\t"}/qa/{print $8, $9}' $infile | sed -e 's/a//g' -e 's/q//g' >> $SPECTROGRAPH.$DISTORTNAME.alpha
+done
+cd $STARTINGDIR
