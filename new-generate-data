@@ -1,0 +1,97 @@
+#!/usr/bin/env python
+
+# Usage: generate-data transitions.txt ion-abundance.txt keck-da.txt simulation-base.config HIRES
+
+import barak
+from barak import absorb
+import argparse
+import numpy as np
+import string
+import re
+
+wavelengthbuffer = 5.0
+fitbuffer = 0.5
+pixelsize = 1.3
+
+parser = argparse.ArgumentParser(description='Parse.')
+parser.add_argument('instrument_transition_file', action="store", nargs='?', default='', type=str)
+parser.add_argument('ion_abundance_file', action="store", nargs='?', default='', type=str)
+parser.add_argument('instrument_qso_file', action="store", nargs='?', default='', type=str)
+parser.add_argument('simulation_config', action="store", nargs='?', default='', type=str)
+parser.add_argument('instrument_name', action="store", nargs='?', default='', type=str)
+args = parser.parse_args()
+
+instrument_transition_file = args.instrument_transition_file # transitions.tsv
+ion_abundance_file = args.ion_abundance_file # ion-abundance.txt
+instrument_qso_file = args.instrument_qso_file # keck-da.txt
+simulation_config = args.simulation_config # simulation-base.config
+instrument_name = args.instrument_name # HIRES UVES 
+
+transitions = {}
+ions = {}
+with open(instrument_transition_file, 'r') as fh:
+    for line in fh.readlines():
+        line = line.strip()
+        if not line.startswith("#"):
+            line = line.split("\t")
+            transitions[line[2]] = float(line[3])
+            ions[line[2]] = line[0]
+    
+absorbers = {}
+redshifts = {}
+with open(instrument_qso_file, 'r') as fh:
+    for line in fh.readlines():
+        line = line.strip()
+        if not line.startswith("#"):
+            line = line.split("\t")
+            name = '/'.join([instrument_name, line[0], line[2]])
+            absorbers[name] = line[9].split()
+            redshifts[name] = float(line[2])
+
+base = {}
+with open(simulation_config, 'r') as fh:
+    for line in fh.readlines():
+        line = line.strip()
+        if not line.startswith("#"):
+            line = line.split("\t")
+            base[line[0]] = float(line[1])
+
+ion_abundance = {}
+with open(ion_abundance_file, 'r') as fh:
+    for line in fh.readlines():
+        line = line.strip()
+        if not line.startswith("#"):
+            line = line.split("\t")
+            ion_abundance[line[0]] = float(line[1])
+
+for name in absorbers:
+    specificion = []
+    for index, trans in enumerate(absorbers[name]):
+        print index, trans, name
+        specificion.append(ions[trans])
+        wave = absorb.make_constant_dv_wa_scale(transitions[trans] * (1.0 + redshifts[name]) - wavelengthbuffer, transitions[trans] * (1.0 + redshifts[name]) + wavelengthbuffer, pixelsize)
+        np.savetxt(name + "/temp." + str(index)+  ".ascii", np.transpose([wave, np.ones_like(wave), np.ones_like(wave), ]))
+        
+    rdion = []
+    for index, ion in enumerate(set(specificion)):
+        temp_string = ' '.join([ion, str(base['ncol'] + ion_abundance[ion]), str(base['bval']), str(redshifts[name])])
+        rdion.append(temp_string)
+    for index, trans in enumerate(absorbers[name]):
+        rdbody = []
+        # rdbody.append("rd " + name + "/temp." + str(index) +  ".ascii")
+        rdbody.append("rd temp." + str(index) +  ".ascii")
+        rdbody.append("gp")
+        for ugh in rdion:
+            rdbody.append(ugh)
+        rdbody.append("")
+        rdbody.append(str(base['fwhm']))
+        rdbody.append("noise")
+        rdbody.append("")
+        rdbody.append(str(base['snr']))
+        rdbody.append("wt " + '.'.join(name.split('/')[1:]) + "." + str(index) + ".ascii  (all)")
+        # rdbody.append("wt " + name + "/" + '.'.join(name.split('/')[1:]) + "." + str(index) + ".ascii (all)")
+        rdbody.append("lo")
+        with open(name + "/rdgen." + str(index)+  ".in", 'w') as filehandle: 
+            for inline in rdbody:
+                print >>filehandle, inline
+    
