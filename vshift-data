@@ -1,0 +1,127 @@
+#!/usr/bin/env python
+# vshift-data
+# Usage: vshift-fort13 linear.14.fort.13 --rootname trial
+# For use with my AstroTools scripts. 
+# Parses the body part of a fort.13 file
+# does various operations that are tedious by hand
+# 
+# Copyright 2013 Jonathan Whitmore 
+# Distributed under the Boost Software License, Version 1.0.
+#
+# Permission is hereby granted, free of charge, to any person or organization
+# obtaining a copy of the software and accompanying documentation covered by
+# this license (the "Software") to use, reproduce, display, distribute,
+# execute, and transmit the Software, and to prepare derivative works of the
+# Software, and to permit third-parties to whom the Software is furnished to
+# do so, all subject to the following:
+#
+# The copyright notices in the Software and this entire statement, including
+# the above license grant, this restriction and the following disclaimer,
+# must be included in all copies of the Software, in whole or in part, and
+# all derivative works of the Software, unless such copies or derivative
+# works are solely in the form of machine-executable object code generated
+# by a source language processor.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND
+# NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR ANYONE
+# DISTRIBUTING THE SOFTWARE BE LIABLE FOR ANY DAMAGES OR OTHER LIABILITY,
+# WHETHER IN CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# 
+
+import sys
+import re
+import string
+import numpy as np
+import argparse
+import itertools 
+        
+def main():
+    """docstring for main"""
+    parser = argparse.ArgumentParser(description='Parse.')
+    parser.add_argument('analysisFile', action="store", nargs='?', default='1fort.13', type=str) # Positional 
+    parser.add_argument('--rootname', action="store", default="setme", help="new fort.13 name") # Positional
+    # parser.add_argument('--single_value', action="store", help="index of only") # Positional
+    # parser.add_argument('--quadratic', action="store", nargs=3, help="quad, slope, offset") # Positional
+    # parser.add_argument('--split_linear', action="store", nargs=5, help="breakpoint, slope, offset, slope2, offset2") # Positional
+    args = parser.parse_args()
+    
+    head = []
+    body = []
+
+    begin_head = False
+    begin_body = False        
+
+    with open(args.analysisFile, 'r') as file_handle:
+        for line in file_handle.read().splitlines():
+            if begin_body == True:
+                body.append(line)
+            if line.startswith('  *'):
+                begin_body = True
+                begin_head = False
+            if begin_head == True:
+                head.append(line.split())
+            if line.startswith('   *'):
+                begin_head = True
+    if len(head) < 1:
+        print "   *"
+        print "Length of the header is zero. "
+        print "Are you sure you have the * above and below spaced correctly?"
+        print "  *"
+        return
+
+    for index, _ in enumerate(head):
+        with open(args.rootname + str(index) + ".13", 'w') as file_handle:
+            print >>file_handle, '   *'
+            for row in head:
+                print >>file_handle, ' '.join(row)
+            print >>file_handle, '  *'    
+            # body
+            for line in body:
+                print >>file_handle, line
+            # shiftpart
+            for shiftindex, line in enumerate(head):
+                wavelength_midpoint = np.average([float(line[2]), float(line[3])])
+                redshift = wavelength_midpoint / 1215.6701 - 1.0
+                if shiftindex == index:
+                    pass
+                else:
+                    print >>file_handle, "   >>       1.00000SN   ",\
+                        str(round(redshift, 6)) + "VZ  ",\
+                        "0.000     0.00E+00QS      0.00   1.00E+00  0 ! ", line[-1]
+            # print_moveable_shift(head, index)
+    pass
+
+def print_moveable_shift(in_list, fix_region_index):
+    for index, line in enumerate(in_list):
+        wavelength_midpoint = np.average([float(line[2]), float(line[3])])
+        redshift = wavelength_midpoint / 1215.6701 - 1.0
+        if index == fix_region_index:
+            print "   >>       1.00000SN   ",\
+                str(round(redshift, 6)) + "VZ  ",\
+                "0.000SZ   0.00E+00QS      0.00   1.00E+00  0 ! ", line[-1]
+        else:
+            print "   >>       1.00000SN   ",\
+                str(round(redshift, 6)) + "VZ  ",\
+                "0.000     0.00E+00QS      0.00   1.00E+00  0 ! ", line[-1]
+    pass
+
+        
+def print_head(in_list):
+    """docstring for print_head"""
+    print '   *'
+    for row in in_list:
+        print ' '.join(row)
+    print '  *'    
+    pass
+
+def print_body(in_list):
+    """docstring for print_body"""
+    for line in in_list:
+        print line
+    pass
+
+if __name__ == '__main__':
+    main()
