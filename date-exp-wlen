@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 # date-exp-wlen OBJECT.upl
 # Takes the upl file; parses it for files used
 # Returns the date/exposuretime/setting for each file used.
@@ -14,7 +14,7 @@ with open(infile, 'r') as fh:
     for row in fh.readlines():
         line = row.split()
         try:
-        #if len(line) > 2 and len(line[0].split("_")) > 2:
+        # if len(line) > 2 and len(line[0].split("_")) > 2:
             if line[0].split("_")[1] == "PATH":
                 temp = line[2]
         except:
@@ -28,17 +28,17 @@ with open(infile, 'r') as fh:
 for filename in filenames:
     hdu = pf.open(filename)
     basename = filename.split("/")[-1]
-    newbasename = "_".join([basename.split("_")[1] + "/" + basename.split("_")[1],
-                            "sci", 
-                            basename.split("_")[3], 
-                            basename.split("_")[4] + ".fits"])
+    basenamesplit = basename.split("_")
+    newbasename = "_".join([basenamesplit[1] + "/" + basenamesplit[1],
+                            "sci",
+                            basenamesplit[3],
+                            basenamesplit[4] + ".fits"])
     otherhdu = pf.open(newbasename)
-    reductionname = "_".join([basename.split("_")[1] + "/reduce", 
-                            basename.split("_")[3], 
-                            basename.split("_")[4] + ".cpl"])
+    reductionname = "_".join([basenamesplit[1] + "/reduce",
+                            basenamesplit[3],
+                            basenamesplit[4] + ".cpl"])
     try:
         wlen = hdu[0].header["HIERARCH ESO INS GRAT1 WLEN"]
     except:
         wlen = hdu[0].header["HIERARCH ESO INS GRAT2 WLEN"]
     print otherhdu[0].header["ARCFILE"], int(hdu[0].header["HIERARCH ESO DET WIN1 DIT1"]), int(wlen), reductionname
-
