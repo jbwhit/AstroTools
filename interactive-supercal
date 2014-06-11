@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+# Usage: interactive-supercal small_cali_500_2004-03-12-fxb_hip67534_sci_564_01_l_up_001.gz
+# Gives a way to interactively plot the small_cali files.
+# Make a copy of this script for each file that you would like to analyze.
+import calicompari 
+
+import numpy as np
+import datetime
+import dateutil
+from glob import glob
+import sys
+
+import matplotlib.pyplot as plt
+plt.rcParams['figure.figsize'] = 16, 8
+
+def main():
+    infile = sys.argv[1]
+    expo = calicompari.load_exposure(infile)
+        
+    print "Converting nans"
+    for order in expo['safe_orders']:
+        if order in expo['Results'][500]:
+            np.nan_to_num(expo['Results'][500][order]['calerr'])
+                    
+    color="blue"
+    combinederror = 10.
+    expo["hand_tweak"] = {}
+    expo["hand_tweak"]["upper_error_bound"] = combinederror
+    expo["hand_tweak"]["upper_wavelength_cutoff"] = 7600.0
+    expo["hand_tweak"]["badorders"] = []
+    expo["hand_tweak"]["orderbegin"] = 0
+    expo["hand_tweak"]["orderend"] = -1
+    expo["hand_tweak"]["offset"] = 0.
+    expo["hand_tweak"]["minimum_number_of_chunks"] = 4
+    calicompari.hand_tweak((infile, expo), clobber=True, vbuffer=400., color=color)
+    plt.show()
+
+if __name__ == '__main__':
+    main()
+########################### 
+
+# flux_header = {}
+# for key, value in flux_hdu[0].header.iteritems():
+#     flux_header[key] = value
+
+# list_of_dictionaries = [arc_header, flux_header]
+
+# with gzip.open(outfile, 'wb') as file_handle:
+#     pickle.dump(list_of_dictionaries, file_handle, pickle.HIGHEST_PROTOCOL)
