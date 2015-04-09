@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+# Usage: supercalibrate 2004-03-28-fxb_hip102793_sci_564_01_l_up_001.fits /home/jwhitmor/github/CaliCompari/FTS/KPNO2010.contin.ascii
+# runs the supercal code on the UVES_popler file (and you have to give explicit path to reference file)
+
+import os
+import sys
+sys.path.append('~/github/CaliCompari/Python')
+import calicompari as calicompari
+
+import argparse
+
+# Edit these by hand
+first_guesses = {}
+first_guesses.update({'shift':-0.003, # Starting value update here.
+                      'fix_shift':False,
+                      'limit_shift':(-1.5, 1.5),
+                      'error_shift':0.03})
+first_guesses.update({'slope':-0.002, # Starting value update here.
+                      'fix_slope':False,
+                      'limit_slope':(-2.0, 2.0),
+                      'error_slope':0.04})
+first_guesses.update({'sigma':3.102, # Starting value update here.
+                      'fix_sigma':False,
+                      'limit_sigma':(1.0, 10.0),
+                      'error_sigma':0.2})
+first_guesses.update({'multiple':1.37, # Starting value update here.
+                      'fix_multiple':False,
+                      'limit_multiple':(0.1, 20.0),
+                      'error_multiple':0.03})
+first_guesses.update({'offset':0.002, # Starting value update here.
+                      'fix_offset':False,
+                      'limit_offset':(-2.0, 2.0),
+                      'error_offset':0.03})
+first_guesses.update({'minuit':0, 'fix_minuit':True})
+
+
+def main():
+    """To be run via command line."""
+    parser = argparse.ArgumentParser(description='Parse.')
+    parser.add_argument('analysisFile', action="store", nargs='?', default='test.analysis.p', type=str) # Positional
+    parser.add_argument('calibration_file', action="store", nargs='?', default='test.analysis.p', type=str) # Positional
+    args = parser.parse_args()
+
+    calibration_file = args.calibration_file
+    print calibration_file
+    telescope_file = args.analysisFile
+    header_file = '.'.join(telescope_file.split('.')[:-1]) + ".header"
+    print telescope_file, header_file
+    headerflag = True
+    try:
+        with open(header_file):
+            print
+    except IOError:
+       print 'Warning: no header_file found.'
+       headerflag = False
+    try:
+        binSize=500 # sets the chunk size in km/s
+        outname = ''.join(["cali_", str(binSize), '_', '.'.join(telescope_file.split('.')[:-1]), ".gz"])
+        print outname
+        if headerflag:
+            test_exposure = calicompari.Exposure(exposure_file=telescope_file,
+                                                 calibration_file=calibration_file,
+                                                 calibration_type='iodine',
+                                                 header_file=header_file)
+        else:
+            test_exposure = calicompari.Exposure(exposure_file=telescope_file,
+                                                 calibration_file=calibration_file,
+                                                 calibration_type='iodine')
+        test_exposure.load_reference_spectra()
+        test_exposure.cleanup()
+        test_exposure.continuum_fit()
+        test_exposure.oversample()
+
+        for order in test_exposure.safe_orders:
+            # test_exposure.full_order_shift_scale(order=order)
+            test_exposure.hand_full_order_shift_scale(order=order, first_guesses=first_guesses)
+            test_exposure.create_bin_arrays(order=order, binSize=binSize)
+            test_exposure.full_order_bin_shift_and_scale(order=order, binSize=binSize)
+
+        test_exposure.make_pretty_results()
+
+        calicompari.save_exposure(test_exposure, filename=outname)
+        smallname = "small_" + outname
+        calicompari.save_small_exposure(test_exposure, filename=smallname)
+    except:
+        with open(telescope_file + ".log", 'w') as fh:
+            print >>fh, telescope_file, "FAILED."
+
+if __name__ == '__main__':
+    main()
+
