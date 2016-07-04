@@ -11,8 +11,10 @@ import argparse
 def main():
     """To be run via command line."""
     parser = argparse.ArgumentParser(description='Parse.')
-    parser.add_argument('analysisFile', action="store", nargs='?', default='2011-08-23-fxb_vesta_sci_346_01_b_up_001.fits', type=str) # Positional
-    parser.add_argument('calibration_file', action="store", nargs='?', default='KPNO2010.contin.ascii', type=str) # Positional
+    parser.add_argument('analysisFile', action="store", nargs='?',
+                        default='2011-08-23-fxb_vesta_sci_346_01_b_up_001.fits', type=str) # Positional
+    parser.add_argument('calibration_file', action="store", nargs='?',
+                        default='KPNO2010.contin.ascii', type=str) # Positional
     parser.add_argument('first_guess_file', action="store", nargs='?', default='', type=str) # Positional
     args = parser.parse_args()
 
@@ -21,43 +23,37 @@ def main():
     telescope_file = args.analysisFile
     header_file = '.'.join(telescope_file.split('.')[:-1]) + ".header"
     print telescope_file, header_file
-    if args.first_guess_file:
-        with open(args.first_guess_file, 'r') as file_handle:
-            first_guesses = json.load(file_handle)
+    first_guess_file = args.first_guess_file
+    if first_guess_file:
+        override_order_fit = True
     else:
-        first_guesses = {}
-    headerflag = True
+        override_order_fit = False
     try:
         with open(header_file):
             print
     except IOError:
        print 'Warning: no header_file found.'
-       headerflag = False
+       header_file = ""
     try:
         binSize=500 # sets the chunk size in km/s
         outname = ''.join(["cali_", str(binSize), '_', '.'.join(telescope_file.split('.')[:-1]), ".gz"])
         print outname
-        if headerflag:
-            test_exposure = calicompari.Exposure(exposure_file=telescope_file,
-                                                 calibration_file=calibration_file,
-                                                 calibration_type='iodine',
-                                                 header_file=header_file)
-        else:
-            test_exposure = calicompari.Exposure(exposure_file=telescope_file,
-                                                 calibration_file=calibration_file,
-                                                 calibration_type='iodine')
+        test_exposure = calicompari.Exposure(exposure_file=telescope_file,
+                                             calibration_file=calibration_file,
+                                             calibration_type='iodine',
+                                             header_file=header_file,
+                                             first_guess_file=first_guess_file,
+                                            )
         test_exposure.load_reference_spectra()
         test_exposure.cleanup()
         test_exposure.continuum_fit()
         test_exposure.oversample()
 
         for order in test_exposure.safe_orders:
-            if first_guesses:
-                test_exposure.full_order_shift_scale(order=order, first_guesses=first_guesses)
-            else:
-                test_exposure.full_order_shift_scale(order=order)
+            test_exposure.full_order_shift_scale(order=order)
             test_exposure.create_bin_arrays(order=order, binSize=binSize)
-            test_exposure.full_order_bin_shift_and_scale(order=order, binSize=binSize)
+            test_exposure.full_order_bin_shift_and_scale(order=order, binSize=binSize,
+                                                         override_order_fit=override_order_fit)
 
         test_exposure.make_pretty_results()
 
